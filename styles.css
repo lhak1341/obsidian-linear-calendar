@@ -1,0 +1,565 @@
+/* ============================================
+   Linear Calendar — AnnuCal-style annual view
+   ============================================ */
+
+.linear-calendar-container {
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+	overflow: hidden;
+	background: var(--background-primary);
+	font-family: var(--font-interface);
+	position: relative;
+}
+
+/* ---- Toolbar ---- */
+.linear-calendar-toolbar {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	padding: 4px 8px;
+	flex-shrink: 0;
+}
+
+.lc-nav {
+	display: flex;
+	align-items: center;
+	gap: 2px;
+}
+
+.lc-year-label {
+	font-size: 15px;
+	font-weight: 600;
+	color: var(--text-normal);
+	min-width: 40px;
+	text-align: center;
+	padding: 0 2px;
+}
+
+.lc-nav-btn {
+	background: transparent;
+	border: none;
+	border-radius: 4px;
+	color: var(--text-muted);
+	cursor: pointer;
+	padding: 2px 6px;
+	font-size: 16px;
+	line-height: 1;
+}
+
+.lc-nav-btn:hover {
+	background: var(--background-modifier-hover);
+	color: var(--text-normal);
+}
+
+.lc-today-btn {
+	background: transparent;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 4px;
+	color: var(--text-muted);
+	cursor: pointer;
+	padding: 2px 8px;
+	font-size: 12px;
+	line-height: 1.4;
+}
+
+.lc-today-btn:hover {
+	background: var(--background-modifier-hover);
+	color: var(--text-normal);
+}
+
+/* ---- Density slider ---- */
+.lc-density {
+	display: flex;
+	align-items: center;
+	margin-left: 4px;
+}
+
+.lc-density-slider {
+	-webkit-appearance: none;
+	appearance: none;
+	width: 32px;
+	height: 4px;
+	background: var(--background-modifier-border);
+	border-radius: 2px;
+	outline: none;
+	cursor: pointer;
+	opacity: 0.7;
+}
+
+.lc-density-slider:hover {
+	opacity: 1;
+}
+
+.lc-density-slider::-webkit-slider-thumb {
+	-webkit-appearance: none;
+	appearance: none;
+	width: 10px;
+	height: 10px;
+	border-radius: 50%;
+	background: var(--text-muted);
+	cursor: pointer;
+}
+
+.lc-density-slider::-moz-range-thumb {
+	width: 10px;
+	height: 10px;
+	border-radius: 50%;
+	background: var(--text-muted);
+	border: none;
+	cursor: pointer;
+}
+
+/* ---- Condense density ---- */
+.lc-density-condense .lc-day-cell {
+	gap: 0;
+}
+
+.lc-density-condense .lc-day-num {
+	font-size: 8px;
+}
+
+.lc-density-condense .lc-day-weekday {
+	display: none;
+}
+
+.lc-density-condense .calendar-bar {
+	height: 10px;
+	font-size: 8px;
+	line-height: 10px;
+	padding: 0 2px;
+}
+
+.lc-density-condense .calendar-bar-icon svg {
+	width: 7px;
+	height: 7px;
+}
+
+.lc-density-condense.linear-calendar-grid {
+	grid-template-rows: 12px;
+}
+
+.lc-density-condense .lc-days-grid {
+	grid-template-rows: 12px;
+	grid-auto-rows: 11px;
+	row-gap: 0px;
+}
+
+.lc-density-condense .lc-month-row {
+	min-height: 22px;
+}
+
+.lc-density-condense .lc-month-label {
+	font-size: 8px;
+}
+
+/* ---- Category filter chips (inline in toolbar) ---- */
+.lc-categories {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	margin-left: auto;
+	flex-wrap: nowrap;
+}
+
+.lc-categories:empty {
+	display: none;
+}
+
+.lc-category-chip {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	padding: 2px 8px 2px 6px;
+	border-radius: 10px;
+	font-size: 11px;
+	cursor: pointer;
+	background: var(--background-secondary);
+	transition: opacity 0.12s ease;
+	user-select: none;
+}
+
+.lc-category-chip:hover {
+	background: var(--background-modifier-hover);
+}
+
+.lc-category-hidden {
+	opacity: 0.35;
+}
+
+.lc-category-dot {
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	flex-shrink: 0;
+}
+
+.lc-category-name {
+	color: var(--text-normal);
+	font-weight: 500;
+}
+
+.lc-category-count {
+	color: var(--text-faint);
+	font-size: 10px;
+}
+
+/* ---- Scroll wrapper ---- */
+.linear-calendar-scroll {
+	flex: 1;
+	overflow: auto;
+	position: relative;
+}
+
+/* ---- Year grid ---- */
+.linear-calendar-grid {
+	display: flex;
+	flex-direction: column;
+	padding: 0;
+}
+
+/* ---- Month row ---- */
+.lc-month-row {
+	display: grid;
+	grid-template-columns: 18px 1fr;
+	border-bottom: 1px solid var(--background-modifier-border);
+	min-height: 32px;
+}
+
+.lc-month-label {
+	font-size: 10px;
+	font-weight: 700;
+	color: var(--text-muted);
+	text-transform: uppercase;
+	letter-spacing: 0.2px;
+	user-select: none;
+	white-space: nowrap;
+	line-height: 1;
+	writing-mode: vertical-rl;
+	transform: rotate(180deg);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 0;
+}
+
+/* ---- Days grid ----
+   31 columns. Row 1 = day header (16px). Rows 2+ = bars (12px). */
+.lc-days-grid {
+	display: grid;
+	/* grid-template-columns set inline by GridRenderer */
+	grid-template-rows: 18px;
+	grid-auto-rows: 17px;
+	row-gap: 1px;
+	padding: 1px 0;
+}
+
+/* ---- Day cell (row 1) ---- */
+.lc-day-cell {
+	grid-row: 1;
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	justify-content: center;
+	gap: 0;
+	border-right: 1px solid var(--background-modifier-border-hover, rgba(128, 128, 128, 0.1));
+	user-select: none;
+	position: relative;
+}
+
+.lc-day-cell:last-of-type {
+	border-right: none;
+}
+
+/* Day number */
+.lc-day-num {
+	font-size: 10px;
+	font-weight: 600;
+	color: var(--text-normal);
+	line-height: 1;
+}
+
+/* Weekday abbr — inline after number, dimmer */
+.lc-day-weekday {
+	font-size: 9px;
+	font-weight: 400;
+	color: var(--text-faint);
+	line-height: 1;
+	margin-left: 1px;
+	opacity: 0.7;
+}
+
+/* Empty cells */
+.lc-day-empty {
+	border-right-color: transparent;
+}
+
+/* Weekend */
+.lc-day-weekend .lc-day-num {
+	color: var(--text-faint);
+}
+
+/* ---- Today indicator ---- */
+/* Circle on day number */
+.lc-today-circle {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 16px;
+	height: 16px;
+	border-radius: 50%;
+	background: var(--color-accent);
+	color: var(--text-on-accent, #fff) !important;
+	font-weight: 700;
+	font-size: 9px;
+}
+
+/* Full-height column outline — absolute, spans entire month row */
+.lc-today-column {
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	border: 1.5px solid var(--color-accent);
+	border-radius: 3px;
+	pointer-events: none;
+	z-index: 15;
+}
+
+/* ---- Bars ---- */
+.lc-bars-container {
+	display: contents;
+}
+
+.calendar-bar {
+	height: 16px;
+	border-radius: 3px;
+	font-size: 12px;
+	font-weight: 500;
+	color: #fff;
+	padding: 0 4px;
+	cursor: pointer;
+	overflow: hidden;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+	line-height: 16px;
+	z-index: 5;
+	margin: 0;
+	display: flex;
+	align-items: center;
+	gap: 2px;
+	opacity: 0.9;
+	transition: opacity 0.1s ease;
+}
+
+.calendar-bar:hover {
+	opacity: 1;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+	z-index: 10;
+}
+
+/* Icon */
+.calendar-bar-icon {
+	display: inline-flex;
+	align-items: center;
+	flex-shrink: 0;
+}
+
+.calendar-bar-icon svg {
+	width: 11px;
+	height: 11px;
+	stroke-width: 2.5;
+}
+
+/* Label */
+.calendar-bar-label {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	min-width: 0;
+}
+
+/* ---- Drag handles ---- */
+.calendar-bar {
+	position: relative;
+}
+
+.lc-drag-handle {
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	width: 5px;
+	cursor: col-resize;
+	opacity: 0;
+	transition: opacity 0.1s ease;
+	z-index: 11;
+}
+
+.calendar-bar:hover .lc-drag-handle {
+	opacity: 1;
+}
+
+.lc-drag-handle-left {
+	left: 0;
+	border-radius: 3px 0 0 3px;
+	background: rgba(255, 255, 255, 0.3);
+}
+
+.lc-drag-handle-right {
+	right: 0;
+	border-radius: 0 3px 3px 0;
+	background: rgba(255, 255, 255, 0.3);
+}
+
+.lc-dragging {
+	opacity: 0.7 !important;
+	z-index: 20 !important;
+}
+
+.lc-drag-ghost {
+	opacity: 0.4 !important;
+	pointer-events: none;
+	z-index: 20 !important;
+}
+
+/* ---- Tooltip ---- */
+.linear-calendar-tooltip {
+	position: absolute;
+	z-index: 100;
+	background: var(--background-secondary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 6px;
+	padding: 6px 8px;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+	pointer-events: none;
+	max-width: 220px;
+	font-size: 11px;
+}
+
+.tooltip-title {
+	font-weight: 600;
+	color: var(--text-normal);
+	margin-bottom: 1px;
+}
+
+.tooltip-dates {
+	color: var(--text-muted);
+	font-size: 10px;
+}
+
+.tooltip-tags {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px;
+	margin-top: 3px;
+}
+
+.tooltip-tag-chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 3px;
+	font-size: 10px;
+	color: var(--text-muted);
+}
+
+.tooltip-tag-dot {
+	width: 7px;
+	height: 7px;
+	border-radius: 50%;
+	flex-shrink: 0;
+}
+
+/* ---- Scrollbar ---- */
+.linear-calendar-scroll::-webkit-scrollbar {
+	height: 4px;
+	width: 4px;
+}
+
+.linear-calendar-scroll::-webkit-scrollbar-track {
+	background: transparent;
+}
+
+.linear-calendar-scroll::-webkit-scrollbar-thumb {
+	background: var(--background-modifier-border);
+	border-radius: 2px;
+}
+
+/* ---- Settings ---- */
+.lc-settings-dot {
+	display: inline-block;
+	width: 10px;
+	height: 10px;
+	border-radius: 50%;
+	margin-right: 6px;
+	vertical-align: middle;
+}
+
+.lc-color-swatches {
+	display: flex;
+	gap: 4px;
+	flex-wrap: wrap;
+	margin-right: 8px;
+}
+
+.lc-color-swatch {
+	width: 18px;
+	height: 18px;
+	border-radius: 50%;
+	cursor: pointer;
+	border: 2px solid transparent;
+	transition: border-color 0.1s ease, transform 0.1s ease;
+}
+
+.lc-color-swatch:hover {
+	transform: scale(1.15);
+}
+
+.lc-color-swatch.is-active {
+	border-color: var(--text-normal);
+}
+
+/* ---- Mobile / narrow ---- */
+@media (max-width: 600px) {
+	.linear-calendar-toolbar {
+		flex-wrap: wrap;
+		gap: 4px;
+	}
+
+	.lc-categories {
+		margin-left: 0;
+		flex-wrap: wrap;
+	}
+
+	.lc-day-weekday {
+		display: none;
+	}
+
+	.lc-day-num {
+		font-size: 8px;
+	}
+
+	.lc-month-label {
+		font-size: 8px;
+	}
+
+	.lc-month-row {
+		grid-template-columns: 14px 1fr;
+		min-height: 26px;
+	}
+
+	.lc-days-grid {
+		grid-template-rows: 14px;
+		grid-auto-rows: 13px;
+	}
+
+	.calendar-bar {
+		height: 12px;
+		font-size: 9px;
+		line-height: 12px;
+		padding: 0 2px;
+	}
+
+	.calendar-bar-icon svg {
+		width: 8px;
+		height: 8px;
+	}
+}

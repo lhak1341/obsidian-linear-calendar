@@ -1,0 +1,24 @@
+# Build output
+main.js
+*.js.map
+
+# Dependencies
+node_modules/
+
+# Test vault plugin symlink target
+test-vault/.obsidian/plugins/obsidian-linear-calendar/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Environment
+.env
+
+# Misc
+.claude/
+temp/

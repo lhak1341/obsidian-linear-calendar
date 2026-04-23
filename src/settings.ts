@@ -1,0 +1,254 @@
+import { App, PluginSettingTab, Setting, type ColorComponent } from "obsidian";
+import type LinearCalendarPlugin from "./main";
+import { COLOR_PALETTE } from "./constants";
+import { buildTagColorMap } from "./view/BarRenderer";
+import { FrontmatterScanner } from "./data/FrontmatterScanner";
+
+export class LinearCalendarSettingTab extends PluginSettingTab {
+	plugin: LinearCalendarPlugin;
+
+	constructor(app: App, plugin: LinearCalendarPlugin) {
+		super(app, plugin);
+		this.plugin = plugin;
+	}
+
+	display(): void {
+		const { containerEl } = this;
+		containerEl.empty();
+
+		containerEl.createEl("h2", { text: "Linear Calendar Settings" });
+
+		// Title property — dropdown: filename or custom
+		const mapping = this.plugin.settings.defaultMapping;
+		const isFilename = mapping.titleProp === "__filename__";
+
+		new Setting(containerEl)
+			.setName("Title source")
+			.setDesc("What to use as the bar label.")
+			.addDropdown((dd) =>
+				dd
+					.addOption("__filename__", "Note title (filename)")
+					.addOption("__custom__", "Frontmatter property")
+					.setValue(isFilename ? "__filename__" : "__custom__")
+					.onChange(async (value) => {
+						if (value === "__filename__") {
+							mapping.titleProp = "__filename__";
+						} else {
+							mapping.titleProp = "title";
+						}
+						await this.plugin.saveSettings();
+						this.display();
+					}),
+			);
+
+		if (!isFilename) {
+			new Setting(containerEl)
+				.setName("Title property name")
+				.setDesc("Frontmatter key for bar labels.")
+				.addText((text) =>
+					text
+						.setPlaceholder("title")
+						.setValue(mapping.titleProp)
+						.onChange(async (value) => {
+							mapping.titleProp = value || "title";
+							await this.plugin.saveSettings();
+						}),
+				);
+		}
+
+		new Setting(containerEl)
+			.setName("Start date property")
+			.setDesc("Frontmatter property for event start date.")
+			.addText((text) =>
+				text
+					.setPlaceholder("datestart")
+					.setValue(mapping.startDateProp)
+					.onChange(async (value) => {
+						mapping.startDateProp = value || "datestart";
+						await this.plugin.saveSettings();
+					}),
+			);
+
+		new Setting(containerEl)
+			.setName("End date property")
+			.setDesc(
+				"Frontmatter property for event end date. Events without this are single-day.",
+			)
+			.addText((text) =>
+				text
+					.setPlaceholder("dateend")
+					.setValue(mapping.endDateProp)
+					.onChange(async (value) => {
+						mapping.endDateProp = value || "dateend";
+						await this.plugin.saveSettings();
+					}),
+			);
+
+		new Setting(containerEl)
+			.setName("Icon property")
+			.setDesc(
+				"Frontmatter property for Lucide icon name displayed on bars.",
+			)
+			.addText((text) =>
+				text
+					.setPlaceholder("icon")
+					.setValue(mapping.iconProp)
+					.onChange(async (value) => {
+						mapping.iconProp = value || "icon";
+						await this.plugin.saveSettings();
+					}),
+			);
+
+		// Color map section
+		containerEl.createEl("h3", { text: "Tag Color Map" });
+		containerEl.createEl("p", {
+			text: 'Assign colors to linear-calendar subtags (e.g., "work", "personal"). Unmapped tags get auto-assigned from the palette.',
+			cls: "setting-item-description",
+		});
+
+		const colorMap = this.plugin.settings.colorMap;
+
+		for (const [tag, color] of Object.entries(colorMap)) {
+			const shortName = tag.replace(/^linear-calendar\//, "");
+
+			new Setting(containerEl)
+				.setName("")
+				.then((setting) => {
+					const nameEl = setting.nameEl;
+					const dot = nameEl.createSpan({ cls: "lc-settings-dot" });
+					dot.style.backgroundColor = color;
+					nameEl.createSpan({ text: shortName });
+
+					// Palette swatches
+					this.addSwatches(setting.controlEl, color, async (c) => {
+						colorMap[tag] = c;
+						await this.plugin.saveSettings();
+						this.display();
+					});
+				})
+				.addColorPicker((picker) =>
+					picker.setValue(color).onChange(async (value) => {
+						colorMap[tag] = value;
+						await this.plugin.saveSettings();
+						this.display();
+					}),
+				)
+				.addExtraButton((btn) =>
+					btn.setIcon("x").setTooltip("Remove").onClick(async () => {
+						delete colorMap[tag];
+						await this.plugin.saveSettings();
+						this.display();
+					}),
+				);
+		}
+
+		// Detected tags — scan vault for auto-assigned colors not yet pinned
+		const scanner = new FrontmatterScanner(this.app);
+		const year = new Date().getFullYear();
+		const items = scanner.scan(mapping, year);
+		const autoMap = buildTagColorMap(items, this.plugin.settings);
+
+		const unpinned = [...autoMap.entries()].filter(
+			([tag]) => !(tag in colorMap),
+		);
+
+		if (unpinned.length > 0) {
+			containerEl.createEl("h4", { text: "Detected tags" });
+			containerEl.createEl("p", {
+				text: "Auto-assigned colors from your notes. Pin to customize.",
+				cls: "setting-item-description",
+			});
+
+			for (const [tag, color] of unpinned) {
+				const shortName =
+					tag === "__uncategorized__"
+						? "Other"
+						: tag.replace(/^linear-calendar\//, "");
+
+				new Setting(containerEl)
+					.setName("")
+					.then((setting) => {
+						const nameEl = setting.nameEl;
+						const dot = nameEl.createSpan({ cls: "lc-settings-dot" });
+						dot.style.backgroundColor = color;
+						nameEl.createSpan({ text: shortName });
+					})
+					.addExtraButton((btn) =>
+						btn
+							.setIcon("pin")
+							.setTooltip("Pin to color map")
+							.onClick(async () => {
+								colorMap[tag] = color;
+								await this.plugin.saveSettings();
+								this.display();
+							}),
+					);
+			}
+		}
+
+		// Add new color mapping
+		let newTagColor =
+			COLOR_PALETTE.find((c) => !new Set(Object.values(colorMap)).has(c)) ??
+			COLOR_PALETTE[0];
+		let newTagInput: HTMLInputElement;
+		let newTagPicker: ColorComponent;
+
+		const addSetting = new Setting(containerEl)
+			.setName("Add tag color")
+			.setDesc('Subtag name (without "linear-calendar/" prefix)');
+
+		addSetting.addText((text) => {
+			text.setPlaceholder("e.g. work");
+			newTagInput = text.inputEl;
+		});
+
+		// Palette swatches for "add new"
+		this.addSwatches(
+			addSetting.controlEl,
+			newTagColor,
+			(c) => {
+				newTagColor = c;
+				if (newTagPicker) newTagPicker.setValue(c);
+			},
+		);
+
+		addSetting.addColorPicker((picker) => {
+			newTagPicker = picker;
+			picker.setValue(newTagColor);
+			picker.onChange((value) => {
+				newTagColor = value;
+			});
+		});
+
+		addSetting.addExtraButton((btn) =>
+			btn.setIcon("plus").setTooltip("Add").onClick(async () => {
+				const tagName = newTagInput?.value?.trim();
+				if (!tagName) return;
+
+				const fullTag = tagName.startsWith("linear-calendar/")
+					? tagName
+					: `linear-calendar/${tagName}`;
+
+				colorMap[fullTag] = newTagColor;
+				await this.plugin.saveSettings();
+				this.display();
+			}),
+		);
+	}
+
+	private addSwatches(
+		parentEl: HTMLElement,
+		activeColor: string,
+		onSelect: (color: string) => void,
+	): void {
+		const wrap = parentEl.createDiv({ cls: "lc-color-swatches" });
+		for (const color of COLOR_PALETTE) {
+			const swatch = wrap.createDiv({ cls: "lc-color-swatch" });
+			swatch.style.backgroundColor = color;
+			if (color.toLowerCase() === activeColor.toLowerCase()) {
+				swatch.addClass("is-active");
+			}
+			swatch.addEventListener("click", () => onSelect(color));
+		}
+	}
+}

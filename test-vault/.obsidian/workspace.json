@@ -1,0 +1,198 @@
+{
+  "main": {
+    "id": "24e6a0f70714e04d",
+    "type": "split",
+    "children": [
+      {
+        "id": "19823f3ea7e85fb2",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "9527874064aa7679",
+            "type": "leaf",
+            "state": {
+              "type": "linear-calendar-view",
+              "state": {
+                "year": 2026,
+                "hiddenCategories": [],
+                "density": "normal"
+              },
+              "icon": "calendar-range",
+              "title": "Linear Calendar"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "2582a557d03c4664",
+    "type": "split",
+    "children": [
+      {
+        "id": "be01c88ee26a0293",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "680fab2e01e8f8bc",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Files"
+            }
+          },
+          {
+            "id": "7dc006c6700bb20a",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "Search"
+            }
+          },
+          {
+            "id": "dde632a7d3d0deda",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "Bookmarks"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "right": {
+    "id": "66062c5157fac22d",
+    "type": "split",
+    "children": [
+      {
+        "id": "a8589a698702d5bc",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "a7fc81025362d298",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "notes/birthday.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "Backlinks for birthday"
+            }
+          },
+          {
+            "id": "d2ba97b692dbdf0f",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "notes/birthday.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "Outgoing links from birthday"
+            }
+          },
+          {
+            "id": "4ca3ec45839cfdb2",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "Tags"
+            }
+          },
+          {
+            "id": "983e99f531e8db61",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "All properties"
+            }
+          },
+          {
+            "id": "7dd900beb2256586",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "Outline"
+            }
+          }
+        ],
+        "currentTab": 4
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Open quick switcher": false,
+      "graph:Open graph view": false,
+      "canvas:Create new canvas": false,
+      "daily-notes:Open today's daily note": false,
+      "templates:Insert template": false,
+      "command-palette:Open command palette": false,
+      "bases:Create new base": false
+    }
+  },
+  "active": "9527874064aa7679",
+  "lastOpenFiles": [
+    "notes/team-offsite.md",
+    "notes/dentist.md",
+    "notes/tax-deadline.md",
+    "notes/hackathon.md",
+    "notes/reading-challenge.md",
+    "notes/conference-talk.md",
+    "notes/project-alpha.md",
+    "notes/bad-date.md"
+  ]
+}

@@ -1,0 +1,84 @@
+export class Tooltip {
+	private el: HTMLElement;
+
+	constructor(parentEl: HTMLElement) {
+		this.el = parentEl.createDiv({ cls: "linear-calendar-tooltip" });
+		this.el.style.display = "none";
+	}
+
+	attach(container: HTMLElement): void {
+		container.addEventListener("mouseenter", (evt) => {
+			const target = evt.target as HTMLElement;
+			if (!target.classList.contains("calendar-bar")) return;
+			this.show(target, evt as MouseEvent);
+		}, true);
+
+		container.addEventListener("mousemove", (evt) => {
+			const target = evt.target as HTMLElement;
+			if (!target.classList.contains("calendar-bar")) return;
+			if (this.el.style.display === "block") {
+				this.reposition(evt as MouseEvent);
+			}
+		}, true);
+
+		container.addEventListener("mouseleave", (evt) => {
+			const target = evt.target as HTMLElement;
+			if (!target.classList.contains("calendar-bar")) return;
+			this.hide();
+		}, true);
+	}
+
+	private show(barEl: HTMLElement, evt: MouseEvent): void {
+		const title = barEl.dataset.title ?? "";
+		const dateRange = barEl.dataset.dateRange ?? "";
+		const tags = barEl.dataset.tags ?? "";
+		const tagColor = barEl.dataset.tagColor ?? "";
+
+		this.el.empty();
+		this.el.createDiv({ cls: "tooltip-title", text: title });
+		this.el.createDiv({ cls: "tooltip-dates", text: dateRange });
+		if (tags) {
+			const tagRow = this.el.createDiv({ cls: "tooltip-tags" });
+			for (const tag of tags.split(", ")) {
+				const chip = tagRow.createSpan({ cls: "tooltip-tag-chip" });
+				const dot = chip.createSpan({ cls: "tooltip-tag-dot" });
+				dot.style.backgroundColor = tagColor || "#888";
+				const shortName = tag.replace(/^linear-calendar\//, "");
+				chip.createSpan({ text: shortName });
+			}
+		}
+
+		this.el.style.display = "block";
+		this.reposition(evt);
+	}
+
+	private reposition(evt: MouseEvent): void {
+		const parentRect = this.el.parentElement!.getBoundingClientRect();
+		const tooltipH = this.el.offsetHeight;
+		const tooltipW = this.el.offsetWidth;
+
+		let top = evt.clientY - parentRect.top - tooltipH - 10;
+		let left = evt.clientX - parentRect.left + 12;
+
+		// Flip below cursor if too close to top
+		if (top < 0) {
+			top = evt.clientY - parentRect.top + 14;
+		}
+
+		// Clamp horizontally
+		const maxLeft = parentRect.width - tooltipW;
+		if (left > maxLeft) left = evt.clientX - parentRect.left - tooltipW - 12;
+		if (left < 0) left = 0;
+
+		this.el.style.top = `${top}px`;
+		this.el.style.left = `${left}px`;
+	}
+
+	private hide(): void {
+		this.el.style.display = "none";
+	}
+
+	cleanup(): void {
+		this.el.remove();
+	}
+}
