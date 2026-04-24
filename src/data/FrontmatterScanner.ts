@@ -1,89 +1,123 @@
-import type { App } from "obsidian";
+import type { App, TFile } from "obsidian";
 import type { CalendarItem, ColumnMapping } from "../types";
 import type { DataSource } from "./DataSource";
 import { parseDateString } from "../utils/dateUtils";
 
+interface CacheEntry {
+	mtime: number;
+	item: CalendarItem | null; // null = file has no valid calendar data
+}
+
 export class FrontmatterScanner implements DataSource {
+	private cache = new Map<string, CacheEntry>();
+	private lastMapping: string | null = null;
+
 	constructor(private app: App) {}
 
 	scan(mapping: ColumnMapping, year: number): CalendarItem[] {
-		const items: CalendarItem[] = [];
+		const mappingKey = JSON.stringify(mapping);
+		// Invalidate entire cache if mapping changed
+		if (mappingKey !== this.lastMapping) {
+			this.cache.clear();
+			this.lastMapping = mappingKey;
+		}
+
 		const files = this.app.vault.getMarkdownFiles();
+		const currentPaths = new Set<string>();
 
 		for (const file of files) {
-			const cache = this.app.metadataCache.getFileCache(file);
-			const fm = cache?.frontmatter;
-			if (!fm) continue;
+			currentPaths.add(file.path);
+			const mtime = file.stat.mtime;
+			const cached = this.cache.get(file.path);
 
-			const startRaw = fm[mapping.startDateProp];
-			if (startRaw === undefined) continue;
+			if (cached && cached.mtime === mtime) continue;
 
-			const dateStart = parseDateString(startRaw);
-			if (!dateStart) continue;
+			// Reprocess this file
+			const item = this.processFile(file, mapping);
+			this.cache.set(file.path, { mtime, item });
+		}
 
-			// Filter by year early
-			if (dateStart.getFullYear() > year) continue;
-
-			let dateEnd: Date;
-			const endRaw = fm[mapping.endDateProp];
-			const parsedEnd = endRaw !== undefined ? parseDateString(endRaw) : null;
-			if (parsedEnd) {
-				dateEnd = parsedEnd;
-			} else {
-				// No end date: treat as single-day event
-				dateEnd = new Date(dateStart);
+		// Remove deleted files from cache
+		for (const path of this.cache.keys()) {
+			if (!currentPaths.has(path)) {
+				this.cache.delete(path);
 			}
+		}
 
-			// Skip if event ends before this year
-			if (dateEnd.getFullYear() < year) continue;
+		// Collect and filter by year
+		const items: CalendarItem[] = [];
+		const yearStart = new Date(year, 0, 1);
+		const yearEnd = new Date(year, 11, 31);
 
-			// Clamp to year boundaries for display
-			const yearStart = new Date(year, 0, 1);
-			const yearEnd = new Date(year, 11, 31);
-			const clampedStart = dateStart < yearStart ? yearStart : dateStart;
-			const clampedEnd = dateEnd > yearEnd ? yearEnd : dateEnd;
+		for (const entry of this.cache.values()) {
+			if (!entry.item) continue;
+			const { dateStart, dateEnd } = entry.item;
 
-			const title =
-				mapping.titleProp === "__filename__"
-					? file.basename
-					: typeof fm[mapping.titleProp] === "string"
-						? fm[mapping.titleProp]
-						: file.basename;
+			// Filter by year
+			if (dateStart > yearEnd || dateEnd < yearStart) continue;
 
-			// Always read tags, filter for linear-calendar/* subtags
-			const tags: string[] = [];
-			const rawTags = fm.tags;
-			if (rawTags) {
-				const tagList = Array.isArray(rawTags)
-					? rawTags.map(String)
-					: typeof rawTags === "string"
-						? [rawTags]
-						: [];
-				for (const t of tagList) {
-					if (t.startsWith("linear-calendar/")) {
-						tags.push(t);
-					}
-				}
-			}
-
-			// Icon (Lucide icon name from frontmatter)
-			const icon =
-				mapping.iconProp && typeof fm[mapping.iconProp] === "string"
-					? fm[mapping.iconProp]
-					: undefined;
-
+			// Clamp to year boundaries
 			items.push({
-				filePath: file.path,
-				title,
-				dateStart: clampedStart,
-				dateEnd: clampedEnd,
-				tags,
-				icon,
+				...entry.item,
+				dateStart: dateStart < yearStart ? yearStart : dateStart,
+				dateEnd: dateEnd > yearEnd ? yearEnd : dateEnd,
 			});
 		}
 
-		// Sort by start date
 		items.sort((a, b) => a.dateStart.getTime() - b.dateStart.getTime());
 		return items;
+	}
+
+	private processFile(file: TFile, mapping: ColumnMapping): CalendarItem | null {
+		const cache = this.app.metadataCache.getFileCache(file);
+		const fm = cache?.frontmatter;
+		if (!fm) return null;
+
+		const startRaw = fm[mapping.startDateProp];
+		if (startRaw === undefined) return null;
+
+		const dateStart = parseDateString(startRaw);
+		if (!dateStart) return null;
+
+		let dateEnd: Date;
+		const endRaw = fm[mapping.endDateProp];
+		const parsedEnd = endRaw !== undefined ? parseDateString(endRaw) : null;
+		dateEnd = parsedEnd ?? new Date(dateStart);
+
+		const title =
+			mapping.titleProp === "__filename__"
+				? file.basename
+				: typeof fm[mapping.titleProp] === "string"
+					? fm[mapping.titleProp]
+					: file.basename;
+
+		const tags: string[] = [];
+		const rawTags = fm.tags;
+		if (rawTags) {
+			const tagList = Array.isArray(rawTags)
+				? rawTags.map(String)
+				: typeof rawTags === "string"
+					? [rawTags]
+					: [];
+			for (const t of tagList) {
+				if (t.startsWith("linear-calendar/")) {
+					tags.push(t);
+				}
+			}
+		}
+
+		const icon =
+			mapping.iconProp && typeof fm[mapping.iconProp] === "string"
+				? fm[mapping.iconProp]
+				: undefined;
+
+		return {
+			filePath: file.path,
+			title,
+			dateStart,
+			dateEnd,
+			tags,
+			icon,
+		};
 	}
 }

@@ -17,10 +17,9 @@ interface DragContext {
 	mode: "resize-start" | "resize-end" | "move";
 	startX: number;
 	dayWidth: number;
-	onComplete: () => void;
 }
 
-interface GhostInfo {
+interface GhostSeg {
 	month: number;
 	startDay: number;
 	endDay: number;
@@ -42,8 +41,8 @@ function mDays(month: number, year: number): number {
 	return new Date(year, month + 1, 0).getDate();
 }
 
-function segmentDates(start: Date, end: Date, year: number): GhostInfo[] {
-	const segs: GhostInfo[] = [];
+function segmentDates(start: Date, end: Date, year: number): GhostSeg[] {
+	const segs: GhostSeg[] = [];
 	const yStart = new Date(year, 0, 1);
 	const yEnd = new Date(year, 11, 31);
 	const s = start < yStart ? yStart : start;
@@ -65,10 +64,43 @@ function segmentDates(start: Date, end: Date, year: number): GhostInfo[] {
 	return segs;
 }
 
+/** Pre-parsed row occupancy for a month's bars container */
+type RowOccupancy = Map<number, [number, number][]>;
+
+function buildOccupancy(container: HTMLElement): RowOccupancy {
+	const occ: RowOccupancy = new Map();
+	const bars = container.querySelectorAll(".calendar-bar:not(.lc-drag-ghost)");
+	for (const bar of bars) {
+		const el = bar as HTMLElement;
+		if (el.style.display === "none") continue;
+		const row = parseInt(el.style.gridRow) - 2;
+		if (isNaN(row) || row < 0) continue;
+		const match = el.style.gridColumn.match(/(\d+)\s*\/\s*span\s*(\d+)/);
+		if (!match) continue;
+		const s = parseInt(match[1]);
+		const e = s + parseInt(match[2]) - 1;
+		if (!occ.has(row)) occ.set(row, []);
+		occ.get(row)!.push([s, e]);
+	}
+	return occ;
+}
+
+function findFreeRow(occ: RowOccupancy, startDay: number, endDay: number): number {
+	for (let r = 0; r < 20; r++) {
+		const spans = occ.get(r);
+		if (!spans || !spans.some(([s, e]) => startDay <= e && endDay >= s)) return r;
+	}
+	return occ.size;
+}
+
 export class DragHandler {
 	private ctx: DragContext | null = null;
 	private monthRows: MonthRowRef[] = [];
-	private ghostEls: HTMLElement[] = [];
+	/** Pre-built occupancy maps per month, computed once at drag start */
+	private occupancyCache = new Map<number, RowOccupancy>();
+	/** Reusable ghost pool — update in place, hide extras */
+	private ghostPool: HTMLElement[] = [];
+	private activeGhostCount = 0;
 	private boundMouseMove: (e: MouseEvent) => void;
 	private boundMouseUp: (e: MouseEvent) => void;
 	private prevDayDelta: number | null = null;
@@ -95,7 +127,6 @@ export class DragHandler {
 		daysInMonth: number,
 		originalStart: Date,
 		originalEnd: Date,
-		onComplete: () => void,
 	): void {
 		const leftHandle = document.createElement("div");
 		leftHandle.className = "lc-drag-handle lc-drag-handle-left";
@@ -108,7 +139,7 @@ export class DragHandler {
 		const initDrag = (e: MouseEvent, mode: DragContext["mode"]) => {
 			e.stopPropagation();
 			e.preventDefault();
-			this.startDrag(e, barEl, filePath, month, startDay, endDay, daysInMonth, originalStart, originalEnd, mode, onComplete);
+			this.startDrag(e, barEl, filePath, month, startDay, endDay, daysInMonth, originalStart, originalEnd, mode);
 		};
 
 		leftHandle.addEventListener("mousedown", (e) => initDrag(e, "resize-start"));
@@ -124,7 +155,7 @@ export class DragHandler {
 					document.removeEventListener("mousemove", onMove);
 					document.removeEventListener("mouseup", onUp);
 					e.preventDefault();
-					this.startDrag(e, barEl, filePath, month, startDay, endDay, daysInMonth, originalStart, originalEnd, "move", onComplete);
+					this.startDrag(e, barEl, filePath, month, startDay, endDay, daysInMonth, originalStart, originalEnd, "move");
 					this.onMouseMove(me);
 				}
 			};
@@ -148,7 +179,6 @@ export class DragHandler {
 		originalStart: Date,
 		originalEnd: Date,
 		mode: DragContext["mode"],
-		onComplete: () => void,
 	): void {
 		const daysGrid = barEl.closest(".lc-days-grid") as HTMLElement | null;
 		if (!daysGrid) return;
@@ -171,9 +201,14 @@ export class DragHandler {
 			mode,
 			startX: e.clientX,
 			dayWidth,
-			onComplete,
 		};
 		this.prevDayDelta = null;
+
+		// Pre-build occupancy maps for all months (once per drag)
+		this.occupancyCache.clear();
+		for (const row of this.monthRows) {
+			this.occupancyCache.set(row.month, buildOccupancy(row.barsContainer));
+		}
 
 		barEl.addClass("lc-dragging");
 		document.body.style.cursor = mode === "move" ? "grabbing" : "col-resize";
@@ -207,12 +242,10 @@ export class DragHandler {
 
 	private onMouseMove(e: MouseEvent): void {
 		if (!this.ctx) return;
-		const { startX, dayWidth } = this.ctx;
 
-		const dx = e.clientX - startX;
-		const dayDelta = Math.round(dx / dayWidth);
+		const dx = e.clientX - this.ctx.startX;
+		const dayDelta = Math.round(dx / this.ctx.dayWidth);
 
-		// Skip if nothing changed
 		if (dayDelta === this.prevDayDelta) return;
 		this.prevDayDelta = dayDelta;
 
@@ -226,86 +259,66 @@ export class DragHandler {
 		const { newStart, newEnd } = this.newDatesFromDelta(dayDelta);
 		const allSegs = segmentDates(newStart, newEnd, year);
 
-		// Find segment for the original month (where the real bar lives)
+		// Update real bar in home month
 		const homeSeg = allSegs.find((s) => s.month === segMonth);
-
 		if (homeSeg) {
-			// Bar still overlaps its home month — update its grid position
 			barEl.style.gridColumn = `${homeSeg.startDay} / span ${homeSeg.endDay - homeSeg.startDay + 1}`;
 			barEl.style.display = "";
 		} else {
-			// Bar has fully left its home month — hide it
 			barEl.style.display = "none";
 		}
 
-		// Update ghost bars in other months
-		this.clearGhosts();
-		for (const seg of allSegs) {
-			if (seg.month === segMonth) continue;
+		// Update ghosts — reuse pooled elements
+		const otherSegs = allSegs.filter((s) => s.month !== segMonth);
+		let gi = 0;
 
+		for (const seg of otherSegs) {
 			const rowRef = this.monthRows.find((r) => r.month === seg.month);
 			if (!rowRef) continue;
 
-			const ghostRow = this.findFreeRow(rowRef.barsContainer, seg.startDay, seg.endDay);
-
-			const ghost = document.createElement("div");
-			ghost.className = "calendar-bar lc-drag-ghost";
+			const occ = this.occupancyCache.get(seg.month);
+			const row = occ ? findFreeRow(occ, seg.startDay, seg.endDay) : 0;
 			const span = seg.endDay - seg.startDay + 1;
+
+			let ghost: HTMLElement;
+			if (gi < this.ghostPool.length) {
+				ghost = this.ghostPool[gi];
+				ghost.style.display = "";
+			} else {
+				ghost = document.createElement("div");
+				ghost.className = "calendar-bar lc-drag-ghost";
+				const label = document.createElement("span");
+				label.className = "calendar-bar-label";
+				ghost.appendChild(label);
+				this.ghostPool.push(ghost);
+			}
+
 			ghost.style.gridColumn = `${seg.startDay} / span ${span}`;
-			ghost.style.gridRow = `${ghostRow + 2}`;
+			ghost.style.gridRow = `${row + 2}`;
 			ghost.style.backgroundColor = barColor;
+			(ghost.firstChild as HTMLElement).textContent = barLabel;
 
-			const label = document.createElement("span");
-			label.className = "calendar-bar-label";
-			label.textContent = barLabel;
-			ghost.appendChild(label);
+			// Move ghost to correct container if needed
+			if (ghost.parentElement !== rowRef.barsContainer) {
+				rowRef.barsContainer.appendChild(ghost);
+			}
 
-			rowRef.barsContainer.appendChild(ghost);
-			this.ghostEls.push(ghost);
-		}
-	}
-
-	/**
-	 * Find first grid row (0-indexed) in a barsContainer where
-	 * no existing bar overlaps the given day range.
-	 */
-	private findFreeRow(container: HTMLElement, startDay: number, endDay: number): number {
-		const bars = container.querySelectorAll(".calendar-bar:not(.lc-drag-ghost)");
-		// Build map: row → list of [colStart, colEnd]
-		const rowOccupied = new Map<number, [number, number][]>();
-
-		for (const bar of bars) {
-			const el = bar as HTMLElement;
-			if (el.style.display === "none") continue;
-			const col = el.style.gridColumn;
-			const rowStr = el.style.gridRow;
-			// gridRow is like "2" or "3" — row index = parseInt - 2
-			const row = parseInt(rowStr) - 2;
-			if (isNaN(row) || row < 0) continue;
-
-			// Parse gridColumn: "5 / span 3" or "5 / 8"
-			const match = col.match(/(\d+)\s*\/\s*span\s*(\d+)/);
-			if (!match) continue;
-			const cStart = parseInt(match[1]);
-			const cEnd = cStart + parseInt(match[2]) - 1;
-
-			if (!rowOccupied.has(row)) rowOccupied.set(row, []);
-			rowOccupied.get(row)!.push([cStart, cEnd]);
+			gi++;
 		}
 
-		// Find first row with no overlap
-		for (let r = 0; r < 20; r++) {
-			const spans = rowOccupied.get(r);
-			if (!spans) return r;
-			const overlaps = spans.some(([s, e]) => startDay <= e && endDay >= s);
-			if (!overlaps) return r;
+		// Hide unused ghosts
+		for (let i = gi; i < this.activeGhostCount; i++) {
+			this.ghostPool[i].style.display = "none";
 		}
-		return rowOccupied.size;
+		this.activeGhostCount = gi;
 	}
 
 	private clearGhosts(): void {
-		for (const el of this.ghostEls) el.remove();
-		this.ghostEls = [];
+		for (let i = 0; i < this.ghostPool.length; i++) {
+			this.ghostPool[i].remove();
+		}
+		this.ghostPool = [];
+		this.activeGhostCount = 0;
 	}
 
 	private async onMouseUp(): Promise<void> {
@@ -313,15 +326,15 @@ export class DragHandler {
 		document.removeEventListener("mouseup", this.boundMouseUp);
 		document.body.style.cursor = "";
 
-		this.clearGhosts();
-
 		if (!this.ctx) return;
 
 		const dayDelta = this.prevDayDelta ?? 0;
 		const { newStart, newEnd } = this.newDatesFromDelta(dayDelta);
-		const { barEl, filePath, onComplete } = this.ctx;
+		const { barEl, filePath } = this.ctx;
 
-		// Restore bar visibility
+		this.clearGhosts();
+		this.occupancyCache.clear();
+
 		barEl.style.display = "";
 		barEl.removeClass("lc-dragging");
 		barEl.dataset.justDragged = "true";
@@ -332,6 +345,9 @@ export class DragHandler {
 
 		if (dayDelta === 0) return;
 
+		// Write new dates — don't re-render immediately.
+		// metadataCache.on('changed') will trigger re-render
+		// once the cache has actually re-indexed the file.
 		const mapping = this.getMapping();
 		const file = this.app.vault.getAbstractFileByPath(filePath) as TFile | null;
 		if (!file) return;
@@ -342,14 +358,13 @@ export class DragHandler {
 				fm[mapping.endDateProp] = formatDate(newEnd);
 			}
 		});
-
-		onComplete();
 	}
 
 	cleanup(): void {
 		document.removeEventListener("mousemove", this.boundMouseMove);
 		document.removeEventListener("mouseup", this.boundMouseUp);
 		this.clearGhosts();
+		this.occupancyCache.clear();
 		this.ctx = null;
 	}
 }

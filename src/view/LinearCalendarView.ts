@@ -91,13 +91,16 @@ export class LinearCalendarView extends ItemView {
 
 		this.renderCalendar();
 
+		// Scroll to today on first open
+		requestAnimationFrame(() => this.scrollToNow());
+
 		// Keyboard shortcuts
 		contentEl.tabIndex = 0;
 		contentEl.addEventListener("keydown", (evt) => {
 			this.handleKeydown(evt);
 		});
 
-		const debouncedRender = debounce(() => this.renderCalendar(), 150, true);
+		const debouncedRender = debounce(() => this.renderCalendar(), 300, true);
 		this.registerEvent(
 			this.app.metadataCache.on("changed", () => debouncedRender()),
 		);
@@ -231,9 +234,7 @@ export class LinearCalendarView extends ItemView {
 		grid.removeClass("lc-density-condense", "lc-density-normal", "lc-density-expand");
 		grid.addClass(`lc-density-${this.density}`);
 
-		this.barRenderer.render(monthRows, items, tagColorMap, () => {
-			this.renderCalendar();
-		});
+		this.barRenderer.render(monthRows, items, tagColorMap);
 
 		this.nowIndicator.cleanup();
 		this.nowIndicator.render(monthRows, this.currentYear);

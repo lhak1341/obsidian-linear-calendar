@@ -55,7 +55,6 @@ export class BarRenderer {
 		monthRows: MonthRowRef[],
 		items: CalendarItem[],
 		tagColorMap: Map<string, string>,
-		onDragComplete: () => void,
 	): void {
 		this.dragHandler.setMonthRows(monthRows);
 		const grouped = groupSegmentsByMonth(items);
@@ -163,7 +162,6 @@ export class BarRenderer {
 					rowRef.daysInMonth,
 					segment.item.dateStart,
 					segment.item.dateEnd,
-					onDragComplete,
 				);
 			}
 		}

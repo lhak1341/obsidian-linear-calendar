@@ -91,10 +91,9 @@ export class GridRenderer {
 				text: WEEKDAY_ABBR[dow],
 			});
 
-			cellEl.addEventListener("click", () => {
+			cellEl.addEventListener("dblclick", () => {
 				this.onDayClick?.(year, month, d);
 			});
-			cellEl.style.cursor = "pointer";
 		}
 
 		const barsContainer = daysGrid.createDiv({
