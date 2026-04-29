@@ -357,12 +357,16 @@ export class DragHandler {
 		const file = this.app.vault.getAbstractFileByPath(filePath) as TFile | null;
 		if (!file) return;
 
-		await this.app.fileManager.processFrontMatter(file, (fm) => {
-			fm[mapping.startDateProp] = formatDate(newStart);
-			if (formatDate(newStart) !== formatDate(newEnd) || fm[mapping.endDateProp]) {
-				fm[mapping.endDateProp] = formatDate(newEnd);
-			}
-		});
+		try {
+			await this.app.fileManager.processFrontMatter(file, (fm) => {
+				fm[mapping.startDateProp] = formatDate(newStart);
+				if (formatDate(newStart) !== formatDate(newEnd) || fm[mapping.endDateProp]) {
+					fm[mapping.endDateProp] = formatDate(newEnd);
+				}
+			});
+		} catch (err) {
+			console.error("[linear-calendar] drag write failed:", err);
+		}
 	}
 
 	cleanup(): void {

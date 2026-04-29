@@ -14,3 +14,4 @@ Obsidian plugin — horizontal year-at-a-glance timeline rendered from note fron
 - All CSS in single `styles.css` (Obsidian plugin convention)
 - Only use Obsidian CSS custom properties (`var(--...)`) for theme compatibility
 - Bar colors set via inline `style.backgroundColor` in JS — CSS cannot override inline styles; color adaptations (contrast, theming) must be handled in JS at render time
+- Use `this.registerDomEvent()` for all DOM event listeners in views — raw `addEventListener` on `contentEl` leaks across open/close cycles

@@ -45,7 +45,13 @@ export function parseDateString(value: unknown): Date | null {
 	if (typeof value === "string") {
 		const trimmed = value.trim();
 		if (!trimmed) return null;
-		// YYYY-MM-DD or ISO 8601
+		// YYYY-MM-DD: parse in local time to avoid UTC-midnight off-by-one in negative-offset timezones
+		const dateOnly = /^\d{4}-\d{2}-\d{2}$/.test(trimmed);
+		if (dateOnly) {
+			const [y, m, d] = trimmed.split("-").map(Number);
+			const local = new Date(y, m - 1, d);
+			return isNaN(local.getTime()) ? null : local;
+		}
 		const parsed = new Date(trimmed);
 		if (!isNaN(parsed.getTime())) {
 			return parsed;

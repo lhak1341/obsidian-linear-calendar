@@ -1,8 +1,13 @@
 /** Return '#000' or '#fff' for maximum contrast against a hex background. */
 export function getContrastColor(hex: string): string {
-	const r = parseInt(hex.slice(1, 3), 16) / 255;
-	const g = parseInt(hex.slice(3, 5), 16) / 255;
-	const b = parseInt(hex.slice(5, 7), 16) / 255;
+	// Expand 3-digit hex to 6-digit
+	const normalized = /^#[0-9a-f]{3}$/i.test(hex)
+		? `#${hex[1]}${hex[1]}${hex[2]}${hex[2]}${hex[3]}${hex[3]}`
+		: hex;
+	if (!/^#[0-9a-f]{6}$/i.test(normalized)) return "#000";
+	const r = parseInt(normalized.slice(1, 3), 16) / 255;
+	const g = parseInt(normalized.slice(3, 5), 16) / 255;
+	const b = parseInt(normalized.slice(5, 7), 16) / 255;
 	const lin = (c: number) =>
 		c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
 	const L = 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);

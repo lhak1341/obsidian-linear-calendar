@@ -82,7 +82,7 @@ export class LinearCalendarView extends ItemView {
 		this.tooltip = new Tooltip(contentEl);
 
 		// Shift+scroll horizontal pan
-		scrollWrapper.addEventListener("wheel", (evt) => {
+		this.registerDomEvent(scrollWrapper, "wheel", (evt: WheelEvent) => {
 			if (evt.shiftKey) {
 				evt.preventDefault();
 				scrollWrapper.scrollLeft += evt.deltaY;
@@ -96,7 +96,7 @@ export class LinearCalendarView extends ItemView {
 
 		// Keyboard shortcuts
 		contentEl.tabIndex = 0;
-		contentEl.addEventListener("keydown", (evt) => {
+		this.registerDomEvent(contentEl, "keydown", (evt: KeyboardEvent) => {
 			this.handleKeydown(evt);
 		});
 
