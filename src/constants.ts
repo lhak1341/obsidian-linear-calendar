@@ -13,6 +13,7 @@ export const DEFAULT_SETTINGS: PluginSettings = {
 	defaultMapping: { ...DEFAULT_MAPPING },
 	viewConfigs: {},
 	colorMap: {},
+	alignMode: "date",
 };
 
 // Google Calendar / Material Design palette

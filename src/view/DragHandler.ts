@@ -182,7 +182,8 @@ export class DragHandler {
 	): void {
 		const daysGrid = barEl.closest(".lc-days-grid") as HTMLElement | null;
 		if (!daysGrid) return;
-		const dayWidth = daysGrid.clientWidth / 31;
+		const totalCols = this.monthRows.find((r) => r.month === month)?.totalCols ?? 31;
+		const dayWidth = daysGrid.clientWidth / totalCols;
 
 		const labelEl = barEl.querySelector(".calendar-bar-label") as HTMLElement | null;
 
@@ -260,9 +261,12 @@ export class DragHandler {
 		const allSegs = segmentDates(newStart, newEnd, year);
 
 		// Update real bar in home month
+		const homeRowRef = this.monthRows.find((r) => r.month === segMonth);
+		const homeOffset = homeRowRef?.weekdayOffset ?? 0;
 		const homeSeg = allSegs.find((s) => s.month === segMonth);
 		if (homeSeg) {
-			barEl.style.gridColumn = `${homeSeg.startDay} / span ${homeSeg.endDay - homeSeg.startDay + 1}`;
+			const span = homeSeg.endDay - homeSeg.startDay + 1;
+			barEl.style.gridColumn = `${homeOffset + homeSeg.startDay} / span ${span}`;
 			barEl.style.display = "";
 		} else {
 			barEl.style.display = "none";
@@ -279,6 +283,7 @@ export class DragHandler {
 			const occ = this.occupancyCache.get(seg.month);
 			const row = occ ? findFreeRow(occ, seg.startDay, seg.endDay) : 0;
 			const span = seg.endDay - seg.startDay + 1;
+			const offset = rowRef.weekdayOffset;
 
 			let ghost: HTMLElement;
 			if (gi < this.ghostPool.length) {
@@ -293,7 +298,7 @@ export class DragHandler {
 				this.ghostPool.push(ghost);
 			}
 
-			ghost.style.gridColumn = `${seg.startDay} / span ${span}`;
+			ghost.style.gridColumn = `${offset + seg.startDay} / span ${span}`;
 			ghost.style.gridRow = `${row + 2}`;
 			ghost.style.backgroundColor = barColor;
 			(ghost.firstChild as HTMLElement).textContent = barLabel;

@@ -3,6 +3,7 @@ import type LinearCalendarPlugin from "./main";
 import { COLOR_PALETTE } from "./constants";
 import { buildTagColorMap } from "./view/BarRenderer";
 import { FrontmatterScanner } from "./data/FrontmatterScanner";
+import type { AlignMode } from "./types";
 
 export class LinearCalendarSettingTab extends PluginSettingTab {
 	plugin: LinearCalendarPlugin;
@@ -17,6 +18,20 @@ export class LinearCalendarSettingTab extends PluginSettingTab {
 		containerEl.empty();
 
 		containerEl.createEl("h2", { text: "Linear Calendar Settings" });
+
+		new Setting(containerEl)
+			.setName("Column alignment")
+			.setDesc("Date: day 1 aligns across months. Weekday: same weekday aligns across months.")
+			.addDropdown((dd) =>
+				dd
+					.addOption("date", "Date (1–31)")
+					.addOption("weekday", "Weekday")
+					.setValue(this.plugin.settings.alignMode)
+					.onChange(async (value) => {
+						this.plugin.settings.alignMode = value as AlignMode;
+						await this.plugin.saveSettings();
+					}),
+			);
 
 		// Title property — dropdown: filename or custom
 		const mapping = this.plugin.settings.defaultMapping;

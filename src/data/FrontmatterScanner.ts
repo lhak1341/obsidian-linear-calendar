@@ -73,6 +73,18 @@ export class FrontmatterScanner implements DataSource {
 		const fm = cache?.frontmatter;
 		if (!fm) return null;
 
+		// Gate: only process notes tagged #linear-calendar
+		const fmTags = Array.isArray(fm.tags)
+			? fm.tags.map(String)
+			: typeof fm.tags === "string"
+				? [fm.tags]
+				: [];
+		const inlineTags = (cache?.tags ?? []).map((t) => t.tag);
+		const hasGateTag =
+			fmTags.some((t) => t === "linear-calendar" || t.startsWith("linear-calendar/")) ||
+			inlineTags.some((t) => t === "#linear-calendar" || t.startsWith("#linear-calendar/"));
+		if (!hasGateTag) return null;
+
 		const startRaw = fm[mapping.startDateProp];
 		if (startRaw === undefined) return null;
 

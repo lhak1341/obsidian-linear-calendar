@@ -1,3 +1,5 @@
+export type AlignMode = "date" | "weekday";
+
 export interface CalendarItem {
 	filePath: string;
 	title: string;
@@ -19,4 +21,5 @@ export interface PluginSettings {
 	defaultMapping: ColumnMapping;
 	viewConfigs: Record<string, ColumnMapping>;
 	colorMap: Record<string, string>;
+	alignMode: AlignMode;
 }

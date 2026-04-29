@@ -227,6 +227,7 @@ export class LinearCalendarView extends ItemView {
 		const monthRows = this.gridRenderer.render(
 			this.currentYear,
 			colMinWidth,
+			this.settings.alignMode,
 		);
 
 		// Apply density class to grid

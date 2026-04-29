@@ -67,11 +67,12 @@ export class BarRenderer {
 
 			for (const { segment, row } of assignments) {
 				const span = segment.endDay - segment.startDay + 1;
+				const colStart = rowRef.weekdayOffset + segment.startDay;
 
 				const barEl = rowRef.barsContainer.createDiv({
 					cls: "calendar-bar",
 				});
-				barEl.style.gridColumn = `${segment.startDay} / span ${span}`;
+				barEl.style.gridColumn = `${colStart} / span ${span}`;
 				barEl.style.gridRow = `${row + 2}`;
 
 				// Icon + label (always show — CSS handles truncation)
