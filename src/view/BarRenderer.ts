@@ -2,6 +2,7 @@ import { type App, Menu, setIcon } from "obsidian";
 import type { CalendarItem, ColumnMapping, PluginSettings } from "../types";
 import { COLOR_PALETTE, MAX_WATERFALL_ROWS } from "../constants";
 import { formatDateRange } from "../utils/dateUtils";
+import { getContrastColor } from "../utils/colorUtils";
 import type { MonthRowRef } from "./GridRenderer";
 import type { MonthSegment } from "../utils/segmentByMonth";
 import { groupSegmentsByMonth } from "../utils/segmentByMonth";
@@ -56,6 +57,7 @@ export class BarRenderer {
 		items: CalendarItem[],
 		tagColorMap: Map<string, string>,
 	): void {
+		this.dragHandler.cleanup();
 		this.dragHandler.setMonthRows(monthRows);
 		const grouped = groupSegmentsByMonth(items);
 
@@ -71,6 +73,7 @@ export class BarRenderer {
 
 				const barEl = rowRef.barsContainer.createDiv({
 					cls: "calendar-bar",
+					attr: { tabindex: "0" },
 				});
 				barEl.style.gridColumn = `${colStart} / span ${span}`;
 				barEl.style.gridRow = `${row + 2}`;
@@ -86,8 +89,9 @@ export class BarRenderer {
 				});
 
 				const tag = segment.item.tags?.[0] ?? "__uncategorized__";
-				barEl.style.backgroundColor =
-					tagColorMap.get(tag) ?? COLOR_PALETTE[0];
+				const bgColor = tagColorMap.get(tag) ?? COLOR_PALETTE[0];
+				barEl.style.backgroundColor = bgColor;
+				barEl.style.color = getContrastColor(bgColor);
 
 				// Data attributes for tooltip
 				barEl.dataset.title = segment.item.title;

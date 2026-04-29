@@ -1,5 +1,6 @@
 export class Tooltip {
 	private el: HTMLElement;
+	private attached = false;
 
 	constructor(parentEl: HTMLElement) {
 		this.el = parentEl.createDiv({ cls: "linear-calendar-tooltip" });
@@ -7,6 +8,9 @@ export class Tooltip {
 	}
 
 	attach(container: HTMLElement): void {
+		if (this.attached) return;
+		this.attached = true;
+
 		container.addEventListener("mouseenter", (evt) => {
 			const target = evt.target as HTMLElement;
 			if (!target.classList.contains("calendar-bar")) return;
@@ -24,6 +28,8 @@ export class Tooltip {
 		container.addEventListener("mouseleave", (evt) => {
 			const target = evt.target as HTMLElement;
 			if (!target.classList.contains("calendar-bar")) return;
+			const related = evt.relatedTarget as HTMLElement | null;
+			if (related && target.contains(related)) return;
 			this.hide();
 		}, true);
 	}

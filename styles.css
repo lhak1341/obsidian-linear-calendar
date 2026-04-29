@@ -135,14 +135,10 @@
 	height: 7px;
 }
 
-.lc-density-condense.linear-calendar-grid {
-	grid-template-rows: 12px;
-}
-
 .lc-density-condense .lc-days-grid {
 	grid-template-rows: 12px;
 	grid-auto-rows: 11px;
-	row-gap: 0px;
+	row-gap: 0;
 }
 
 .lc-density-condense .lc-month-row {
@@ -335,7 +331,6 @@
 	border-radius: 3px;
 	font-size: 12px;
 	font-weight: 500;
-	color: #fff;
 	padding: 0 4px;
 	cursor: pointer;
 	overflow: hidden;
@@ -353,7 +348,13 @@
 
 .calendar-bar:hover {
 	opacity: 1;
-	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+	box-shadow: var(--shadow-s);
+	z-index: 10;
+}
+
+.calendar-bar:focus-visible {
+	outline: 2px solid var(--color-accent);
+	outline-offset: 1px;
 	z-index: 10;
 }
 
@@ -401,13 +402,13 @@
 .lc-drag-handle-left {
 	left: 0;
 	border-radius: 3px 0 0 3px;
-	background: rgba(255, 255, 255, 0.3);
+	background: color-mix(in srgb, currentColor 25%, transparent);
 }
 
 .lc-drag-handle-right {
 	right: 0;
 	border-radius: 0 3px 3px 0;
-	background: rgba(255, 255, 255, 0.3);
+	background: color-mix(in srgb, currentColor 25%, transparent);
 }
 
 .lc-dragging {
