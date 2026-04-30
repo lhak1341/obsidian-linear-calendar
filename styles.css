@@ -295,6 +295,33 @@
 	color: var(--text-faint);
 }
 
+/* Daily note indicators — cursor applies to both styles */
+.lc-daily-tint,
+.lc-daily-border-top {
+	cursor: pointer;
+}
+
+/* Tint style — color via --lc-daily-tint / --lc-daily-tint-hover */
+.lc-daily-tint {
+	background-color: var(--lc-daily-tint);
+}
+
+.lc-daily-tint:hover {
+	background-color: var(--lc-daily-tint-hover);
+}
+
+/* Border-top style — solid bar via --lc-daily-color, no layout shift */
+.lc-daily-border-top::before {
+	content: "";
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	height: 2px;
+	background: var(--lc-daily-color);
+	pointer-events: none;
+}
+
 /* ---- Today indicator ---- */
 /* Circle on day number */
 .lc-today-circle {

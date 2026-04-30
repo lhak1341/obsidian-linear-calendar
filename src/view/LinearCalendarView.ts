@@ -6,6 +6,7 @@ import { GridRenderer } from "./GridRenderer";
 import { BarRenderer, buildTagColorMap } from "./BarRenderer";
 import { NowIndicator } from "./NowIndicator";
 import { Tooltip } from "./Tooltip";
+import { getDailyNoteMap } from "../utils/dailyNotes";
 
 type ViewDensity = "condense" | "normal" | "expand";
 
@@ -76,7 +77,7 @@ export class LinearCalendarView extends ItemView {
 		});
 
 		this.gridRenderer = new GridRenderer(scrollWrapper);
-		this.gridRenderer.setDayClickHandler((year, month, day) => {
+		this.gridRenderer.setDayDblClickHandler((year, month, day) => {
 			this.createNoteForDate(year, month, day);
 		});
 		this.tooltip = new Tooltip(contentEl);
@@ -223,11 +224,23 @@ export class LinearCalendarView extends ItemView {
 			return !this.hiddenCategories.has(tag);
 		});
 
+		const dailyNoteMap = getDailyNoteMap(this.app);
+		const dailyNoteDates = new Set(dailyNoteMap.keys());
+
+		this.gridRenderer.setDayClickHandler((year, month, day) => {
+			const pad = (n: number) => String(n).padStart(2, "0");
+			const file = dailyNoteMap.get(`${year}-${pad(month + 1)}-${pad(day)}`);
+			if (file) this.app.workspace.openLinkText(file.path, "", false);
+		});
+
 		const colMinWidth = this.density === "expand" ? 28 : 0;
 		const monthRows = this.gridRenderer.render(
 			this.currentYear,
 			colMinWidth,
 			this.settings.alignMode,
+			dailyNoteDates,
+			this.settings.dailyNoteColor,
+			this.settings.dailyNoteStyle,
 		);
 
 		// Apply density class to grid

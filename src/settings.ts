@@ -3,7 +3,7 @@ import type LinearCalendarPlugin from "./main";
 import { COLOR_PALETTE } from "./constants";
 import { buildTagColorMap } from "./view/BarRenderer";
 import { FrontmatterScanner } from "./data/FrontmatterScanner";
-import type { AlignMode } from "./types";
+import type { AlignMode, DailyNoteStyle } from "./types";
 
 export class LinearCalendarSettingTab extends PluginSettingTab {
 	plugin: LinearCalendarPlugin;
@@ -110,6 +110,58 @@ export class LinearCalendarSettingTab extends PluginSettingTab {
 					.setValue(mapping.iconProp)
 					.onChange(async (value) => {
 						mapping.iconProp = value || "icon";
+						await this.plugin.saveSettings();
+					}),
+			);
+
+		// Daily note indicator
+		containerEl.createEl("h3", { text: "Daily Note Indicator" });
+
+		const isCustomColor = this.plugin.settings.dailyNoteColor !== null;
+
+		new Setting(containerEl)
+			.setName("Highlight color")
+			.setDesc("Color used to tint days that have a daily note.")
+			.addDropdown((dd) =>
+				dd
+					.addOption("accent", "Accent color")
+					.addOption("custom", "Custom color")
+					.setValue(isCustomColor ? "custom" : "accent")
+					.onChange(async (value) => {
+						if (value === "accent") {
+							this.plugin.settings.dailyNoteColor = null;
+						} else {
+							this.plugin.settings.dailyNoteColor =
+								this.plugin.settings.dailyNoteColor ?? "#4a9eff";
+						}
+						await this.plugin.saveSettings();
+						this.display();
+					}),
+			);
+
+		if (isCustomColor) {
+			new Setting(containerEl)
+				.setName("Custom color")
+				.addColorPicker((picker) =>
+					picker
+						.setValue(this.plugin.settings.dailyNoteColor ?? "#4a9eff")
+						.onChange(async (value) => {
+							this.plugin.settings.dailyNoteColor = value;
+							await this.plugin.saveSettings();
+						}),
+				);
+		}
+
+		new Setting(containerEl)
+			.setName("Indicator style")
+			.setDesc("How to mark days that have a daily note.")
+			.addDropdown((dd) =>
+				dd
+					.addOption("tint", "Background tint")
+					.addOption("border-top", "Top edge line")
+					.setValue(this.plugin.settings.dailyNoteStyle)
+					.onChange(async (value) => {
+						this.plugin.settings.dailyNoteStyle = value as DailyNoteStyle;
 						await this.plugin.saveSettings();
 					}),
 			);

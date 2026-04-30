@@ -17,9 +17,13 @@ export interface ColumnMapping {
 	iconProp: string;
 }
 
+export type DailyNoteStyle = "tint" | "border-top";
+
 export interface PluginSettings {
 	defaultMapping: ColumnMapping;
 	viewConfigs: Record<string, ColumnMapping>;
 	colorMap: Record<string, string>;
 	alignMode: AlignMode;
+	dailyNoteColor: string | null; // null = use accent
+	dailyNoteStyle: DailyNoteStyle;
 }

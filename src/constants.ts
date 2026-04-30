@@ -14,6 +14,8 @@ export const DEFAULT_SETTINGS: PluginSettings = {
 	viewConfigs: {},
 	colorMap: {},
 	alignMode: "date",
+	dailyNoteColor: null,
+	dailyNoteStyle: "tint",
 };
 
 // Google Calendar / Material Design palette
