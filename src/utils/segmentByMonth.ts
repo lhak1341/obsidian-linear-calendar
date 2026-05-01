@@ -40,13 +40,13 @@ export function segmentByMonth(item: CalendarItem): MonthSegment[] {
 		});
 
 		// Middle months: full month
+		// Wrap m/y before the condition check so year-crossing events don't
+		// incorrectly emit a full-month segment for what is actually the last month.
 		let m = startMonth + 1;
 		let y = startYear;
-		while (y < endYear || (y === endYear && m < endMonth)) {
-			if (m > 11) {
-				m = 0;
-				y++;
-			}
+		while (true) {
+			if (m > 11) { m = 0; y++; }
+			if (!(y < endYear || (y === endYear && m < endMonth))) break;
 			const days = daysInMonth(m, y);
 			segments.push({
 				item,

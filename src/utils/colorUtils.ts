@@ -1,3 +1,34 @@
+import type { CalendarItem, PluginSettings } from "../types";
+import { COLOR_PALETTE } from "../constants";
+
+/**
+ * Build a stable tag→color map from ALL items.
+ * User-defined colorMap takes priority, then palette assignment
+ * in order of first appearance. Uncategorized items get "__uncategorized__".
+ */
+export function buildTagColorMap(
+	items: CalendarItem[],
+	settings: PluginSettings,
+): Map<string, string> {
+	const map = new Map<string, string>();
+	let paletteIdx = 0;
+
+	for (const item of items) {
+		const tag = item.tags?.[0] ?? "__uncategorized__";
+		if (map.has(tag)) continue;
+
+		const userColor = settings.colorMap[tag];
+		if (userColor) {
+			map.set(tag, userColor);
+		} else {
+			map.set(tag, COLOR_PALETTE[paletteIdx % COLOR_PALETTE.length]);
+			paletteIdx++;
+		}
+	}
+
+	return map;
+}
+
 /** Return '#000' or '#fff' for maximum contrast against a hex background. */
 export function getContrastColor(hex: string): string {
 	// Expand 3-digit hex to 6-digit

@@ -1,7 +1,7 @@
 import { App, PluginSettingTab, Setting, type ColorComponent } from "obsidian";
 import type LinearCalendarPlugin from "./main";
 import { COLOR_PALETTE } from "./constants";
-import { buildTagColorMap } from "./view/BarRenderer";
+import { buildTagColorMap } from "./utils/colorUtils";
 import { FrontmatterScanner } from "./data/FrontmatterScanner";
 import type { AlignMode, ColumnMapping, DailyNoteStyle } from "./types";
 

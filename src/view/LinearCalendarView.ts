@@ -3,7 +3,8 @@ import type { PluginSettings, ColumnMapping, CalendarItem } from "../types";
 import { VIEW_TYPE_LINEAR_CALENDAR } from "../constants";
 import { FrontmatterScanner } from "../data/FrontmatterScanner";
 import { GridRenderer } from "./GridRenderer";
-import { BarRenderer, buildTagColorMap } from "./BarRenderer";
+import { BarRenderer } from "./BarRenderer";
+import { buildTagColorMap } from "../utils/colorUtils";
 import { NowIndicator } from "./NowIndicator";
 import { Tooltip } from "./Tooltip";
 import { getDailyNoteMap } from "../utils/dailyNotes";
@@ -15,6 +16,18 @@ interface ViewState {
 	layout: "horizontal" | "vertical";
 }
 
+/**
+ * Public interface:
+ *   refresh()          — force re-render (called by plugin after settings save)
+ *   getState()         — persists { year, hiddenCategories, rowHeight, layout } across reloads
+ *   setState(s, r)     — restores persisted state, then re-renders
+ *
+ * Re-render triggers: vault create/delete/metadataCache changed (debounced 300ms),
+ *   year nav buttons, layout toggle, category chip clicks, ResizeObserver (debounced 200ms).
+ *
+ * Lifecycle: onOpen builds DOM once; renderCalendar() clears and repaints the grid each call.
+ *   onClose cleans up NowIndicator timer and Tooltip listener.
+ */
 export class LinearCalendarView extends ItemView {
 	private currentYear: number;
 	private hiddenCategories: Set<string> = new Set();

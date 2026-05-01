@@ -1,5 +1,5 @@
 import { type App, Menu, setIcon } from "obsidian";
-import type { CalendarItem, ColumnMapping, PluginSettings } from "../types";
+import type { CalendarItem, ColumnMapping } from "../types";
 import { COLOR_PALETTE, MAX_WATERFALL_ROWS, MAX_WATERFALL_COLS_VERT } from "../constants";
 import { formatDateRange } from "../utils/dateUtils";
 import { getContrastColor } from "../utils/colorUtils";
@@ -11,34 +11,6 @@ import { DragHandler } from "./DragHandler";
 interface RowAssignment {
 	segment: MonthSegment;
 	row: number;
-}
-
-/**
- * Build a stable tag→color map from ALL items.
- * User-defined colorMap takes priority, then palette assignment
- * in order of first appearance. Uncategorized items get "__uncategorized__".
- */
-export function buildTagColorMap(
-	items: CalendarItem[],
-	settings: PluginSettings,
-): Map<string, string> {
-	const map = new Map<string, string>();
-	let paletteIdx = 0;
-
-	for (const item of items) {
-		const tag = item.tags?.[0] ?? "__uncategorized__";
-		if (map.has(tag)) continue;
-
-		const userColor = settings.colorMap[tag];
-		if (userColor) {
-			map.set(tag, userColor);
-		} else {
-			map.set(tag, COLOR_PALETTE[paletteIdx % COLOR_PALETTE.length]);
-			paletteIdx++;
-		}
-	}
-
-	return map;
 }
 
 export class BarRenderer {
