@@ -71,107 +71,16 @@ export class BarRenderer {
 			const assignments = this.assignRowsForMonth(segments, maxRows);
 
 			for (const { segment, row } of assignments) {
-				const span = segment.endDay - segment.startDay + 1;
+				const barEl = this.createBarEl(rowRef, segment, row, isVertical);
+				this.decorateBar(barEl, segment, tagColorMap);
 
-				const isSingleDay = isVertical && span === 1;
-				const barEl = rowRef.barsContainer.createDiv({
-					cls: isVertical
-						? `calendar-bar calendar-bar-vert${isSingleDay ? " calendar-bar-vert-single" : ""}`
-						: "calendar-bar",
-					attr: { tabindex: "0" },
-				});
-
-				if (isVertical) {
-					barEl.style.gridRow = `${rowRef.weekdayOffset + segment.startDay} / span ${span}`;
-					barEl.style.gridColumn = `${row + 2}`;  // col 1 = date header
-					barEl.style.height = "100%";
-					barEl.style.pointerEvents = "auto";
-				} else {
-					const colStart = rowRef.weekdayOffset + segment.startDay;
-					barEl.style.gridColumn = `${colStart} / span ${span}`;
-					barEl.style.gridRow = `${row + 2}`;
-				}
-
-				// Icon + label (always show — CSS handles truncation)
-				if (segment.item.icon) {
-					const iconEl = barEl.createSpan({ cls: "calendar-bar-icon" });
-					setIcon(iconEl, segment.item.icon);
-				}
-				barEl.createSpan({
-					cls: "calendar-bar-label",
-					text: segment.item.title,
-				});
-
-				const tag = segment.item.tags?.[0] ?? "__uncategorized__";
-				const bgColor = tagColorMap.get(tag) ?? COLOR_PALETTE[0];
-				barEl.style.backgroundColor = bgColor;
-				barEl.style.color = getContrastColor(bgColor);
-
-				// Data attributes for tooltip
-				barEl.dataset.title = segment.item.title;
-				barEl.dataset.dateRange = formatDateRange(
-					segment.item.dateStart,
-					segment.item.dateEnd,
-				);
-				barEl.dataset.tags = segment.item.tags?.join(", ") ?? "";
-				barEl.dataset.tagColor =
-					tagColorMap.get(tag) ?? COLOR_PALETTE[0];
-				barEl.dataset.filePath = segment.item.filePath;
-
-				// Click to open (suppress after drag)
 				barEl.addEventListener("click", (evt) => {
 					if (barEl.dataset.justDragged) return;
-					const newLeaf = evt.metaKey || evt.ctrlKey;
-					this.app.workspace.openLinkText(
-						segment.item.filePath,
-						"",
-						newLeaf,
-					);
+					this.app.workspace.openLinkText(segment.item.filePath, "", evt.metaKey || evt.ctrlKey);
 				});
 
-				// Right-click context menu
-				barEl.addEventListener("contextmenu", (evt) => {
-					evt.preventDefault();
-					const menu = new Menu();
-					menu.addItem((item) =>
-						item
-							.setTitle("Open note")
-							.setIcon("file-text")
-							.onClick(() => {
-								this.app.workspace.openLinkText(
-									segment.item.filePath,
-									"",
-									false,
-								);
-							}),
-					);
-					menu.addItem((item) =>
-						item
-							.setTitle("Open in new tab")
-							.setIcon("file-plus")
-							.onClick(() => {
-								this.app.workspace.openLinkText(
-									segment.item.filePath,
-									"",
-									true,
-								);
-							}),
-					);
-					menu.addSeparator();
-					menu.addItem((item) =>
-						item
-							.setTitle("Copy link")
-							.setIcon("link")
-							.onClick(() => {
-								navigator.clipboard.writeText(
-									`[[${segment.item.filePath}]]`,
-								);
-							}),
-					);
-					menu.showAtMouseEvent(evt);
-				});
+				this.attachContextMenu(barEl, segment.item.filePath);
 
-				// Drag handles (horizontal only)
 				if (!isVertical) {
 					this.dragHandler.attach(
 						barEl,
@@ -186,6 +95,80 @@ export class BarRenderer {
 				}
 			}
 		}
+	}
+
+	private createBarEl(
+		rowRef: MonthRowRef,
+		segment: MonthSegment,
+		row: number,
+		isVertical: boolean,
+	): HTMLElement {
+		const span = segment.endDay - segment.startDay + 1;
+		const isSingleDay = isVertical && span === 1;
+		const barEl = rowRef.barsContainer.createDiv({
+			cls: isVertical
+				? `calendar-bar calendar-bar-vert${isSingleDay ? " calendar-bar-vert-single" : ""}`
+				: "calendar-bar",
+			attr: { tabindex: "0" },
+		});
+
+		if (isVertical) {
+			barEl.style.gridRow = `${rowRef.weekdayOffset + segment.startDay} / span ${span}`;
+			barEl.style.gridColumn = `${row + 2}`;  // col 1 = date header
+			barEl.style.height = "100%";
+			barEl.style.pointerEvents = "auto";
+		} else {
+			barEl.style.gridColumn = `${rowRef.weekdayOffset + segment.startDay} / span ${span}`;
+			barEl.style.gridRow = `${row + 2}`;
+		}
+		return barEl;
+	}
+
+	private decorateBar(
+		barEl: HTMLElement,
+		segment: MonthSegment,
+		tagColorMap: Map<string, string>,
+	): void {
+		if (segment.item.icon) {
+			const iconEl = barEl.createSpan({ cls: "calendar-bar-icon" });
+			setIcon(iconEl, segment.item.icon);
+		}
+		barEl.createSpan({ cls: "calendar-bar-label", text: segment.item.title });
+
+		const tag = segment.item.tags?.[0] ?? "__uncategorized__";
+		const bgColor = tagColorMap.get(tag) ?? COLOR_PALETTE[0];
+		barEl.style.backgroundColor = bgColor;
+		barEl.style.color = getContrastColor(bgColor);
+
+		barEl.dataset.title = segment.item.title;
+		barEl.dataset.dateRange = formatDateRange(segment.item.dateStart, segment.item.dateEnd);
+		barEl.dataset.tags = segment.item.tags?.join(", ") ?? "";
+		barEl.dataset.tagColor = tagColorMap.get(tag) ?? COLOR_PALETTE[0];
+		barEl.dataset.filePath = segment.item.filePath;
+	}
+
+	private attachContextMenu(barEl: HTMLElement, filePath: string): void {
+		barEl.addEventListener("contextmenu", (evt) => {
+			evt.preventDefault();
+			const menu = new Menu();
+			menu.addItem((item) =>
+				item.setTitle("Open note").setIcon("file-text").onClick(() => {
+					this.app.workspace.openLinkText(filePath, "", false);
+				}),
+			);
+			menu.addItem((item) =>
+				item.setTitle("Open in new tab").setIcon("file-plus").onClick(() => {
+					this.app.workspace.openLinkText(filePath, "", true);
+				}),
+			);
+			menu.addSeparator();
+			menu.addItem((item) =>
+				item.setTitle("Copy link").setIcon("link").onClick(() => {
+					navigator.clipboard.writeText(`[[${filePath}]]`);
+				}),
+			);
+			menu.showAtMouseEvent(evt);
+		});
 	}
 
 	private assignRowsForMonth(segments: MonthSegment[], maxRows = MAX_WATERFALL_ROWS): RowAssignment[] {

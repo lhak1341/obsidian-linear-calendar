@@ -3,7 +3,7 @@ import type LinearCalendarPlugin from "./main";
 import { COLOR_PALETTE } from "./constants";
 import { buildTagColorMap } from "./view/BarRenderer";
 import { FrontmatterScanner } from "./data/FrontmatterScanner";
-import type { AlignMode, DailyNoteStyle } from "./types";
+import type { AlignMode, ColumnMapping, DailyNoteStyle } from "./types";
 
 export class LinearCalendarSettingTab extends PluginSettingTab {
 	plugin: LinearCalendarPlugin;
@@ -16,9 +16,14 @@ export class LinearCalendarSettingTab extends PluginSettingTab {
 	display(): void {
 		const { containerEl } = this;
 		containerEl.empty();
-
 		containerEl.createEl("h2", { text: "Linear Calendar Settings" });
+		const mapping = this.plugin.settings.defaultMapping;
+		this.renderGeneralSettings(containerEl, mapping);
+		this.renderDailyNoteSettings(containerEl);
+		this.renderColorMapSection(containerEl, mapping);
+	}
 
+	private renderGeneralSettings(containerEl: HTMLElement, mapping: ColumnMapping): void {
 		new Setting(containerEl)
 			.setName("Column alignment")
 			.setDesc("Date: day 1 aligns across months. Weekday: same weekday aligns across months.")
@@ -33,10 +38,7 @@ export class LinearCalendarSettingTab extends PluginSettingTab {
 					}),
 			);
 
-		// Title property — dropdown: filename or custom
-		const mapping = this.plugin.settings.defaultMapping;
 		const isFilename = mapping.titleProp === "__filename__";
-
 		new Setting(containerEl)
 			.setName("Title source")
 			.setDesc("What to use as the bar label.")
@@ -46,11 +48,7 @@ export class LinearCalendarSettingTab extends PluginSettingTab {
 					.addOption("__custom__", "Frontmatter property")
 					.setValue(isFilename ? "__filename__" : "__custom__")
 					.onChange(async (value) => {
-						if (value === "__filename__") {
-							mapping.titleProp = "__filename__";
-						} else {
-							mapping.titleProp = "title";
-						}
+						mapping.titleProp = value === "__filename__" ? "__filename__" : "title";
 						await this.plugin.saveSettings();
 						this.display();
 					}),
@@ -86,9 +84,7 @@ export class LinearCalendarSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName("End date property")
-			.setDesc(
-				"Frontmatter property for event end date. Events without this are single-day.",
-			)
+			.setDesc("Frontmatter property for event end date. Events without this are single-day.")
 			.addText((text) =>
 				text
 					.setPlaceholder("dateend")
@@ -101,9 +97,7 @@ export class LinearCalendarSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName("Icon property")
-			.setDesc(
-				"Frontmatter property for Lucide icon name displayed on bars.",
-			)
+			.setDesc("Frontmatter property for Lucide icon name displayed on bars.")
 			.addText((text) =>
 				text
 					.setPlaceholder("icon")
@@ -113,12 +107,12 @@ export class LinearCalendarSettingTab extends PluginSettingTab {
 						await this.plugin.saveSettings();
 					}),
 			);
+	}
 
-		// Daily note indicator
+	private renderDailyNoteSettings(containerEl: HTMLElement): void {
 		containerEl.createEl("h3", { text: "Daily Note Indicator" });
 
 		const isCustomColor = this.plugin.settings.dailyNoteColor !== null;
-
 		new Setting(containerEl)
 			.setName("Highlight color")
 			.setDesc("Color used to tint days that have a daily note.")
@@ -128,12 +122,8 @@ export class LinearCalendarSettingTab extends PluginSettingTab {
 					.addOption("custom", "Custom color")
 					.setValue(isCustomColor ? "custom" : "accent")
 					.onChange(async (value) => {
-						if (value === "accent") {
-							this.plugin.settings.dailyNoteColor = null;
-						} else {
-							this.plugin.settings.dailyNoteColor =
-								this.plugin.settings.dailyNoteColor ?? "#4a9eff";
-						}
+						this.plugin.settings.dailyNoteColor =
+							value === "accent" ? null : (this.plugin.settings.dailyNoteColor ?? "#4a9eff");
 						await this.plugin.saveSettings();
 						this.display();
 					}),
@@ -165,8 +155,9 @@ export class LinearCalendarSettingTab extends PluginSettingTab {
 						await this.plugin.saveSettings();
 					}),
 			);
+	}
 
-		// Color map section
+	private renderColorMapSection(containerEl: HTMLElement, mapping: ColumnMapping): void {
 		containerEl.createEl("h3", { text: "Tag Color Map" });
 		containerEl.createEl("p", {
 			text: 'Assign colors to linear-calendar subtags (e.g., "work", "personal"). Unmapped tags get auto-assigned from the palette.',
@@ -174,10 +165,17 @@ export class LinearCalendarSettingTab extends PluginSettingTab {
 		});
 
 		const colorMap = this.plugin.settings.colorMap;
+		this.renderPinnedTags(containerEl, colorMap);
+		this.renderDetectedTags(containerEl, colorMap, mapping);
+		this.renderAddColorMapping(containerEl, colorMap);
+	}
 
+	private renderPinnedTags(
+		containerEl: HTMLElement,
+		colorMap: Record<string, string>,
+	): void {
 		for (const [tag, color] of Object.entries(colorMap)) {
 			const shortName = tag.replace(/^linear-calendar\//, "");
-
 			new Setting(containerEl)
 				.setName("")
 				.then((setting) => {
@@ -185,8 +183,6 @@ export class LinearCalendarSettingTab extends PluginSettingTab {
 					const dot = nameEl.createSpan({ cls: "lc-settings-dot" });
 					dot.style.backgroundColor = color;
 					nameEl.createSpan({ text: shortName });
-
-					// Palette swatches
 					this.addSwatches(setting.controlEl, color, async (c) => {
 						colorMap[tag] = c;
 						await this.plugin.saveSettings();
@@ -208,55 +204,52 @@ export class LinearCalendarSettingTab extends PluginSettingTab {
 					}),
 				);
 		}
+	}
 
-		// Detected tags — scan vault for auto-assigned colors not yet pinned
+	private renderDetectedTags(
+		containerEl: HTMLElement,
+		colorMap: Record<string, string>,
+		mapping: ColumnMapping,
+	): void {
 		const scanner = new FrontmatterScanner(this.app);
-		const year = new Date().getFullYear();
-		const items = scanner.scan(mapping, year);
+		const items = scanner.scan(mapping, new Date().getFullYear());
 		const autoMap = buildTagColorMap(items, this.plugin.settings);
+		const unpinned = [...autoMap.entries()].filter(([tag]) => !(tag in colorMap));
 
-		const unpinned = [...autoMap.entries()].filter(
-			([tag]) => !(tag in colorMap),
-		);
+		if (unpinned.length === 0) return;
 
-		if (unpinned.length > 0) {
-			containerEl.createEl("h4", { text: "Detected tags" });
-			containerEl.createEl("p", {
-				text: "Auto-assigned colors from your notes. Pin to customize.",
-				cls: "setting-item-description",
-			});
+		containerEl.createEl("h4", { text: "Detected tags" });
+		containerEl.createEl("p", {
+			text: "Auto-assigned colors from your notes. Pin to customize.",
+			cls: "setting-item-description",
+		});
 
-			for (const [tag, color] of unpinned) {
-				const shortName =
-					tag === "__uncategorized__"
-						? "Other"
-						: tag.replace(/^linear-calendar\//, "");
-
-				new Setting(containerEl)
-					.setName("")
-					.then((setting) => {
-						const nameEl = setting.nameEl;
-						const dot = nameEl.createSpan({ cls: "lc-settings-dot" });
-						dot.style.backgroundColor = color;
-						nameEl.createSpan({ text: shortName });
-					})
-					.addExtraButton((btn) =>
-						btn
-							.setIcon("pin")
-							.setTooltip("Pin to color map")
-							.onClick(async () => {
-								colorMap[tag] = color;
-								await this.plugin.saveSettings();
-								this.display();
-							}),
-					);
-			}
+		for (const [tag, color] of unpinned) {
+			const shortName = tag === "__uncategorized__" ? "Other" : tag.replace(/^linear-calendar\//, "");
+			new Setting(containerEl)
+				.setName("")
+				.then((setting) => {
+					const nameEl = setting.nameEl;
+					const dot = nameEl.createSpan({ cls: "lc-settings-dot" });
+					dot.style.backgroundColor = color;
+					nameEl.createSpan({ text: shortName });
+				})
+				.addExtraButton((btn) =>
+					btn.setIcon("pin").setTooltip("Pin to color map").onClick(async () => {
+						colorMap[tag] = color;
+						await this.plugin.saveSettings();
+						this.display();
+					}),
+				);
 		}
+	}
 
-		// Add new color mapping
+	private renderAddColorMapping(
+		containerEl: HTMLElement,
+		colorMap: Record<string, string>,
+	): void {
 		let newTagColor =
-			COLOR_PALETTE.find((c) => !new Set(Object.values(colorMap)).has(c)) ??
-			COLOR_PALETTE[0];
+			COLOR_PALETTE.find((c) => !new Set(Object.values(colorMap)).has(c)) ?? COLOR_PALETTE[0];
 		let newTagInput: HTMLInputElement;
 		let newTagPicker: ColorComponent;
 
@@ -269,33 +262,21 @@ export class LinearCalendarSettingTab extends PluginSettingTab {
 			newTagInput = text.inputEl;
 		});
 
-		// Palette swatches for "add new"
-		this.addSwatches(
-			addSetting.controlEl,
-			newTagColor,
-			(c) => {
-				newTagColor = c;
-				if (newTagPicker) newTagPicker.setValue(c);
-			},
-		);
+		this.addSwatches(addSetting.controlEl, newTagColor, (c) => {
+			newTagColor = c;
+			if (newTagPicker) newTagPicker.setValue(c);
+		});
 
 		addSetting.addColorPicker((picker) => {
 			newTagPicker = picker;
-			picker.setValue(newTagColor);
-			picker.onChange((value) => {
-				newTagColor = value;
-			});
+			picker.setValue(newTagColor).onChange((value) => { newTagColor = value; });
 		});
 
 		addSetting.addExtraButton((btn) =>
 			btn.setIcon("plus").setTooltip("Add").onClick(async () => {
 				const tagName = newTagInput?.value?.trim();
 				if (!tagName) return;
-
-				const fullTag = tagName.startsWith("linear-calendar/")
-					? tagName
-					: `linear-calendar/${tagName}`;
-
+				const fullTag = tagName.startsWith("linear-calendar/") ? tagName : `linear-calendar/${tagName}`;
 				colorMap[fullTag] = newTagColor;
 				await this.plugin.saveSettings();
 				this.display();

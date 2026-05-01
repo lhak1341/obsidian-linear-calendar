@@ -8,6 +8,7 @@ Obsidian plugin — horizontal year-at-a-glance timeline rendered from note fron
 - `npm run deploy` — build + copy main.js, manifest.json, styles.css to test-vault plugin dir
 - No test framework — test manually in Obsidian with test-vault
 - Uses esbuild (not webpack/vite)
+- `npx fallow` dead-file/dead-export results are wrong — fallow reads `package.json` `"main": "main.js"` (compiled output) and can't trace back to `src/main.ts`; ignore dead-code section entirely, complexity/duplication sections are accurate
 
 ## Conventions
 

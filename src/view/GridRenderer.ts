@@ -21,7 +21,6 @@ const MONTH_NAMES = [
 
 const WEEKDAY_ABBR = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
 
-const DATE_TOTAL_COLS = 31;
 
 export interface MonthRowRef {
 	month: number;
@@ -59,14 +58,7 @@ export class GridRenderer {
 		this.containerEl.style.removeProperty("grid-template-columns");
 		this.containerEl.style.removeProperty("grid-template-rows");
 
-		let totalCols = DATE_TOTAL_COLS;
-		if (alignMode === "weekday") {
-			for (let m = 0; m < 12; m++) {
-				const offset = new Date(year, m, 1).getDay();
-				const days = new Date(year, m + 1, 0).getDate();
-				totalCols = Math.max(totalCols, offset + days);
-			}
-		}
+		const totalCols = this.computeAlignedSize(year, alignMode);
 
 		const colTemplate =
 			colMinWidth > 0
@@ -94,14 +86,7 @@ export class GridRenderer {
 		this.containerEl.style.gridTemplateRows = "auto 1fr";
 		this.containerEl.style.minWidth = "";
 
-		let totalRows = 31;
-		if (alignMode === "weekday") {
-			for (let m = 0; m < 12; m++) {
-				const offset = new Date(year, m, 1).getDay();
-				const days = new Date(year, m + 1, 0).getDate();
-				totalRows = Math.max(totalRows, offset + days);
-			}
-		}
+		const totalRows = this.computeAlignedSize(year, alignMode);
 
 		// Month headers (row 1)
 		for (let m = 0; m < 12; m++) {
@@ -127,18 +112,7 @@ export class GridRenderer {
 				cellEl.style.gridColumn = "1";
 				cellEl.style.gridRow = `${weekdayOffset + d}`;
 				cellEl.dataset.day = String(d);
-
-				const dow = new Date(year, m, d).getDay();
-				if (dow === 0 || dow === 6) cellEl.addClass("lc-day-weekend");
-
-				const dateKey = `${year}-${String(m + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
-				const hasDailyNote = dailyNoteDates.has(dateKey);
-				if (hasDailyNote) cellEl.addClass("lc-has-daily-note");
-
-				cellEl.createSpan({ cls: "lc-day-num", text: String(d) });
-				cellEl.createSpan({ cls: "lc-day-weekday", text: WEEKDAY_ABBR[dow] });
-
-				this.attachCellHandlers(cellEl, year, m, d, hasDailyNote, dailyNoteColor, dailyNoteStyle);
+				this.populateDayCell(cellEl, year, m, d, dailyNoteDates, dailyNoteColor, dailyNoteStyle);
 			}
 
 			this.monthRows.push({
@@ -184,44 +158,15 @@ export class GridRenderer {
 				const cellEl = daysGrid.createDiv({ cls: "lc-day-cell" });
 				cellEl.style.gridColumn = `${d}`;
 				cellEl.style.gridRow = "1";
-
-				if (d > daysInMonth) {
-					cellEl.addClass("lc-day-empty");
-					continue;
-				}
-
-				const date = new Date(year, month, d);
-				const dow = date.getDay();
-				if (dow === 0 || dow === 6) cellEl.addClass("lc-day-weekend");
-
-				const dateKey = `${year}-${String(month + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
-				const hasDailyNote = dailyNoteDates.has(dateKey);
-				if (hasDailyNote) cellEl.addClass("lc-has-daily-note");
-
-				cellEl.createSpan({ cls: "lc-day-num", text: String(d) });
-				cellEl.createSpan({ cls: "lc-day-weekday", text: WEEKDAY_ABBR[dow] });
-
-				this.attachCellHandlers(cellEl, year, month, d, hasDailyNote, dailyNoteColor, dailyNoteStyle);
+				if (d > daysInMonth) { cellEl.addClass("lc-day-empty"); continue; }
+				this.populateDayCell(cellEl, year, month, d, dailyNoteDates, dailyNoteColor, dailyNoteStyle);
 			}
 		} else {
 			for (let d = 1; d <= daysInMonth; d++) {
-				const col = weekdayOffset + d;
 				const cellEl = daysGrid.createDiv({ cls: "lc-day-cell" });
-				cellEl.style.gridColumn = `${col}`;
+				cellEl.style.gridColumn = `${weekdayOffset + d}`;
 				cellEl.style.gridRow = "1";
-
-				const date = new Date(year, month, d);
-				const dow = date.getDay();
-				if (dow === 0 || dow === 6) cellEl.addClass("lc-day-weekend");
-
-				const dateKey = `${year}-${String(month + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
-				const hasDailyNote = dailyNoteDates.has(dateKey);
-				if (hasDailyNote) cellEl.addClass("lc-has-daily-note");
-
-				cellEl.createSpan({ cls: "lc-day-num", text: String(d) });
-				cellEl.createSpan({ cls: "lc-day-weekday", text: WEEKDAY_ABBR[dow] });
-
-				this.attachCellHandlers(cellEl, year, month, d, hasDailyNote, dailyNoteColor, dailyNoteStyle);
+				this.populateDayCell(cellEl, year, month, d, dailyNoteDates, dailyNoteColor, dailyNoteStyle);
 			}
 		}
 
@@ -230,6 +175,39 @@ export class GridRenderer {
 		});
 
 		return { month, barsContainer, daysInMonth, weekdayOffset, totalCols, layout: "horizontal" };
+	}
+
+	private computeAlignedSize(year: number, alignMode: AlignMode): number {
+		if (alignMode !== "weekday") return 31;
+		let max = 31;
+		for (let m = 0; m < 12; m++) {
+			const offset = new Date(year, m, 1).getDay();
+			const days = new Date(year, m + 1, 0).getDate();
+			max = Math.max(max, offset + days);
+		}
+		return max;
+	}
+
+	private populateDayCell(
+		cellEl: HTMLElement,
+		year: number,
+		month: number,
+		day: number,
+		dailyNoteDates: Set<string>,
+		dailyNoteColor: string | null,
+		dailyNoteStyle: DailyNoteStyle,
+	): void {
+		const dow = new Date(year, month, day).getDay();
+		if (dow === 0 || dow === 6) cellEl.addClass("lc-day-weekend");
+
+		const dateKey = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+		const hasDailyNote = dailyNoteDates.has(dateKey);
+		if (hasDailyNote) cellEl.addClass("lc-has-daily-note");
+
+		cellEl.createSpan({ cls: "lc-day-num", text: String(day) });
+		cellEl.createSpan({ cls: "lc-day-weekday", text: WEEKDAY_ABBR[dow] });
+
+		this.attachCellHandlers(cellEl, year, month, day, hasDailyNote, dailyNoteColor, dailyNoteStyle);
 	}
 
 	private attachCellHandlers(
