@@ -11,7 +11,6 @@ export class NowIndicator {
 		const today = new Date();
 		if (today.getFullYear() !== year) return;
 
-		// Defer to next frame so grid layout is computed
 		requestAnimationFrame(() => {
 			this.markToday(monthRows, today);
 		});
@@ -23,6 +22,14 @@ export class NowIndicator {
 	}
 
 	private markToday(monthRows: MonthRowRef[], date: Date): void {
+		if (monthRows[0]?.layout === "vertical") {
+			this.markTodayVertical(monthRows, date);
+		} else {
+			this.markTodayHorizontal(monthRows, date);
+		}
+	}
+
+	private markTodayHorizontal(monthRows: MonthRowRef[], date: Date): void {
 		const month = date.getMonth();
 		const day = date.getDate();
 
@@ -32,7 +39,6 @@ export class NowIndicator {
 		const daysGrid = row.barsContainer.parentElement;
 		if (!daysGrid) return;
 
-		// Circle on day number
 		const cells = daysGrid.querySelectorAll(".lc-day-cell");
 		const cell = cells[day - 1] as HTMLElement | undefined;
 		if (!cell) return;
@@ -43,7 +49,6 @@ export class NowIndicator {
 			this.markedElements.push(numSpan as HTMLElement);
 		}
 
-		// Full-height column outline via absolute positioning
 		daysGrid.style.position = "relative";
 
 		const outline = document.createElement("div");
@@ -54,9 +59,32 @@ export class NowIndicator {
 		this.createdElements.push(outline);
 	}
 
+	private markTodayVertical(monthRows: MonthRowRef[], date: Date): void {
+		const month = date.getMonth();
+		const day = date.getDate();
+
+		const rowRef = monthRows.find((r) => r.month === month);
+		if (!rowRef) return;
+
+		const grid = rowRef.barsContainer.parentElement;
+		if (!grid) return;
+
+		// Rectangle highlight on today's day-number span only
+		const cell = rowRef.barsContainer.querySelector<HTMLElement>(
+			`.lc-vert-day-cell[data-day="${day}"]`,
+		);
+		const numSpan = cell?.querySelector<HTMLElement>(".lc-day-num");
+		if (numSpan) {
+			numSpan.addClass("lc-today-vert-cell");
+			this.markedElements.push(numSpan);
+		}
+	}
+
 	private clearMarks(): void {
 		for (const el of this.markedElements) {
 			el.removeClass("lc-today-circle");
+			el.removeClass("lc-today-vert-col");
+			el.removeClass("lc-today-vert-cell");
 		}
 		this.markedElements = [];
 

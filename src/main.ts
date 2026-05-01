@@ -55,14 +55,11 @@ export default class LinearCalendarPlugin extends Plugin {
 
 		let leaf = workspace.getLeavesOfType(VIEW_TYPE_LINEAR_CALENDAR)[0];
 		if (!leaf) {
-			const rightLeaf = workspace.getRightLeaf(false);
-			if (rightLeaf) {
-				leaf = rightLeaf;
-				await leaf.setViewState({
-					type: VIEW_TYPE_LINEAR_CALENDAR,
-					active: true,
-				});
-			}
+			leaf = workspace.getLeaf("tab");
+			await leaf.setViewState({
+				type: VIEW_TYPE_LINEAR_CALENDAR,
+				active: true,
+			});
 		}
 
 		if (leaf) {

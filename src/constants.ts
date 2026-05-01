@@ -35,3 +35,4 @@ export const COLOR_PALETTE = [
 ];
 
 export const MAX_WATERFALL_ROWS = 8;
+export const MAX_WATERFALL_COLS_VERT = 3;

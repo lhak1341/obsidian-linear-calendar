@@ -1,4 +1,4 @@
-import { ItemView, WorkspaceLeaf, debounce } from "obsidian";
+import { ItemView, WorkspaceLeaf, debounce, setIcon } from "obsidian";
 import type { PluginSettings, ColumnMapping, CalendarItem } from "../types";
 import { VIEW_TYPE_LINEAR_CALENDAR } from "../constants";
 import { FrontmatterScanner } from "../data/FrontmatterScanner";
@@ -8,18 +8,19 @@ import { NowIndicator } from "./NowIndicator";
 import { Tooltip } from "./Tooltip";
 import { getDailyNoteMap } from "../utils/dailyNotes";
 
-type ViewDensity = "condense" | "normal" | "expand";
-
 interface ViewState {
 	year: number;
 	hiddenCategories: string[];
-	density: ViewDensity;
+	rowHeight: number;
+	layout: "horizontal" | "vertical";
 }
 
 export class LinearCalendarView extends ItemView {
 	private currentYear: number;
 	private hiddenCategories: Set<string> = new Set();
-	private density: ViewDensity = "normal";
+	private rowHeight = 0;
+	private layout: "horizontal" | "vertical";
+	private layoutToggleBtn!: HTMLElement;
 	private scanner: FrontmatterScanner;
 	private gridRenderer!: GridRenderer;
 	private barRenderer: BarRenderer;
@@ -38,6 +39,7 @@ export class LinearCalendarView extends ItemView {
 		this.settings = settings;
 		this.getMapping = getMapping;
 		this.currentYear = new Date().getFullYear();
+		this.layout = window.innerWidth < 768 ? "vertical" : "horizontal";
 		this.scanner = new FrontmatterScanner(this.app);
 		this.barRenderer = new BarRenderer(
 			this.app,
@@ -67,9 +69,6 @@ export class LinearCalendarView extends ItemView {
 		// Toolbar
 		const toolbar = contentEl.createDiv({ cls: "linear-calendar-toolbar" });
 		this.buildToolbar(toolbar);
-		this.categoriesContainer = toolbar.createDiv({
-			cls: "lc-categories",
-		});
 
 		// Scroll wrapper
 		const scrollWrapper = contentEl.createDiv({
@@ -82,9 +81,9 @@ export class LinearCalendarView extends ItemView {
 		});
 		this.tooltip = new Tooltip(contentEl);
 
-		// Shift+scroll horizontal pan
+		// Shift+scroll horizontal pan (horizontal mode only)
 		this.registerDomEvent(scrollWrapper, "wheel", (evt: WheelEvent) => {
-			if (evt.shiftKey) {
+			if (evt.shiftKey && this.layout === "horizontal") {
 				evt.preventDefault();
 				scrollWrapper.scrollLeft += evt.deltaY;
 			}
@@ -128,7 +127,8 @@ export class LinearCalendarView extends ItemView {
 		return {
 			year: this.currentYear,
 			hiddenCategories: [...this.hiddenCategories],
-			density: this.density,
+			rowHeight: this.rowHeight,
+			layout: this.layout,
 		};
 	}
 
@@ -138,7 +138,8 @@ export class LinearCalendarView extends ItemView {
 		if (s?.hiddenCategories) {
 			this.hiddenCategories = new Set(s.hiddenCategories);
 		}
-		if (s?.density) this.density = s.density;
+		if (s?.rowHeight != null) this.rowHeight = s.rowHeight;
+		if (s?.layout) this.layout = s.layout;
 		this.renderCalendar();
 		await super.setState(state, result as { history: boolean });
 	}
@@ -184,31 +185,61 @@ export class LinearCalendarView extends ItemView {
 			this.scrollToNow();
 		});
 
-		// Density slider (3 stops)
+		// Row height slider
 		const densityWrap = toolbar.createDiv({ cls: "lc-density" });
-		const densityMap: ViewDensity[] = ["condense", "normal", "expand"];
 		const slider = densityWrap.createEl("input", {
 			cls: "lc-density-slider",
 			attr: {
 				type: "range",
 				min: "0",
-				max: "2",
+				max: "100",
 				step: "1",
-				"aria-label": "View density",
+				"aria-label": "Row height",
 			},
 		});
-		(slider as HTMLInputElement).value = String(
-			densityMap.indexOf(this.density),
-		);
+		(slider as HTMLInputElement).value = String(this.rowHeight);
 		slider.addEventListener("input", () => {
-			this.density = densityMap[Number((slider as HTMLInputElement).value)];
-			this.renderCalendar();
+			this.rowHeight = Number((slider as HTMLInputElement).value);
+			this.applyRowHeightVars();
 		});
+
+		// Categories filter chips (before toggle so toggle sits at the end)
+		this.categoriesContainer = toolbar.createDiv({ cls: "lc-categories" });
+
+		// Layout toggle button
+		this.layoutToggleBtn = toolbar.createEl("button", {
+			cls: "lc-layout-toggle clickable-icon",
+		});
+		this.updateLayoutToggleIcon();
+		this.layoutToggleBtn.addEventListener("click", () => {
+			this.layout = this.layout === "horizontal" ? "vertical" : "horizontal";
+			this.updateLayoutToggleIcon();
+			this.renderCalendar();
+			requestAnimationFrame(() => this.scrollToNow());
+		});
+	}
+
+	private updateLayoutToggleIcon(): void {
+		// Icon shows what you'll switch TO
+		setIcon(this.layoutToggleBtn, this.layout === "horizontal" ? "chevrons-up-down" : "chevrons-left-right");
+		this.layoutToggleBtn.setAttribute(
+			"aria-label",
+			this.layout === "horizontal" ? "Switch to vertical layout" : "Switch to horizontal layout",
+		);
 	}
 
 	private updateYearLabel(): void {
 		const label = this.contentEl.querySelector('[data-role="year-label"]');
 		if (label) label.textContent = String(this.currentYear);
+	}
+
+	private applyRowHeightVars(): void {
+		const grid = this.gridRenderer.getContainer();
+		if (this.layout === "vertical") {
+			grid.style.setProperty("--lc-vert-row-h", `${20 + this.rowHeight * 0.4}px`);
+		} else {
+			grid.style.setProperty("--lc-row-min", `${this.rowHeight * 3}px`);
+		}
 	}
 
 	private renderCalendar(): void {
@@ -233,20 +264,27 @@ export class LinearCalendarView extends ItemView {
 			if (file) this.app.workspace.openLinkText(file.path, "", false);
 		});
 
-		const colMinWidth = this.density === "expand" ? 28 : 0;
-		const monthRows = this.gridRenderer.render(
-			this.currentYear,
-			colMinWidth,
-			this.settings.alignMode,
-			dailyNoteDates,
-			this.settings.dailyNoteColor,
-			this.settings.dailyNoteStyle,
-		);
+		let monthRows;
+		if (this.layout === "vertical") {
+			monthRows = this.gridRenderer.renderVertical(
+				this.currentYear,
+				dailyNoteDates,
+				this.settings.dailyNoteColor,
+				this.settings.dailyNoteStyle,
+				this.settings.alignMode,
+			);
+		} else {
+			monthRows = this.gridRenderer.render(
+				this.currentYear,
+				0,
+				this.settings.alignMode,
+				dailyNoteDates,
+				this.settings.dailyNoteColor,
+				this.settings.dailyNoteStyle,
+			);
+		}
 
-		// Apply density class to grid
-		const grid = this.gridRenderer.getContainer();
-		grid.removeClass("lc-density-condense", "lc-density-normal", "lc-density-expand");
-		grid.addClass(`lc-density-${this.density}`);
+		this.applyRowHeightVars();
 
 		this.barRenderer.render(monthRows, items, tagColorMap);
 
@@ -312,7 +350,6 @@ export class LinearCalendarView extends ItemView {
 	}
 
 	private handleKeydown(evt: KeyboardEvent): void {
-		// Ignore if user is typing in an input
 		if (evt.target instanceof HTMLInputElement || evt.target instanceof HTMLTextAreaElement) return;
 
 		switch (evt.key) {
@@ -352,7 +389,6 @@ export class LinearCalendarView extends ItemView {
 			"",
 		].join("\n");
 
-		// Find unique filename
 		let path = fileName;
 		let counter = 1;
 		while (this.app.vault.getAbstractFileByPath(path)) {

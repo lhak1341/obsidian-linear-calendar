@@ -15,7 +15,7 @@
               "state": {
                 "year": 2026,
                 "hiddenCategories": [],
-                "density": "normal"
+                "rowHeight": 0
               },
               "icon": "calendar-range",
               "title": "Linear Calendar"

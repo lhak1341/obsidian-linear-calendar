@@ -110,43 +110,22 @@
 	cursor: pointer;
 }
 
-/* ---- Condense density ---- */
-.lc-density-condense .lc-day-cell {
-	gap: 0;
+/* ---- Layout toggle button ---- */
+.lc-layout-toggle {
+	background: transparent;
+	border: none;
+	border-radius: 4px;
+	color: var(--text-muted);
+	flex-shrink: 0;
+	cursor: pointer;
+	padding: 2px 4px;
+	display: flex;
+	align-items: center;
 }
 
-.lc-density-condense .lc-day-num {
-	font-size: 8px;
-}
-
-.lc-density-condense .lc-day-weekday {
-	display: none;
-}
-
-.lc-density-condense .calendar-bar {
-	height: 10px;
-	font-size: 8px;
-	line-height: 10px;
-	padding: 0 2px;
-}
-
-.lc-density-condense .calendar-bar-icon svg {
-	width: 7px;
-	height: 7px;
-}
-
-.lc-density-condense .lc-days-grid {
-	grid-template-rows: 12px;
-	grid-auto-rows: 11px;
-	row-gap: 0;
-}
-
-.lc-density-condense .lc-month-row {
-	min-height: 22px;
-}
-
-.lc-density-condense .lc-month-label {
-	font-size: 8px;
+.lc-layout-toggle:hover {
+	background: var(--background-modifier-hover);
+	color: var(--text-normal);
 }
 
 /* ---- Category filter chips (inline in toolbar) ---- */
@@ -247,7 +226,9 @@
 	grid-template-rows: 18px;
 	grid-auto-rows: 17px;
 	row-gap: 1px;
+	column-gap: 1px;
 	padding: 1px 0;
+	min-height: var(--lc-row-min, 0px);
 }
 
 /* ---- Day cell (row 1) ---- */
@@ -255,7 +236,8 @@
 	grid-row: 1;
 	display: flex;
 	flex-direction: row;
-	align-items: center;
+	align-items: flex-start;
+	padding-top: 3px;
 	justify-content: center;
 	gap: 0;
 	border-right: 1px solid var(--background-modifier-border-hover, rgba(128, 128, 128, 0.1));
@@ -323,7 +305,6 @@
 }
 
 /* ---- Today indicator ---- */
-/* Circle on day number */
 .lc-today-circle {
 	display: inline-flex;
 	align-items: center;
@@ -335,6 +316,19 @@
 	color: var(--text-on-accent, #fff) !important;
 	font-weight: 700;
 	font-size: 9px;
+}
+
+/* Vertical: rectangle on day number span */
+.lc-today-vert-cell {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 16px;
+	height: 14px;
+	border-radius: 2px;
+	background: var(--color-accent);
+	color: var(--text-on-accent, #fff) !important;
+	font-weight: 700;
 }
 
 /* Full-height column outline — absolute, spans entire month row */
@@ -590,4 +584,134 @@
 		width: 8px;
 		height: 8px;
 	}
+}
+
+/* ============================================
+   Vertical layout
+   ============================================ */
+
+.lc-vert-grid {
+	display: grid;
+	grid-template-columns: repeat(12, 1fr);
+	row-gap: 0;
+	column-gap: 1px;
+	width: 100%;
+}
+
+.lc-vert-month-header {
+	font-size: 10px;
+	font-weight: 700;
+	text-align: center;
+	text-transform: uppercase;
+	letter-spacing: 0.2px;
+	padding: 4px 0 3px;
+	color: var(--text-muted);
+	position: sticky;
+	top: 0;
+	background: var(--background-primary);
+	z-index: 10;
+	border-bottom: 1px solid var(--background-modifier-border);
+}
+
+/* Per-month container: left = date header, right = bars */
+.lc-vert-month-col {
+	display: grid;
+	overflow: hidden;
+	row-gap: 2px;
+	column-gap: 1px;
+}
+
+/* Date/weekday cell — left column of each month container */
+.lc-vert-day-cell {
+	grid-column: 1;
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	align-items: flex-end;
+	justify-content: flex-start;
+	padding-top: 2px;
+	padding-right: 3px;
+	overflow: hidden;
+	border-right: 1px solid var(--background-modifier-border-hover, rgba(128,128,128,0.1));
+}
+
+.lc-vert-day-cell .lc-day-num {
+	font-size: 10px;
+	line-height: 1;
+}
+
+.lc-vert-day-cell .lc-day-weekday {
+	font-size: 8px;
+	line-height: 1;
+}
+
+.lc-vert-day-empty {
+	opacity: 0.15;
+}
+
+.lc-vert-day-cell.lc-day-weekend {
+	background: color-mix(in srgb, var(--background-modifier-border) 30%, transparent);
+}
+
+/* Daily note — left-edge line in vertical (overrides top-edge) */
+.lc-vert-day-cell.lc-daily-border-top::before {
+	width: 3px;
+	height: 100%;
+	top: 0;
+	left: 0;
+}
+
+/* Vertical bars — fill row span */
+.calendar-bar-vert {
+	border-radius: 2px;
+	overflow: hidden;
+	min-height: 0;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: flex-start;
+	padding: 4px 2px;
+	box-sizing: border-box;
+}
+
+.calendar-bar-vert .calendar-bar-icon {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+	width: 100%;
+}
+
+.calendar-bar-vert .calendar-bar-icon svg {
+	width: 9px;
+	height: 9px;
+}
+
+.calendar-bar-vert .calendar-bar-label {
+	writing-mode: vertical-lr;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	font-size: 10px;
+	line-height: 1;
+	padding: 0;
+}
+
+/* Single-day vertical: icon centered */
+.calendar-bar-vert-single {
+	justify-content: center;
+}
+
+.calendar-bar-vert-single .calendar-bar-label {
+	display: none;
+}
+
+.calendar-bar-vert-single .calendar-bar-icon {
+	display: flex;
+}
+
+/* Today indicator — column accent */
+.lc-today-vert-col {
+	box-shadow: inset 0 0 0 1.5px var(--color-accent);
+	border-radius: 2px;
 }
