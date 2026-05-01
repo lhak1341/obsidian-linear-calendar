@@ -1,4 +1,4 @@
-import { App, PluginSettingTab, Setting, type ColorComponent } from "obsidian";
+import { App, PluginSettingTab, Setting, setIcon, type ColorComponent } from "obsidian";
 import type LinearCalendarPlugin from "./main";
 import { COLOR_PALETTE } from "./constants";
 import { buildTagColorMap } from "./utils/colorUtils";
@@ -187,6 +187,7 @@ export class LinearCalendarSettingTab extends PluginSettingTab {
 		containerEl: HTMLElement,
 		colorMap: Record<string, string>,
 	): void {
+		const iconMap = this.plugin.settings.iconMap;
 		for (const [tag, color] of Object.entries(colorMap)) {
 			const shortName = tag.replace(/^linear-calendar\//, "");
 			new Setting(containerEl)
@@ -201,6 +202,24 @@ export class LinearCalendarSettingTab extends PluginSettingTab {
 						await this.plugin.saveSettings();
 						this.display();
 					});
+					const iconWrap = setting.controlEl.createSpan({ cls: "lc-icon-input-wrap" });
+					const iconInput = iconWrap.createEl("input", {
+						cls: "lc-icon-input",
+						attr: { type: "text", placeholder: "icon name", value: iconMap[tag] ?? "" },
+					}) as HTMLInputElement;
+					const iconPreview = iconWrap.createSpan({ cls: "lc-icon-preview" });
+					if (iconMap[tag]) setIcon(iconPreview, iconMap[tag]);
+					iconInput.addEventListener("input", () => {
+						iconPreview.empty();
+						const val = iconInput.value.trim();
+						if (val) setIcon(iconPreview, val);
+					});
+					iconInput.addEventListener("change", async () => {
+						const val = iconInput.value.trim();
+						if (val) iconMap[tag] = val;
+						else delete iconMap[tag];
+						await this.plugin.saveSettings();
+					});
 				})
 				.addColorPicker((picker) =>
 					picker.setValue(color).onChange(async (value) => {
@@ -212,6 +231,7 @@ export class LinearCalendarSettingTab extends PluginSettingTab {
 				.addExtraButton((btn) =>
 					btn.setIcon("x").setTooltip("Remove").onClick(async () => {
 						delete colorMap[tag];
+						delete iconMap[tag];
 						await this.plugin.saveSettings();
 						this.display();
 					}),
@@ -261,10 +281,12 @@ export class LinearCalendarSettingTab extends PluginSettingTab {
 		containerEl: HTMLElement,
 		colorMap: Record<string, string>,
 	): void {
+		const iconMap = this.plugin.settings.iconMap;
 		let newTagColor =
 			COLOR_PALETTE.find((c) => !new Set(Object.values(colorMap)).has(c)) ?? COLOR_PALETTE[0];
 		let newTagInput: HTMLInputElement;
 		let newTagPicker: ColorComponent;
+		let newIconValue = "";
 
 		const addSetting = new Setting(containerEl)
 			.setName("Add tag color")
@@ -285,12 +307,28 @@ export class LinearCalendarSettingTab extends PluginSettingTab {
 			picker.setValue(newTagColor).onChange((value) => { newTagColor = value; });
 		});
 
+		addSetting.then((setting) => {
+			const iconWrap = setting.controlEl.createSpan({ cls: "lc-icon-input-wrap" });
+			const iconInput = iconWrap.createEl("input", {
+				cls: "lc-icon-input",
+				attr: { type: "text", placeholder: "icon (optional)" },
+			}) as HTMLInputElement;
+			const iconPreview = iconWrap.createSpan({ cls: "lc-icon-preview" });
+			iconInput.addEventListener("input", () => {
+				iconPreview.empty();
+				const val = iconInput.value.trim();
+				if (val) setIcon(iconPreview, val);
+				newIconValue = val;
+			});
+		});
+
 		addSetting.addExtraButton((btn) =>
 			btn.setIcon("plus").setTooltip("Add").onClick(async () => {
 				const tagName = newTagInput?.value?.trim();
 				if (!tagName) return;
 				const fullTag = tagName.startsWith("linear-calendar/") ? tagName : `linear-calendar/${tagName}`;
 				colorMap[fullTag] = newTagColor;
+				if (newIconValue) iconMap[fullTag] = newIconValue;
 				await this.plugin.saveSettings();
 				this.display();
 			}),

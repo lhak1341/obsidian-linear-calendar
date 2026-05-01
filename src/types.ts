@@ -25,6 +25,7 @@ export interface PluginSettings {
 	defaultMapping: ColumnMapping;
 	viewConfigs: Record<string, ColumnMapping>;
 	colorMap: Record<string, string>;
+	iconMap: Record<string, string>;
 	alignMode: AlignMode;
 	dailyNoteColor: string | null; // null = use accent
 	dailyNoteStyle: DailyNoteStyle;

@@ -550,6 +550,35 @@
 	border-color: var(--text-normal);
 }
 
+.lc-icon-input-wrap {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+}
+
+.lc-icon-input {
+	width: 120px;
+	font-size: var(--font-ui-small);
+	padding: 2px 6px;
+	border-radius: var(--radius-s);
+	border: 1px solid var(--background-modifier-border);
+	background: var(--background-primary);
+	color: var(--text-normal);
+}
+
+.lc-icon-preview {
+	display: inline-flex;
+	align-items: center;
+	width: 16px;
+	height: 16px;
+	color: var(--text-muted);
+}
+
+.lc-icon-preview svg {
+	width: 14px;
+	height: 14px;
+}
+
 /* ---- Mobile / narrow ---- */
 @media (max-width: 600px) {
 	.linear-calendar-toolbar {

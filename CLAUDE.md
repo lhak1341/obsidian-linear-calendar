@@ -22,3 +22,4 @@ Obsidian plugin — horizontal year-at-a-glance timeline rendered from note fron
 - Use `this.registerDomEvent()` for all DOM event listeners in views — raw `addEventListener` on `contentEl` leaks across open/close cycles
 - Sticky headers need `z-index` > 5 (bars use `z-index: 5`) or they get painted over on scroll
 - To fill a cell with a dynamic background, put the class on the container or use `position: absolute; inset: 0` — `width/height: 100%` on a `<span>` inside a flex column is unreliable
+- In Settings UI, `Setting.then(cb)` is synchronous and returns `this` — use it mid-chain for raw DOM injection into `controlEl` (e.g. live-preview inputs) while still chaining `.addColorPicker()` / `.addExtraButton()`

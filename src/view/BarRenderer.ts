@@ -28,6 +28,7 @@ export class BarRenderer {
 		monthRows: MonthRowRef[],
 		items: CalendarItem[],
 		tagColorMap: Map<string, string>,
+		tagIconMap: Map<string, string>,
 	): void {
 		const isVertical = monthRows[0]?.layout === "vertical";
 
@@ -44,7 +45,7 @@ export class BarRenderer {
 
 			for (const { segment, row } of assignments) {
 				const barEl = this.createBarEl(rowRef, segment, row, isVertical);
-				this.decorateBar(barEl, segment, tagColorMap);
+				this.decorateBar(barEl, segment, tagColorMap, tagIconMap);
 
 				barEl.addEventListener("click", (evt) => {
 					if (barEl.dataset.justDragged) return;
@@ -100,14 +101,16 @@ export class BarRenderer {
 		barEl: HTMLElement,
 		segment: MonthSegment,
 		tagColorMap: Map<string, string>,
+		tagIconMap: Map<string, string>,
 	): void {
-		if (segment.item.icon) {
+		const tag = segment.item.tags?.[0] ?? "__uncategorized__";
+		const resolvedIcon = segment.item.icon ?? tagIconMap.get(tag);
+		if (resolvedIcon) {
 			const iconEl = barEl.createSpan({ cls: "calendar-bar-icon" });
-			setIcon(iconEl, segment.item.icon);
+			setIcon(iconEl, resolvedIcon);
 		}
 		barEl.createSpan({ cls: "calendar-bar-label", text: segment.item.title });
 
-		const tag = segment.item.tags?.[0] ?? "__uncategorized__";
 		const bgColor = tagColorMap.get(tag) ?? COLOR_PALETTE[0];
 		barEl.style.backgroundColor = bgColor;
 		barEl.style.color = getContrastColor(bgColor);

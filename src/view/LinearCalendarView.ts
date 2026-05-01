@@ -299,7 +299,8 @@ export class LinearCalendarView extends ItemView {
 
 		this.applyRowHeightVars();
 
-		this.barRenderer.render(monthRows, items, tagColorMap);
+		const tagIconMap = new Map(Object.entries(this.settings.iconMap));
+		this.barRenderer.render(monthRows, items, tagColorMap, tagIconMap);
 
 		this.nowIndicator.cleanup();
 		this.nowIndicator.render(monthRows, this.currentYear);
