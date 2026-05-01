@@ -67,6 +67,20 @@ export function parseDateString(value: unknown): Date | null {
 }
 
 /**
+ * Projects an anniversary event's dates into the target year, preserving duration.
+ * Caller is responsible for only calling this when dateStart.getFullYear() < year.
+ */
+export function projectAnniversaryDates(
+	dateStart: Date,
+	dateEnd: Date,
+	year: number,
+): { dateStart: Date; dateEnd: Date } {
+	const duration = dateEnd.getTime() - dateStart.getTime();
+	const projected = new Date(year, dateStart.getMonth(), dateStart.getDate());
+	return { dateStart: projected, dateEnd: new Date(projected.getTime() + duration) };
+}
+
+/**
  * Month boundaries for a given year.
  * Returns array of { name, startDay, days } for each month.
  */

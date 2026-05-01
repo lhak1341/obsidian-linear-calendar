@@ -53,7 +53,7 @@ export class BarRenderer {
 
 				this.attachContextMenu(barEl, segment.item.filePath);
 
-				if (!isVertical) {
+				if (!isVertical && !segment.item.anniversary) {
 					this.dragHandler.attach(
 						barEl,
 						segment.item.filePath,
@@ -111,6 +111,8 @@ export class BarRenderer {
 		const bgColor = tagColorMap.get(tag) ?? COLOR_PALETTE[0];
 		barEl.style.backgroundColor = bgColor;
 		barEl.style.color = getContrastColor(bgColor);
+
+		if (segment.item.anniversary) barEl.addClass("calendar-bar-anniversary");
 
 		barEl.dataset.title = segment.item.title;
 		barEl.dataset.dateRange = formatDateRange(segment.item.dateStart, segment.item.dateEnd);

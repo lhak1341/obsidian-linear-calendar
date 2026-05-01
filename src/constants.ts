@@ -7,6 +7,7 @@ export const DEFAULT_MAPPING: ColumnMapping = {
 	startDateProp: "datestart",
 	endDateProp: "dateend",
 	iconProp: "icon",
+	anniversaryProp: "anniversary",
 };
 
 export const DEFAULT_SETTINGS: PluginSettings = {

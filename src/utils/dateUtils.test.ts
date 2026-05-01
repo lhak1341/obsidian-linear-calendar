@@ -7,6 +7,7 @@ import {
 	formatDateRange,
 	parseDateString,
 	monthBoundaries,
+	projectAnniversaryDates,
 } from "./dateUtils";
 
 describe("isLeapYear", () => {
@@ -77,6 +78,56 @@ describe("parseDateString", () => {
 		const ts = new Date(2024, 5, 1).getTime();
 		const d = parseDateString(ts);
 		expect(d).not.toBeNull();
+	});
+});
+
+describe("projectAnniversaryDates", () => {
+	it("projects single-day event into target year", () => {
+		const { dateStart, dateEnd } = projectAnniversaryDates(
+			new Date(2023, 2, 15),
+			new Date(2023, 2, 15),
+			2026,
+		);
+		expect(dateStart.getFullYear()).toBe(2026);
+		expect(dateStart.getMonth()).toBe(2);
+		expect(dateStart.getDate()).toBe(15);
+		expect(dateEnd.getTime()).toBe(dateStart.getTime());
+	});
+
+	it("preserves duration for multi-day event", () => {
+		const start = new Date(2022, 5, 10); // Jun 10
+		const end = new Date(2022, 5, 17);   // Jun 17 — 7 days
+		const { dateStart, dateEnd } = projectAnniversaryDates(start, end, 2025);
+		const days = (dateEnd.getTime() - dateStart.getTime()) / (1000 * 60 * 60 * 24);
+		expect(days).toBe(7);
+		expect(dateStart.getFullYear()).toBe(2025);
+		expect(dateStart.getMonth()).toBe(5);
+		expect(dateStart.getDate()).toBe(10);
+	});
+
+	it("year-crossing event: dateEnd spills into next year", () => {
+		// Dec 29 – Jan 2 (4-day span)
+		const start = new Date(2023, 11, 29);
+		const end = new Date(2024, 0, 2);
+		const { dateStart, dateEnd } = projectAnniversaryDates(start, end, 2026);
+		expect(dateStart.getFullYear()).toBe(2026);
+		expect(dateStart.getMonth()).toBe(11);
+		expect(dateStart.getDate()).toBe(29);
+		expect(dateEnd.getFullYear()).toBe(2027);
+		expect(dateEnd.getMonth()).toBe(0);
+		expect(dateEnd.getDate()).toBe(2);
+	});
+
+	it("Feb 29 projected to non-leap year overflows to Mar 1 (JS behavior)", () => {
+		const { dateStart } = projectAnniversaryDates(
+			new Date(2024, 1, 29),
+			new Date(2024, 1, 29),
+			2025,
+		);
+		// new Date(2025, 1, 29) → March 1 2025
+		expect(dateStart.getFullYear()).toBe(2025);
+		expect(dateStart.getMonth()).toBe(2);
+		expect(dateStart.getDate()).toBe(1);
 	});
 });
 

@@ -1,7 +1,7 @@
 import type { App, TFile } from "obsidian";
 import type { CalendarItem, ColumnMapping } from "../types";
 import type { DataSource } from "./DataSource";
-import { parseDateString } from "../utils/dateUtils";
+import { parseDateString, projectAnniversaryDates } from "../utils/dateUtils";
 
 interface CacheEntry {
 	mtime: number;
@@ -51,14 +51,19 @@ export class FrontmatterScanner implements DataSource {
 
 		for (const entry of this.cache.values()) {
 			if (!entry.item) continue;
-			const { dateStart, dateEnd } = entry.item;
+			let { dateStart, dateEnd } = entry.item;
 
-			// Filter by year
+			// Anniversary: project month/day into the current year for past events
+			const isProjected = entry.item.anniversary === true && dateStart.getFullYear() < year;
+			if (isProjected) {
+				({ dateStart, dateEnd } = projectAnniversaryDates(dateStart, dateEnd, year));
+			}
+
 			if (dateStart > yearEnd || dateEnd < yearStart) continue;
 
-			// Clamp to year boundaries
 			items.push({
 				...entry.item,
+				anniversary: isProjected || undefined,
 				dateStart: dateStart < yearStart ? yearStart : dateStart,
 				dateEnd: dateEnd > yearEnd ? yearEnd : dateEnd,
 			});
@@ -123,6 +128,9 @@ export class FrontmatterScanner implements DataSource {
 				? fm[mapping.iconProp]
 				: undefined;
 
+		const anniversary =
+			mapping.anniversaryProp ? fm[mapping.anniversaryProp] === true : false;
+
 		return {
 			filePath: file.path,
 			title,
@@ -130,6 +138,7 @@ export class FrontmatterScanner implements DataSource {
 			dateEnd,
 			tags,
 			icon,
+			anniversary: anniversary || undefined,
 		};
 	}
 }

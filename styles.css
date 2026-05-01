@@ -400,6 +400,17 @@
 	min-width: 0;
 }
 
+/* Anniversary bars — dashed outline using contrast-adapted text color */
+.calendar-bar-anniversary {
+	outline: 1.5px dashed currentColor;
+	outline-offset: -2px;
+	opacity: 0.85;
+}
+
+.calendar-bar-anniversary:hover {
+	opacity: 1;
+}
+
 /* ---- Drag handles ---- */
 .calendar-bar {
 	position: relative;

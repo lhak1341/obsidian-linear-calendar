@@ -107,6 +107,19 @@ export class LinearCalendarSettingTab extends PluginSettingTab {
 						await this.plugin.saveSettings();
 					}),
 			);
+
+		new Setting(containerEl)
+			.setName("Anniversary property")
+			.setDesc("Frontmatter boolean property. When true, the event repeats on the same date every subsequent year (shown with a dashed border).")
+			.addText((text) =>
+				text
+					.setPlaceholder("anniversary")
+					.setValue(mapping.anniversaryProp)
+					.onChange(async (value) => {
+						mapping.anniversaryProp = value || "anniversary";
+						await this.plugin.saveSettings();
+					}),
+			);
 	}
 
 	private renderDailyNoteSettings(containerEl: HTMLElement): void {
