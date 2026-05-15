@@ -16,7 +16,6 @@ export class LinearCalendarSettingTab extends PluginSettingTab {
 	display(): void {
 		const { containerEl } = this;
 		containerEl.empty();
-		containerEl.createEl("h2", { text: "Linear Calendar Settings" });
 		const mapping = this.plugin.settings.defaultMapping;
 		this.renderGeneralSettings(containerEl, mapping);
 		this.renderDailyNoteSettings(containerEl);
@@ -123,7 +122,7 @@ export class LinearCalendarSettingTab extends PluginSettingTab {
 	}
 
 	private renderDailyNoteSettings(containerEl: HTMLElement): void {
-		containerEl.createEl("h3", { text: "Daily Note Indicator" });
+		new Setting(containerEl).setName("Daily Note Indicator").setHeading();
 
 		const isCustomColor = this.plugin.settings.dailyNoteColor !== null;
 		new Setting(containerEl)
@@ -171,7 +170,7 @@ export class LinearCalendarSettingTab extends PluginSettingTab {
 	}
 
 	private renderColorMapSection(containerEl: HTMLElement, mapping: ColumnMapping): void {
-		containerEl.createEl("h3", { text: "Tag Color Map" });
+		new Setting(containerEl).setName("Tag Color Map").setHeading();
 		containerEl.createEl("p", {
 			text: 'Assign colors to linear-calendar subtags (e.g., "work", "personal"). Unmapped tags get auto-assigned from the palette.',
 			cls: "setting-item-description",
@@ -251,7 +250,7 @@ export class LinearCalendarSettingTab extends PluginSettingTab {
 
 		if (unpinned.length === 0) return;
 
-		containerEl.createEl("h4", { text: "Detected tags" });
+		new Setting(containerEl).setName("Detected tags").setHeading();
 		containerEl.createEl("p", {
 			text: "Auto-assigned colors from your notes. Pin to customize.",
 			cls: "setting-item-description",

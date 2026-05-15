@@ -1,0 +1,543 @@
+{
+  "nodes": [
+    {
+      "id": "main_linearcalendarplugin",
+      "label": "LinearCalendarPlugin",
+      "file_type": "code",
+      "source_file": "src/main.ts"
+    },
+    {
+      "id": "settings_linearcalendarsettingtab",
+      "label": "LinearCalendarSettingTab",
+      "file_type": "code",
+      "source_file": "src/settings.ts"
+    },
+    {
+      "id": "types_pluginsettings",
+      "label": "PluginSettings",
+      "file_type": "code",
+      "source_file": "src/types.ts"
+    },
+    {
+      "id": "types_calendaritem",
+      "label": "CalendarItem",
+      "file_type": "code",
+      "source_file": "src/types.ts"
+    },
+    {
+      "id": "types_columnmapping",
+      "label": "ColumnMapping",
+      "file_type": "code",
+      "source_file": "src/types.ts"
+    },
+    {
+      "id": "constants_view_type_linear_calendar",
+      "label": "VIEW_TYPE_LINEAR_CALENDAR",
+      "file_type": "code",
+      "source_file": "src/constants.ts"
+    },
+    {
+      "id": "constants_default_settings",
+      "label": "DEFAULT_SETTINGS",
+      "file_type": "code",
+      "source_file": "src/constants.ts"
+    },
+    {
+      "id": "constants_color_palette",
+      "label": "COLOR_PALETTE",
+      "file_type": "code",
+      "source_file": "src/constants.ts"
+    },
+    {
+      "id": "segmentbymonth_segmentbymonth",
+      "label": "segmentByMonth",
+      "file_type": "code",
+      "source_file": "src/utils/segmentByMonth.ts"
+    },
+    {
+      "id": "segmentbymonth_groupsegmentsbymonth",
+      "label": "groupSegmentsByMonth",
+      "file_type": "code",
+      "source_file": "src/utils/segmentByMonth.ts"
+    },
+    {
+      "id": "dateutils_dayofyear",
+      "label": "dayOfYear",
+      "file_type": "code",
+      "source_file": "src/utils/dateUtils.ts"
+    },
+    {
+      "id": "dateutils_parsedatestring",
+      "label": "parseDateString",
+      "file_type": "code",
+      "source_file": "src/utils/dateUtils.ts"
+    },
+    {
+      "id": "dateutils_projectanniversarydates",
+      "label": "projectAnniversaryDates",
+      "file_type": "code",
+      "source_file": "src/utils/dateUtils.ts"
+    },
+    {
+      "id": "dailynotes_getdailynotemap",
+      "label": "getDailyNoteMap",
+      "file_type": "code",
+      "source_file": "src/utils/dailyNotes.ts"
+    },
+    {
+      "id": "colorutils_buildtagcolormap",
+      "label": "buildTagColorMap",
+      "file_type": "code",
+      "source_file": "src/utils/colorUtils.ts"
+    },
+    {
+      "id": "gridrenderer_gridrenderer",
+      "label": "GridRenderer",
+      "file_type": "code",
+      "source_file": "src/view/GridRenderer.ts"
+    },
+    {
+      "id": "linearcalendarview_linearcalendarview",
+      "label": "LinearCalendarView",
+      "file_type": "code",
+      "source_file": "src/view/LinearCalendarView.ts"
+    },
+    {
+      "id": "draghandler_draghandler",
+      "label": "DragHandler",
+      "file_type": "code",
+      "source_file": "src/view/DragHandler.ts"
+    },
+    {
+      "id": "nowindicator_nowindicator",
+      "label": "NowIndicator",
+      "file_type": "code",
+      "source_file": "src/view/NowIndicator.ts"
+    },
+    {
+      "id": "tooltip_tooltip",
+      "label": "Tooltip",
+      "file_type": "code",
+      "source_file": "src/view/Tooltip.ts"
+    },
+    {
+      "id": "barrenderer_barrenderer",
+      "label": "BarRenderer",
+      "file_type": "code",
+      "source_file": "src/view/BarRenderer.ts"
+    },
+    {
+      "id": "datasource_datasource",
+      "label": "DataSource",
+      "file_type": "code",
+      "source_file": "src/data/DataSource.ts"
+    },
+    {
+      "id": "frontmatterscanner_frontmatterscanner",
+      "label": "FrontmatterScanner",
+      "file_type": "code",
+      "source_file": "src/data/FrontmatterScanner.ts"
+    },
+    {
+      "id": "claude_md_readme",
+      "label": "CLAUDE.md",
+      "file_type": "document",
+      "source_file": "CLAUDE.md"
+    },
+    {
+      "id": "move_apartments_note",
+      "label": "Move Apartments",
+      "file_type": "document",
+      "source_file": "test-vault/notes/move-apartments.md"
+    },
+    {
+      "id": "client_project_a_note",
+      "label": "Client Project A",
+      "file_type": "document",
+      "source_file": "test-vault/notes/client-project-a.md"
+    },
+    {
+      "id": "birthday_note",
+      "label": "Birthday Party",
+      "file_type": "document",
+      "source_file": "test-vault/notes/birthday.md"
+    },
+    {
+      "id": "tax_deadline_note",
+      "label": "Tax Deadline Note",
+      "file_type": "document",
+      "source_file": "test-vault/notes/tax-deadline.md"
+    },
+    {
+      "id": "gym_membership_note",
+      "label": "Gym Membership Note",
+      "file_type": "document",
+      "source_file": "test-vault/notes/gym-membership.md"
+    },
+    {
+      "id": "conference_talk_note",
+      "label": "Conference Talk Note",
+      "file_type": "document",
+      "source_file": "test-vault/notes/conference-talk.md"
+    },
+    {
+      "id": "project_alpha_note",
+      "label": "Project Alpha Note",
+      "file_type": "document",
+      "source_file": "test-vault/notes/project-alpha.md"
+    },
+    {
+      "id": "marathon_training_note",
+      "label": "Marathon Training Note",
+      "file_type": "document",
+      "source_file": "test-vault/notes/marathon-training.md"
+    },
+    {
+      "id": "onboarding_new_hire_note",
+      "label": "Onboarding New Hire Note",
+      "file_type": "document",
+      "source_file": "test-vault/notes/onboarding-new-hire.md"
+    },
+    {
+      "id": "summer_vacation_note",
+      "label": "Summer Vacation Note",
+      "file_type": "document",
+      "source_file": "test-vault/notes/summer-vacation.md"
+    },
+    {
+      "id": "bad_date_note",
+      "label": "Bad Date Format Note",
+      "file_type": "document",
+      "source_file": "test-vault/notes/bad-date.md"
+    },
+    {
+      "id": "security_audit_note",
+      "label": "Security Audit Note",
+      "file_type": "document",
+      "source_file": "test-vault/notes/security-audit.md"
+    },
+    {
+      "id": "hackathon_note",
+      "label": "Internal Hackathon Note",
+      "file_type": "document",
+      "source_file": "test-vault/notes/hackathon.md"
+    },
+    {
+      "id": "product_launch_note",
+      "label": "Product Launch Note",
+      "file_type": "document",
+      "source_file": "test-vault/notes/product-launch.md"
+    },
+    {
+      "id": "no_dates_note",
+      "label": "Random Note (No Dates)",
+      "file_type": "document",
+      "source_file": "test-vault/notes/no-dates.md"
+    },
+    {
+      "id": "blog_series_note",
+      "label": "Blog Series Note",
+      "file_type": "document",
+      "source_file": "test-vault/notes/blog-series.md"
+    },
+    {
+      "id": "design_review_note",
+      "label": "Design Review Note",
+      "file_type": "document",
+      "source_file": "test-vault/notes/design-review.md"
+    },
+    {
+      "id": "team_offsite_note",
+      "label": "Team Offsite Note",
+      "file_type": "document",
+      "source_file": "test-vault/notes/team-offsite.md"
+    },
+    {
+      "id": "quarterly_review_note",
+      "label": "Quarterly Review Note",
+      "file_type": "document",
+      "source_file": "test-vault/notes/quarterly-review.md"
+    },
+    {
+      "id": "sprint_q2_note",
+      "label": "Sprint Q2 Note",
+      "file_type": "document",
+      "source_file": "test-vault/notes/sprint-q2.md"
+    },
+    {
+      "id": "reading_challenge_note",
+      "label": "Reading Challenge Note",
+      "file_type": "document",
+      "source_file": "test-vault/notes/reading-challenge.md"
+    },
+    {
+      "id": "dentist_note",
+      "label": "Dentist Appointment Note",
+      "file_type": "document",
+      "source_file": "test-vault/notes/dentist.md"
+    },
+    {
+      "id": "client_project_b_note",
+      "label": "Client Project B Note",
+      "file_type": "document",
+      "source_file": "test-vault/notes/client-project-b.md"
+    },
+    {
+      "id": "wedding_note",
+      "label": "Wedding Note",
+      "file_type": "document",
+      "source_file": "test-vault/notes/wedding.md"
+    },
+    {
+      "id": "holiday_break_note",
+      "label": "Holiday Break Note",
+      "file_type": "document",
+      "source_file": "test-vault/notes/holiday-break.md"
+    },
+    {
+      "id": "daily_note_priority",
+      "label": "Daily Note Plugin Priority Logic",
+      "file_type": "rationale",
+      "source_file": "src/utils/CLAUDE.md"
+    },
+    {
+      "id": "tag_format_gotcha",
+      "label": "Obsidian Tag Format API Gotcha",
+      "file_type": "rationale",
+      "source_file": "src/data/CLAUDE.md"
+    }
+  ],
+  "edges": [
+    {
+      "source": "main_linearcalendarplugin",
+      "target": "settings_linearcalendarsettingtab",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/main.ts"
+    },
+    {
+      "source": "main_linearcalendarplugin",
+      "target": "linearcalendarview_linearcalendarview",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/main.ts"
+    },
+    {
+      "source": "linearcalendarview_linearcalendarview",
+      "target": "gridrenderer_gridrenderer",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/view/LinearCalendarView.ts"
+    },
+    {
+      "source": "linearcalendarview_linearcalendarview",
+      "target": "barrenderer_barrenderer",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/view/LinearCalendarView.ts"
+    },
+    {
+      "source": "linearcalendarview_linearcalendarview",
+      "target": "frontmatterscanner_frontmatterscanner",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/view/LinearCalendarView.ts"
+    },
+    {
+      "source": "linearcalendarview_linearcalendarview",
+      "target": "nowindicator_nowindicator",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/view/LinearCalendarView.ts"
+    },
+    {
+      "source": "linearcalendarview_linearcalendarview",
+      "target": "tooltip_tooltip",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/view/LinearCalendarView.ts"
+    },
+    {
+      "source": "linearcalendarview_linearcalendarview",
+      "target": "dailynotes_getdailynotemap",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/view/LinearCalendarView.ts"
+    },
+    {
+      "source": "linearcalendarview_linearcalendarview",
+      "target": "colorutils_buildtagcolormap",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/view/LinearCalendarView.ts"
+    },
+    {
+      "source": "barrenderer_barrenderer",
+      "target": "draghandler_draghandler",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/view/BarRenderer.ts"
+    },
+    {
+      "source": "barrenderer_barrenderer",
+      "target": "segmentbymonth_groupsegmentsbymonth",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/view/BarRenderer.ts"
+    },
+    {
+      "source": "frontmatterscanner_frontmatterscanner",
+      "target": "dateutils_parsedatestring",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/data/FrontmatterScanner.ts"
+    },
+    {
+      "source": "frontmatterscanner_frontmatterscanner",
+      "target": "dateutils_projectanniversarydates",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/data/FrontmatterScanner.ts"
+    },
+    {
+      "source": "settings_linearcalendarsettingtab",
+      "target": "colorutils_buildtagcolormap",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/settings.ts"
+    },
+    {
+      "source": "settings_linearcalendarsettingtab",
+      "target": "frontmatterscanner_frontmatterscanner",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/settings.ts"
+    },
+    {
+      "source": "linearcalendarview_linearcalendarview",
+      "target": "claude_md_readme",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "CLAUDE.md"
+    },
+    {
+      "source": "frontmatterscanner_frontmatterscanner",
+      "target": "move_apartments_note",
+      "relation": "references",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "test-vault/notes/move-apartments.md"
+    },
+    {
+      "source": "frontmatterscanner_frontmatterscanner",
+      "target": "client_project_a_note",
+      "relation": "references",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "test-vault/notes/client-project-a.md"
+    },
+    {
+      "source": "frontmatterscanner_frontmatterscanner",
+      "target": "birthday_note",
+      "relation": "references",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "test-vault/notes/birthday.md"
+    },
+    {
+      "source": "client_project_b_note",
+      "target": "project_alpha_note",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "test-vault/notes/client-project-b.md"
+    },
+    {
+      "source": "quarterly_review_note",
+      "target": "project_alpha_note",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "test-vault/notes/quarterly-review.md"
+    },
+    {
+      "source": "tax_deadline_note",
+      "target": "client_project_b_note",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "test-vault/notes/client-project-b.md"
+    },
+    {
+      "source": "tag_format_gotcha",
+      "target": "frontmatter_scanner",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/data/CLAUDE.md"
+    },
+    {
+      "source": "sprint_q2_note",
+      "target": "quarterly_review_note",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.75,
+      "source_file": "test-vault/notes/sprint-q2.md"
+    },
+    {
+      "source": "daily_note_priority",
+      "target": "daily_notes_util",
+      "relation": "rationale_for",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "src/utils/CLAUDE.md"
+    }
+  ],
+  "hyperedges": [
+    {
+      "id": "work_project_timeline",
+      "label": "Work Project Lifecycle",
+      "nodes": [
+        "project_alpha_note",
+        "client_project_b_note",
+        "product_launch_note",
+        "quarterly_review_note"
+      ],
+      "relation": "participate_in",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "test-vault/notes/project-alpha.md"
+    },
+    {
+      "id": "daily_note_integrations",
+      "label": "Daily Note Plugin Integrations",
+      "nodes": [
+        "daily_note_priority",
+        "periodic_notes_plugin",
+        "core_daily_notes_plugin"
+      ],
+      "relation": "form",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "src/utils/CLAUDE.md"
+    }
+  ],
+  "input_tokens": 0,
+  "output_tokens": 0
+}

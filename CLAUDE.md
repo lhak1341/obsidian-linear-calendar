@@ -23,3 +23,15 @@ Obsidian plugin — horizontal year-at-a-glance timeline rendered from note fron
 - Sticky headers need `z-index` > 5 (bars use `z-index: 5`) or they get painted over on scroll
 - To fill a cell with a dynamic background, put the class on the container or use `position: absolute; inset: 0` — `width/height: 100%` on a `<span>` inside a flex column is unreliable
 - In Settings UI, `Setting.then(cb)` is synchronous and returns `this` — use it mid-chain for raw DOM injection into `controlEl` (e.g. live-preview inputs) while still chaining `.addColorPicker()` / `.addExtraButton()`
+- Command `name` must not include plugin name (e.g. `"Open"` not `"Open Linear Calendar"`) — Obsidian prepends plugin name in palette automatically
+- Settings headings: use `new Setting(containerEl).setName("...").setHeading()` not `createEl("h2"/"h3")`; omit top-level plugin title (sidebar shows it); no "setting" or "option" in heading text
+
+## graphify
+
+This project has a knowledge graph at graphify-out/ with god nodes, community structure, and cross-file relationships.
+
+Rules:
+- ALWAYS read graphify-out/GRAPH_REPORT.md before reading any source files, running grep/glob searches, or answering codebase questions. The graph is your primary map of the codebase.
+- IF graphify-out/wiki/index.md EXISTS, navigate it instead of reading raw files
+- For cross-module "how does X relate to Y" questions, prefer `graphify query "<question>"`, `graphify path "<A>" "<B>"`, or `graphify explain "<concept>"` over grep — these traverse the graph's EXTRACTED + INFERRED edges instead of scanning files
+- After modifying code, run `graphify update .` to keep the graph current (AST-only, no API cost).

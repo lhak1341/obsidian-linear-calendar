@@ -1,5 +1,9 @@
 # Utils
 
+## Moment
+
+- Always `import { moment } from 'obsidian'` — never `window.moment` (risks version mismatch)
+
 ## Daily note plugin priority
 
 When reading daily note folder/format settings, check in order:
