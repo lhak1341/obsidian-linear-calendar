@@ -24,9 +24,10 @@ function makeItem(tag?: string): CalendarItem {
 
 function makeSettings(colorMap: Record<string, string> = {}): PluginSettings {
 	return {
-		defaultMapping: { titleProp: "__filename__", startDateProp: "datestart", endDateProp: "dateend", iconProp: "icon" },
+		defaultMapping: { titleProp: "__filename__", startDateProp: "datestart", endDateProp: "dateend", iconProp: "icon", anniversaryProp: "anniversary" },
 		viewConfigs: {},
 		colorMap,
+		iconMap: {},
 		alignMode: "date",
 		dailyNoteColor: null,
 		dailyNoteStyle: "tint",

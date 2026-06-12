@@ -128,6 +128,35 @@ export class GridRenderer {
 		return this.monthRows;
 	}
 
+	/** Render a single month into the container — for embedding in other views. */
+	renderMonth(
+		year: number,
+		month: number,
+		alignMode: AlignMode = "date",
+		dailyNoteDates: Set<string> = new Set(),
+		dailyNoteColor: string | null = null,
+		dailyNoteStyle: DailyNoteStyle = "tint",
+	): MonthRowRef {
+		this.containerEl.empty();
+		this.monthRows = [];
+		this.containerEl.removeClass("lc-vert-grid");
+		this.containerEl.addClass("linear-calendar-grid");
+		this.containerEl.style.removeProperty("grid-template-columns");
+		this.containerEl.style.removeProperty("grid-template-rows");
+		this.containerEl.style.minWidth = "";
+
+		const totalCols = this.computeAlignedSize(year, alignMode);
+		const colTemplate = `repeat(${totalCols}, 1fr)`;
+		const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+		const rowRef = this.renderMonthRow(
+			year, month, daysInMonth, colTemplate, alignMode, totalCols,
+			dailyNoteDates, dailyNoteColor, dailyNoteStyle,
+		);
+		this.monthRows.push(rowRef);
+		return rowRef;
+	}
+
 	private renderMonthRow(
 		year: number,
 		month: number,

@@ -61,7 +61,7 @@ export function getDailyNoteMap(app: App): Map<string, TFile> {
 
 	Vault.recurseChildren(folderAbstract, (file) => {
 		if (!(file instanceof TFile) || file.extension !== "md") return;
-		const date = moment(file.basename, format, true);
+		const date = (moment as unknown as (s: string, fmt: string, strict: boolean) => { isValid(): boolean; format(f: string): string })(file.basename, format, true);
 		if (date.isValid()) {
 			result.set(date.format("YYYY-MM-DD"), file);
 		}

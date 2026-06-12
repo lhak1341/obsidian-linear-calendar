@@ -6,7 +6,7 @@
 	"scripts": {
 		"dev": "node esbuild.config.mjs",
 		"build": "node esbuild.config.mjs production",
-		"deploy": "node esbuild.config.mjs production && cp main.js manifest.json styles.css test-vault/.obsidian/plugins/obsidian-linear-calendar/",
+		"deploy": "node esbuild.config.mjs production && cp main.js manifest.json styles.css test-vault/.obsidian/plugins/obsidian-linear-calendar/ && cp main.js manifest.json styles.css \"/Users/lhak/Library/Mobile Documents/iCloud~md~obsidian/Documents/lhakZettel/.obsidian/plugins/obsidian-linear-calendar/\"",
 		"test": "vitest run",
 		"test:watch": "vitest"
 	},
