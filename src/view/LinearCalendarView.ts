@@ -1,12 +1,8 @@
 import { ItemView, Menu, Notice, TFile, WorkspaceLeaf, debounce, moment, normalizePath, setIcon } from "obsidian";
-import type { PluginSettings, ColumnMapping, CalendarItem } from "../types";
+import type { PluginSettings, ColumnMapping } from "../types";
 import { VIEW_TYPE_LINEAR_CALENDAR } from "../constants";
 import { FrontmatterScanner } from "../data/FrontmatterScanner";
-import { GridRenderer } from "./GridRenderer";
-import { BarRenderer } from "./BarRenderer";
-import { buildTagColorMap } from "../utils/colorUtils";
-import { NowIndicator } from "./NowIndicator";
-import { Tooltip } from "./Tooltip";
+import { CalendarRenderer } from "./CalendarRenderer";
 import { createDailyNote, getDailyNoteMap } from "../utils/dailyNotes";
 
 interface ViewState {
@@ -26,7 +22,7 @@ interface ViewState {
  *   year nav buttons, layout toggle, category chip clicks, ResizeObserver (debounced 200ms).
  *
  * Lifecycle: onOpen builds DOM once; renderCalendar() clears and repaints the grid each call.
- *   onClose cleans up NowIndicator timer and Tooltip listener.
+ *   onClose cleans up CalendarRenderer (NowIndicator timer, Tooltip listener).
  */
 export class LinearCalendarView extends ItemView {
 	private currentYear: number;
@@ -34,11 +30,7 @@ export class LinearCalendarView extends ItemView {
 	private rowHeight = 0;
 	private layout: "horizontal" | "vertical";
 	private layoutToggleBtn!: HTMLElement;
-	private scanner: FrontmatterScanner;
-	private gridRenderer!: GridRenderer;
-	private barRenderer: BarRenderer;
-	private nowIndicator: NowIndicator;
-	private tooltip!: Tooltip;
+	private calendarRenderer!: CalendarRenderer;
 	private settings: PluginSettings;
 	private getMapping: () => ColumnMapping;
 	private categoriesContainer!: HTMLElement;
@@ -54,13 +46,6 @@ export class LinearCalendarView extends ItemView {
 		this.getMapping = getMapping;
 		this.currentYear = new Date().getFullYear();
 		this.layout = window.innerWidth < 768 ? "vertical" : "horizontal";
-		this.scanner = new FrontmatterScanner(this.app);
-		this.barRenderer = new BarRenderer(
-			this.app,
-			() => this.getMapping(),
-			() => this.currentYear,
-		);
-		this.nowIndicator = new NowIndicator();
 	}
 
 	getViewType(): string {
@@ -80,22 +65,34 @@ export class LinearCalendarView extends ItemView {
 		contentEl.empty();
 		contentEl.addClass("linear-calendar-container");
 
-		// Toolbar
 		const toolbar = contentEl.createDiv({ cls: "linear-calendar-toolbar" });
 		this.buildToolbar(toolbar);
 
-		// Scroll wrapper
-		const scrollWrapper = contentEl.createDiv({
-			cls: "linear-calendar-scroll",
-		});
+		const scrollWrapper = contentEl.createDiv({ cls: "linear-calendar-scroll" });
 
-		this.gridRenderer = new GridRenderer(scrollWrapper);
-		this.gridRenderer.setDayDblClickHandler((year, month, day) => {
-			this.createNoteForDate(year, month, day);
-		});
-		this.tooltip = new Tooltip(contentEl);
+		const scanner = new FrontmatterScanner(this.app);
+		this.calendarRenderer = new CalendarRenderer(
+			this.app,
+			scrollWrapper,
+			this.categoriesContainer,
+			scanner,
+			this.settings,
+			() => this.getMapping(),
+			{
+				onDayDblClick: (y, m, d) => this.createNoteForDate(y, m, d),
+				onDayContextMenu: (y, m, d, e) => this.showDayContextMenu(y, m, d, e),
+				onCategoryToggle: (tag) => {
+					if (this.hiddenCategories.has(tag)) {
+						this.hiddenCategories.delete(tag);
+					} else {
+						this.hiddenCategories.add(tag);
+					}
+					this.renderCalendar();
+				},
+				onDropCommit: (filePath, newStart, newEnd) => this.commitDrop(filePath, newStart, newEnd),
+			},
+		);
 
-		// Shift+scroll horizontal pan (horizontal mode only)
 		this.registerDomEvent(scrollWrapper, "wheel", (evt: WheelEvent) => {
 			if (evt.shiftKey && this.layout === "horizontal") {
 				evt.preventDefault();
@@ -105,10 +102,8 @@ export class LinearCalendarView extends ItemView {
 
 		this.renderCalendar();
 
-		// Scroll to today on first open
 		requestAnimationFrame(() => this.scrollToNow());
 
-		// Keyboard shortcuts
 		contentEl.tabIndex = 0;
 		this.registerDomEvent(contentEl, "keydown", (evt: KeyboardEvent) => {
 			this.handleKeydown(evt);
@@ -136,8 +131,7 @@ export class LinearCalendarView extends ItemView {
 	}
 
 	async onClose(): Promise<void> {
-		this.nowIndicator.cleanup();
-		this.tooltip.cleanup();
+		this.calendarRenderer.cleanup();
 	}
 
 	getState(): Record<string, unknown> {
@@ -202,7 +196,6 @@ export class LinearCalendarView extends ItemView {
 			this.scrollToNow();
 		});
 
-		// Row height slider
 		const densityWrap = toolbar.createDiv({ cls: "lc-density" });
 		const slider = densityWrap.createEl("input", {
 			cls: "lc-density-slider",
@@ -217,13 +210,11 @@ export class LinearCalendarView extends ItemView {
 		(slider as HTMLInputElement).value = String(this.rowHeight);
 		this.registerDomEvent(slider as HTMLInputElement, "input", () => {
 			this.rowHeight = Number((slider as HTMLInputElement).value);
-			this.applyRowHeightVars();
+			this.calendarRenderer.updateRowHeight(this.layout, this.rowHeight);
 		});
 
-		// Categories filter chips (before toggle so toggle sits at the end)
 		this.categoriesContainer = toolbar.createDiv({ cls: "lc-categories" });
 
-		// Layout toggle button
 		this.layoutToggleBtn = toolbar.createEl("button", {
 			cls: "lc-layout-toggle clickable-icon",
 		});
@@ -237,7 +228,6 @@ export class LinearCalendarView extends ItemView {
 	}
 
 	private updateLayoutToggleIcon(): void {
-		// Icon shows what you'll switch TO
 		setIcon(this.layoutToggleBtn, this.layout === "horizontal" ? "chevrons-up-down" : "chevrons-left-right");
 		this.layoutToggleBtn.setAttribute(
 			"aria-label",
@@ -250,146 +240,66 @@ export class LinearCalendarView extends ItemView {
 		if (label) label.textContent = String(this.currentYear);
 	}
 
-	private applyRowHeightVars(): void {
-		const grid = this.gridRenderer.getContainer();
-		if (this.layout === "vertical") {
-			grid.style.setProperty("--lc-vert-row-h", `${20 + this.rowHeight * 0.4}px`);
-		} else {
-			grid.style.setProperty("--lc-row-min", `${this.rowHeight * 3}px`);
-		}
-	}
-
 	private renderCalendar(): void {
-		const mapping = this.getMapping();
-		const allItems = this.scanner.scan(mapping, this.currentYear);
-
-		const tagColorMap = buildTagColorMap(allItems, this.settings);
-		this.renderCategories(allItems, tagColorMap);
-
-		const items = allItems.filter((item) => {
-			const tag = item.tags?.[0];
-			if (!tag) return !this.hiddenCategories.has("__uncategorized__");
-			return !this.hiddenCategories.has(tag);
-		});
-
 		if (!this.dailyNoteMapCache) {
 			this.dailyNoteMapCache = getDailyNoteMap(this.app);
 		}
 		const dailyNoteMap = this.dailyNoteMapCache;
-		const dailyNoteDates = new Set(dailyNoteMap.keys());
-
-		const pad = (n: number) => String(n).padStart(2, "0");
-
-		this.gridRenderer.setDayClickHandler((year, month, day) => {
-			const file = dailyNoteMap.get(`${year}-${pad(month + 1)}-${pad(day)}`);
-			if (file) this.app.workspace.openLinkText(file.path, "", false);
-		});
-
-		this.gridRenderer.setDayContextMenuHandler((year, month, day, event) => {
-			const dateKey = `${year}-${pad(month + 1)}-${pad(day)}`;
-			const menu = new Menu();
-			if (!dailyNoteMap.has(dateKey)) {
-				menu.addItem((item) =>
-					item.setTitle("Create daily note")
-						.setIcon("file-plus")
-						.onClick(async () => {
-							try {
-								const file = await createDailyNote(this.app, year, month, day);
-								await this.app.workspace.openLinkText(file.path, "", false);
-							} catch (err) {
-								console.error("[linear-calendar] create daily note failed:", err);
-								new Notice("Failed to create daily note.");
-							}
-						})
-				);
-			}
-			menu.addItem((item) =>
-				item.setTitle("Create event")
-					.setIcon("calendar-plus")
-					.onClick(() => this.createNoteForDate(year, month, day))
-			);
-			menu.showAtMouseEvent(event);
-		});
-
-		let monthRows;
-		if (this.layout === "vertical") {
-			monthRows = this.gridRenderer.renderVertical(
-				this.currentYear,
-				dailyNoteDates,
-				this.settings.dailyNoteColor,
-				this.settings.dailyNoteStyle,
-				this.settings.alignMode,
-			);
-		} else {
-			monthRows = this.gridRenderer.render(
-				this.currentYear,
-				0,
-				this.settings.alignMode,
-				dailyNoteDates,
-				this.settings.dailyNoteColor,
-				this.settings.dailyNoteStyle,
-			);
-		}
-
-		this.applyRowHeightVars();
-
-		const tagIconMap = new Map(Object.entries(this.settings.iconMap));
-		this.barRenderer.render(monthRows, items, tagColorMap, tagIconMap);
-
-		this.nowIndicator.cleanup();
-		this.nowIndicator.render(monthRows, this.currentYear);
-
-		this.tooltip.attach(this.gridRenderer.getContainer());
+		this.calendarRenderer.render(
+			this.currentYear,
+			[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+			this.hiddenCategories,
+			this.layout,
+			this.settings.alignMode,
+			this.rowHeight,
+			new Set(dailyNoteMap.keys()),
+			dailyNoteMap,
+		);
 	}
 
-	private renderCategories(
-		items: CalendarItem[],
-		tagColorMap: Map<string, string>,
-	): void {
-		this.categoriesContainer.empty();
-
-		const categories = new Map<string, number>();
-		for (const item of items) {
-			const tag = item.tags?.[0] ?? "__uncategorized__";
-			categories.set(tag, (categories.get(tag) ?? 0) + 1);
+	private showDayContextMenu(year: number, month: number, day: number, event: MouseEvent): void {
+		const pad = (n: number) => String(n).padStart(2, "0");
+		const dateKey = `${year}-${pad(month + 1)}-${pad(day)}`;
+		const dailyNoteMap = this.dailyNoteMapCache ?? new Map<string, TFile>();
+		const menu = new Menu();
+		if (!dailyNoteMap.has(dateKey)) {
+			menu.addItem((item) =>
+				item.setTitle("Create daily note")
+					.setIcon("file-plus")
+					.onClick(async () => {
+						try {
+							const file = await createDailyNote(this.app, year, month, day);
+							await this.app.workspace.openLinkText(file.path, "", false);
+						} catch (err) {
+							console.error("[linear-calendar] create daily note failed:", err);
+							new Notice("Failed to create daily note.");
+						}
+					})
+			);
 		}
+		menu.addItem((item) =>
+			item.setTitle("Create event")
+				.setIcon("calendar-plus")
+				.onClick(() => this.createNoteForDate(year, month, day))
+		);
+		menu.showAtMouseEvent(event);
+	}
 
-		if (categories.size <= 1) return;
-
-		for (const [tag, count] of categories) {
-			const isHidden = this.hiddenCategories.has(tag);
-			const displayName =
-				tag === "__uncategorized__"
-					? "Other"
-					: tag.replace(/^linear-calendar\//, "");
-
-			const color = tagColorMap.get(tag) ?? "#888";
-
-			const chip = this.categoriesContainer.createDiv({
-				cls: `lc-category-chip ${isHidden ? "lc-category-hidden" : ""}`,
-			});
-
-			const dot = chip.createSpan({ cls: "lc-category-dot" });
-			dot.style.backgroundColor = color;
-
-			chip.createSpan({
-				cls: "lc-category-name",
-				text: displayName,
-			});
-
-			chip.createSpan({
-				cls: "lc-category-count",
-				text: String(count),
-			});
-
-			chip.addEventListener("click", () => {
-				if (this.hiddenCategories.has(tag)) {
-					this.hiddenCategories.delete(tag);
-				} else {
-					this.hiddenCategories.add(tag);
+	private async commitDrop(filePath: string, newStart: Date, newEnd: Date): Promise<void> {
+		const mapping = this.getMapping();
+		const file = this.app.vault.getAbstractFileByPath(filePath) as TFile | null;
+		if (!file) return;
+		const pad = (n: number) => String(n).padStart(2, "0");
+		const fmt = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+		try {
+			await this.app.fileManager.processFrontMatter(file, (fm) => {
+				fm[mapping.startDateProp] = fmt(newStart);
+				if (fmt(newStart) !== fmt(newEnd) || fm[mapping.endDateProp]) {
+					fm[mapping.endDateProp] = fmt(newEnd);
 				}
-				this.renderCalendar();
 			});
+		} catch (err) {
+			console.error("[linear-calendar] drag write failed:", err);
 		}
 	}
 

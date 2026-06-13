@@ -2,6 +2,9 @@
 
 Obsidian plugin — horizontal year-at-a-glance timeline rendered from note frontmatter.
 
+## Public API
+- `mountMonthStrip(container, categoriesEl)` and `getCalendarData(year)` on `LinearCalendarPlugin` are consumed by `obsidian-lhak-dashboard` at runtime; signature changes require coordinating both repos
+
 ## Build & Test
 
 - `npm run build` — production build → main.js

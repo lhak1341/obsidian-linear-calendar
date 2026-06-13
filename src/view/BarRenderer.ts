@@ -1,5 +1,5 @@
 import { type App, Menu, setIcon } from "obsidian";
-import type { CalendarItem, ColumnMapping } from "../types";
+import type { CalendarItem } from "../types";
 import { COLOR_PALETTE, MAX_WATERFALL_ROWS, MAX_WATERFALL_COLS_VERT } from "../constants";
 import { formatDateRange } from "../utils/dateUtils";
 import { getContrastColor } from "../utils/colorUtils";
@@ -18,10 +18,10 @@ export class BarRenderer {
 
 	constructor(
 		private app: App,
-		getMapping: () => ColumnMapping,
 		getYear: () => number,
+		onDropCommit: (filePath: string, newStart: Date, newEnd: Date) => Promise<void>,
 	) {
-		this.dragHandler = new DragHandler(app, getMapping, getYear);
+		this.dragHandler = new DragHandler(getYear, onDropCommit);
 	}
 
 	render(

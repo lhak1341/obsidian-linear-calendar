@@ -1,5 +1,3 @@
-import type { App, TFile } from "obsidian";
-import type { ColumnMapping } from "../types";
 import type { MonthRowRef } from "./GridRenderer";
 
 interface DragContext {
@@ -25,16 +23,10 @@ interface GhostSeg {
 	endDay: number;
 }
 
-const pad = (n: number) => String(n).padStart(2, "0");
-
 function addDays(date: Date, days: number): Date {
 	const d = new Date(date);
 	d.setDate(d.getDate() + days);
 	return d;
-}
-
-function formatDate(d: Date): string {
-	return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
 function mDays(month: number, year: number): number {
@@ -106,9 +98,8 @@ export class DragHandler {
 	private prevDayDelta: number | null = null;
 
 	constructor(
-		private app: App,
-		private getMapping: () => ColumnMapping,
 		private getYear: () => number,
+		private onDropCommit: (filePath: string, newStart: Date, newEnd: Date) => Promise<void>,
 	) {
 		this.boundMouseMove = this.onMouseMove.bind(this);
 		this.boundMouseUp = this.onMouseUp.bind(this);
@@ -350,23 +341,8 @@ export class DragHandler {
 
 		if (dayDelta === 0) return;
 
-		// Write new dates — don't re-render immediately.
-		// metadataCache.on('changed') will trigger re-render
-		// once the cache has actually re-indexed the file.
-		const mapping = this.getMapping();
-		const file = this.app.vault.getAbstractFileByPath(filePath) as TFile | null;
-		if (!file) return;
-
-		try {
-			await this.app.fileManager.processFrontMatter(file, (fm) => {
-				fm[mapping.startDateProp] = formatDate(newStart);
-				if (formatDate(newStart) !== formatDate(newEnd) || fm[mapping.endDateProp]) {
-					fm[mapping.endDateProp] = formatDate(newEnd);
-				}
-			});
-		} catch (err) {
-			console.error("[linear-calendar] drag write failed:", err);
-		}
+		// Delegate write to caller — metadataCache.on('changed') triggers re-render
+		await this.onDropCommit(filePath, newStart, newEnd);
 	}
 
 	cleanup(): void {
