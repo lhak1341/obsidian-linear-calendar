@@ -39,18 +39,6 @@
     "mtime": 1777600251.5077252,
     "hash": "56d123a77b277fdfe73860151b202641"
   },
-  "/Users/lhak/workspace/github.com/lhak1341/obsidian-linear-calendar/src/utils/dateUtils.test.ts": {
-    "mtime": 1777616539.041517,
-    "hash": "0752a1c8db92832184cf66e466261efc"
-  },
-  "/Users/lhak/workspace/github.com/lhak1341/obsidian-linear-calendar/src/utils/segmentByMonth.test.ts": {
-    "mtime": 1777600347.1014452,
-    "hash": "6f43e7d70d993c13e22f76ee0e7b4739"
-  },
-  "/Users/lhak/workspace/github.com/lhak1341/obsidian-linear-calendar/src/utils/colorUtils.test.ts": {
-    "mtime": 1781220012.6548803,
-    "hash": "12d0a01a8171979cb55a113b57d253f4"
-  },
   "/Users/lhak/workspace/github.com/lhak1341/obsidian-linear-calendar/src/view/GridRenderer.ts": {
     "mtime": 1781310161.4746528,
     "hash": "02ed63168d4f0cda5e90d1701f126fbb"

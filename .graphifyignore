@@ -25,5 +25,9 @@ Thumbs.db
 .fallow/
 temp/
 
+# Test files — distort centrality/community detection; not production architecture
+*.test.ts
+*.spec.ts
+
 # Graphify output
 graphify-out/
