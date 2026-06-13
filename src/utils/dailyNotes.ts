@@ -1,7 +1,7 @@
 import { App, moment, normalizePath, TFile, TFolder, Vault } from "obsidian";
 
 interface DailyPluginSettings {
-	daily?: { enabled: boolean; format?: string; folder?: string };
+	daily?: { enabled: boolean; format?: string; folder?: string; template?: string };
 }
 
 interface ObsidianPlugins {
@@ -11,6 +11,7 @@ interface ObsidianPlugins {
 interface CoreDailyNoteOptions {
 	format?: string;
 	folder?: string;
+	template?: string;
 }
 
 interface ObsidianInternalPlugins {
@@ -22,7 +23,7 @@ interface AppInternal extends App {
 	internalPlugins: ObsidianInternalPlugins;
 }
 
-function getDailyNoteSettings(app: App): { folder: string; format: string } {
+function getDailyNoteSettings(app: App): { folder: string; format: string; template: string } {
 	const defaultFormat = "YYYY-MM-DD";
 	try {
 		const { plugins, internalPlugins } = app as AppInternal;
@@ -30,23 +31,56 @@ function getDailyNoteSettings(app: App): { folder: string; format: string } {
 		// 1. lhak-periodic-notes (fork)
 		const lhakPN = plugins?.getPlugin("lhak-periodic-notes");
 		if (lhakPN?.settings?.daily?.enabled) {
-			const { format, folder } = lhakPN.settings.daily;
-			return { format: format || defaultFormat, folder: (folder || "").trim() };
+			const { format, folder, template } = lhakPN.settings.daily;
+			return { format: format || defaultFormat, folder: (folder || "").trim(), template: (template || "").trim() };
 		}
 
 		// 2. periodic-notes (original)
 		const periodicNotes = plugins?.getPlugin("periodic-notes");
 		if (periodicNotes?.settings?.daily?.enabled) {
-			const { format, folder } = periodicNotes.settings.daily;
-			return { format: format || defaultFormat, folder: (folder || "").trim() };
+			const { format, folder, template } = periodicNotes.settings.daily;
+			return { format: format || defaultFormat, folder: (folder || "").trim(), template: (template || "").trim() };
 		}
 
 		// 3. built-in daily-notes core plugin
 		const opts = internalPlugins?.getPluginById("daily-notes")?.instance?.options ?? {};
-		return { format: opts.format || defaultFormat, folder: (opts.folder || "").trim() };
+		return { format: opts.format || defaultFormat, folder: (opts.folder || "").trim(), template: (opts.template || "").trim() };
 	} catch {
-		return { folder: "", format: defaultFormat };
+		return { folder: "", format: defaultFormat, template: "" };
 	}
+}
+
+export async function createDailyNote(app: App, year: number, month: number, day: number): Promise<TFile> {
+	const { folder, format, template } = getDailyNoteSettings(app);
+	const date = (moment as unknown as (d: Date) => { format(f: string): string })(new Date(year, month, day));
+	const filename = date.format(format);
+
+	if (folder) {
+		const normalizedFolder = normalizePath(folder);
+		if (!app.vault.getAbstractFileByPath(normalizedFolder)) {
+			await app.vault.createFolder(normalizedFolder);
+		}
+	}
+
+	let content = "";
+	if (template) {
+		const templatePath = normalizePath(template.endsWith(".md") ? template : `${template}.md`);
+		const templateFile = app.vault.getAbstractFileByPath(templatePath);
+		if (templateFile instanceof TFile) {
+			const raw = await app.vault.read(templateFile);
+			const now = (moment as unknown as () => { format(f: string): string })();
+			content = raw
+				.replace(/{{\s*date\s*}}/gi, filename)
+				.replace(/{{\s*time\s*}}/gi, now.format("HH:mm"))
+				.replace(/{{\s*title\s*}}/gi, filename);
+		}
+	}
+
+	const filePath = folder
+		? normalizePath(`${folder}/${filename}.md`)
+		: normalizePath(`${filename}.md`);
+
+	return await app.vault.create(filePath, content);
 }
 
 export function getDailyNoteMap(app: App): Map<string, TFile> {

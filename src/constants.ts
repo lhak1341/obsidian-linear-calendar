@@ -18,6 +18,9 @@ export const DEFAULT_SETTINGS: PluginSettings = {
 	alignMode: "date",
 	dailyNoteColor: null,
 	dailyNoteStyle: "tint",
+	newEventFolder: "",
+	newEventDateFormat: "YYYY-MM-DD",
+	newEventTemplate: "",
 };
 
 // Google Calendar / Material Design palette

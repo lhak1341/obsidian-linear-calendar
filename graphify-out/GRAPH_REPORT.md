@@ -1,16 +1,16 @@
-# Graph Report - obsidian-linear-calendar  (2026-05-15)
+# Graph Report - obsidian-linear-calendar  (2026-06-13)
 
 ## Corpus Check
-- 24 files · ~9,320 words
+- 24 files · ~10,494 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 232 nodes · 347 edges · 47 communities (12 shown, 35 thin omitted)
-- Extraction: 97% EXTRACTED · 3% INFERRED · 0% AMBIGUOUS · INFERRED: 9 edges (avg confidence: 0.88)
+- 238 nodes · 374 edges · 47 communities (13 shown, 34 thin omitted)
+- Extraction: 98% EXTRACTED · 2% INFERRED · 0% AMBIGUOUS · INFERRED: 9 edges (avg confidence: 0.88)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `9d929194`
+- Built from commit: `3e1213d4`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -63,15 +63,15 @@
 
 ## God Nodes (most connected - your core abstractions)
 1. `LinearCalendarView` - 20 edges
-2. `GridRenderer` - 13 edges
-3. `DragHandler` - 12 edges
-4. `LinearCalendarSettingTab` - 11 edges
-5. `CalendarItem` - 9 edges
-6. `LinearCalendarView` - 9 edges
-7. `ColumnMapping` - 8 edges
-8. `NowIndicator` - 8 edges
-9. `Tooltip` - 8 edges
-10. `BarRenderer` - 8 edges
+2. `GridRenderer` - 16 edges
+3. `LinearCalendarSettingTab` - 12 edges
+4. `DragHandler` - 12 edges
+5. `CalendarItem` - 10 edges
+6. `NowIndicator` - 9 edges
+7. `Tooltip` - 9 edges
+8. `BarRenderer` - 9 edges
+9. `LinearCalendarView` - 9 edges
+10. `LinearCalendarPlugin` - 8 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `FrontmatterScanner` --references--> `Move Apartments`  [INFERRED]
@@ -89,35 +89,39 @@
 - **Work Project Lifecycle** — project_alpha_note, client_project_b_note, product_launch_note, quarterly_review_note [INFERRED 0.85]
 - **Daily Note Plugin Integrations** — daily_note_priority, periodic_notes_plugin, core_daily_notes_plugin [INFERRED 0.95]
 
-## Communities (47 total, 35 thin omitted)
+## Communities (47 total, 34 thin omitted)
 
 ### Community 0 - "Core Data & Constants"
-Cohesion: 0.15
-Nodes (19): DataSource, CacheEntry, COLOR_PALETTE, DEFAULT_MAPPING, DEFAULT_SETTINGS, AlignMode, CalendarItem, ColumnMapping (+11 more)
+Cohesion: 0.16
+Nodes (20): DataSource, CacheEntry, FrontmatterScanner, COLOR_PALETTE, DEFAULT_MAPPING, DEFAULT_SETTINGS, AlignMode, CalendarItem (+12 more)
 
 ### Community 1 - "Drag & Layout Utilities"
 Cohesion: 0.13
 Nodes (11): addDays(), buildOccupancy(), DragContext, DragHandler, findFreeRow(), formatDate(), GhostSeg, mDays() (+3 more)
 
 ### Community 2 - "Data Scanning & Metadata"
-Cohesion: 0.15
-Nodes (16): FrontmatterScanner, dateFromDayOfYear(), dayOfYear(), daysInYear(), formatDateRange(), isLeapYear(), monthBoundaries(), parseDateString() (+8 more)
+Cohesion: 0.18
+Nodes (14): dateFromDayOfYear(), dayOfYear(), daysInYear(), isLeapYear(), monthBoundaries(), parseDateString(), projectAnniversaryDates(), d (+6 more)
 
 ### Community 4 - "Rendering & Visual Styles"
 Cohesion: 0.12
 Nodes (17): BarRenderer, Birthday Party, Client Project A, buildTagColorMap, getDailyNoteMap, parseDateString, projectAnniversaryDates, DragHandler (+9 more)
 
 ### Community 5 - "Temporal Logic"
-Cohesion: 0.21
+Cohesion: 0.19
 Nodes (3): computeSolidColor(), computeTint(), GridRenderer
 
-### Community 6 - "Notes & Bar Display"
-Cohesion: 0.23
-Nodes (9): daysInMonth(), groupSegmentsByMonth(), MonthSegment, segmentByMonth(), items, map, segs, src (+1 more)
+### Community 7 - "Configuration Interface"
+Cohesion: 0.25
+Nodes (8): daysInMonth(), groupSegmentsByMonth(), MonthSegment, segmentByMonth(), items, map, segs, src
 
 ### Community 8 - "User Feedback (Tooltips)"
-Cohesion: 0.29
-Nodes (7): AppInternal, CoreDailyNoteOptions, DailyPluginSettings, getDailyNoteMap(), getDailyNoteSettings(), ObsidianInternalPlugins, ObsidianPlugins
+Cohesion: 0.28
+Nodes (8): AppInternal, CoreDailyNoteOptions, createDailyNote(), DailyPluginSettings, getDailyNoteMap(), getDailyNoteSettings(), ObsidianInternalPlugins, ObsidianPlugins
+
+### Community 9 - "Temporal Markers"
+Cohesion: 0.33
+Nodes (3): getContrastColor(), formatDateRange(), BarRenderer
 
 ### Community 13 - "Fragment 13"
 Cohesion: 0.4
@@ -134,16 +138,16 @@ Nodes (3): Daily note plugin priority, Moment, Utils
 ## Knowledge Gaps
 - **75 isolated node(s):** `DEFAULT_MAPPING`, `DailyPluginSettings`, `ObsidianPlugins`, `CoreDailyNoteOptions`, `ObsidianInternalPlugins` (+70 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **35 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **34 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `LinearCalendarView` connect `View & Note Integration` to `Core Data & Constants`, `Drag & Layout Utilities`?**
-  _High betweenness centrality (0.097) - this node is a cross-community bridge._
+  _High betweenness centrality (0.096) - this node is a cross-community bridge._
 - **Why does `GridRenderer` connect `Temporal Logic` to `Core Data & Constants`?**
-  _High betweenness centrality (0.064) - this node is a cross-community bridge._
-- **Why does `DragHandler` connect `Drag & Layout Utilities` to `Notes & Bar Display`?**
+  _High betweenness centrality (0.075) - this node is a cross-community bridge._
+- **Why does `DragHandler` connect `Drag & Layout Utilities` to `Core Data & Constants`?**
   _High betweenness centrality (0.057) - this node is a cross-community bridge._
 - **What connects `DEFAULT_MAPPING`, `DailyPluginSettings`, `ObsidianPlugins` to the rest of the system?**
   _75 weakly-connected nodes found - possible documentation gaps or missing edges._

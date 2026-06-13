@@ -18,6 +18,7 @@ export class LinearCalendarSettingTab extends PluginSettingTab {
 		containerEl.empty();
 		const mapping = this.plugin.settings.defaultMapping;
 		this.renderGeneralSettings(containerEl, mapping);
+		this.renderNewEventSettings(containerEl);
 		this.renderDailyNoteSettings(containerEl);
 		this.renderColorMapSection(containerEl, mapping);
 	}
@@ -116,6 +117,49 @@ export class LinearCalendarSettingTab extends PluginSettingTab {
 					.setValue(mapping.anniversaryProp)
 					.onChange(async (value) => {
 						mapping.anniversaryProp = value || "anniversary";
+						await this.plugin.saveSettings();
+					}),
+			);
+	}
+
+	private renderNewEventSettings(containerEl: HTMLElement): void {
+		new Setting(containerEl).setName("New Event").setHeading();
+
+		new Setting(containerEl)
+			.setName("New event folder")
+			.setDesc("Folder where new events are created via right-click. Leave empty to use vault root.")
+			.addText((text) =>
+				text
+					.setPlaceholder("e.g. Events")
+					.setValue(this.plugin.settings.newEventFolder)
+					.onChange(async (value) => {
+						this.plugin.settings.newEventFolder = value.trim();
+						await this.plugin.saveSettings();
+					}),
+			);
+
+		new Setting(containerEl)
+			.setName("Filename date format")
+			.setDesc("Moment.js format for the date prefix in new event filenames.")
+			.addText((text) =>
+				text
+					.setPlaceholder("YYYY-MM-DD")
+					.setValue(this.plugin.settings.newEventDateFormat)
+					.onChange(async (value) => {
+						this.plugin.settings.newEventDateFormat = value.trim() || "YYYY-MM-DD";
+						await this.plugin.saveSettings();
+					}),
+			);
+
+		new Setting(containerEl)
+			.setName("Templater template")
+			.setDesc("Path to a Templater template file to apply when creating new events. Leave empty to use plain frontmatter. Requires the Templater plugin.")
+			.addText((text) =>
+				text
+					.setPlaceholder("e.g. Templates/Event.md")
+					.setValue(this.plugin.settings.newEventTemplate)
+					.onChange(async (value) => {
+						this.plugin.settings.newEventTemplate = value.trim();
 						await this.plugin.saveSettings();
 					}),
 			);

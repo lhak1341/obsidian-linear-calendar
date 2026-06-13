@@ -29,4 +29,7 @@ export interface PluginSettings {
 	alignMode: AlignMode;
 	dailyNoteColor: string | null; // null = use accent
 	dailyNoteStyle: DailyNoteStyle;
+	newEventFolder: string;
+	newEventDateFormat: string;
+	newEventTemplate: string;
 }

@@ -36,6 +36,7 @@ export class GridRenderer {
 	private monthRows: MonthRowRef[] = [];
 	private onDayClick?: (year: number, month: number, day: number) => void;
 	private onDayDblClick?: (year: number, month: number, day: number) => void;
+	private onDayContextMenu?: (year: number, month: number, day: number, event: MouseEvent) => void;
 
 	constructor(parentEl: HTMLElement) {
 		this.containerEl = parentEl.createDiv({ cls: "linear-calendar-grid" });
@@ -47,6 +48,10 @@ export class GridRenderer {
 
 	setDayDblClickHandler(handler: (year: number, month: number, day: number) => void): void {
 		this.onDayDblClick = handler;
+	}
+
+	setDayContextMenuHandler(handler: (year: number, month: number, day: number, event: MouseEvent) => void): void {
+		this.onDayContextMenu = handler;
 	}
 
 	render(year: number, colMinWidth = 0, alignMode: AlignMode = "date", dailyNoteDates: Set<string> = new Set(), dailyNoteColor: string | null = null, dailyNoteStyle: DailyNoteStyle = "tint"): MonthRowRef[] {
@@ -277,6 +282,11 @@ export class GridRenderer {
 				this.onDayDblClick?.(year, month, day);
 			});
 		}
+
+		cellEl.addEventListener("contextmenu", (event: MouseEvent) => {
+			event.preventDefault();
+			this.onDayContextMenu?.(year, month, day, event);
+		});
 	}
 
 	getContainer(): HTMLElement {
