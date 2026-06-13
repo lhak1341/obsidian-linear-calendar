@@ -8,12 +8,12 @@
     "hash": "546e9fdeb39a397ba5be5f52a9171312"
   },
   "/Users/lhak/workspace/github.com/lhak1341/obsidian-linear-calendar/src/main.ts": {
-    "mtime": 1781224749.2893517,
-    "hash": "fc0fb463f87f093eb93c7172ea965823"
+    "mtime": 1781313170.2479846,
+    "hash": "0c16a0af7c66e9c2c01a0c9ca2934533"
   },
   "/Users/lhak/workspace/github.com/lhak1341/obsidian-linear-calendar/src/settings.ts": {
-    "mtime": 1781311512.4637992,
-    "hash": "91ebed480b25206805d73b1bd277da0e"
+    "mtime": 1781313180.5933058,
+    "hash": "982c67c50332712428c51d60473e8d68"
   },
   "/Users/lhak/workspace/github.com/lhak1341/obsidian-linear-calendar/src/types.ts": {
     "mtime": 1781311498.786783,
@@ -28,8 +28,8 @@
     "hash": "26748e36254dd88e6a888466723dd019"
   },
   "/Users/lhak/workspace/github.com/lhak1341/obsidian-linear-calendar/src/utils/dateUtils.ts": {
-    "mtime": 1777616510.5619624,
-    "hash": "b08545c55b28d293277afbce70bb38fa"
+    "mtime": 1781313149.6445622,
+    "hash": "c16662a464bc301fc955fbf2a517e205"
   },
   "/Users/lhak/workspace/github.com/lhak1341/obsidian-linear-calendar/src/utils/dailyNotes.ts": {
     "mtime": 1781310138.136711,
@@ -56,16 +56,16 @@
     "hash": "02ed63168d4f0cda5e90d1701f126fbb"
   },
   "/Users/lhak/workspace/github.com/lhak1341/obsidian-linear-calendar/src/view/LinearCalendarView.ts": {
-    "mtime": 1781311534.62218,
-    "hash": "d9777f868def3c0a97912d71b925d541"
+    "mtime": 1781313245.6577964,
+    "hash": "43fee27c91aed753ce0dcda2279f6a04"
   },
   "/Users/lhak/workspace/github.com/lhak1341/obsidian-linear-calendar/src/view/DragHandler.ts": {
     "mtime": 1777480227.1228645,
     "hash": "2b1f66cf7936b390cab8559d974c21e6"
   },
   "/Users/lhak/workspace/github.com/lhak1341/obsidian-linear-calendar/src/view/NowIndicator.ts": {
-    "mtime": 1777598689.108452,
-    "hash": "9a0f3d9fccf49b20d764a4ab543b212d"
+    "mtime": 1781313165.5182574,
+    "hash": "adef9d538e6f47c4ce715380882dfa6a"
   },
   "/Users/lhak/workspace/github.com/lhak1341/obsidian-linear-calendar/src/view/Tooltip.ts": {
     "mtime": 1777479201.4588788,

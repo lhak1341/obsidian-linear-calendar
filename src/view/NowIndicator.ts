@@ -4,6 +4,7 @@ export class NowIndicator {
 	private markedElements: HTMLElement[] = [];
 	private createdElements: HTMLElement[] = [];
 	private intervalId: number | null = null;
+	private rafId: number | null = null;
 
 	render(monthRows: MonthRowRef[], year: number): void {
 		this.cleanup();
@@ -11,7 +12,8 @@ export class NowIndicator {
 		const today = new Date();
 		if (today.getFullYear() !== year) return;
 
-		requestAnimationFrame(() => {
+		this.rafId = requestAnimationFrame(() => {
+			this.rafId = null;
 			this.markToday(monthRows, today);
 		});
 
@@ -95,6 +97,10 @@ export class NowIndicator {
 	}
 
 	cleanup(): void {
+		if (this.rafId !== null) {
+			cancelAnimationFrame(this.rafId);
+			this.rafId = null;
+		}
 		if (this.intervalId !== null) {
 			window.clearInterval(this.intervalId);
 			this.intervalId = null;

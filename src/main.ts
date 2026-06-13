@@ -41,10 +41,12 @@ export default class LinearCalendarPlugin extends Plugin {
 	}
 
 	async loadSettings(): Promise<void> {
-		this.settings = Object.assign(
+		const saved = (await this.loadData()) ?? {};
+		this.settings = Object.assign({}, DEFAULT_SETTINGS, saved);
+		this.settings.defaultMapping = Object.assign(
 			{},
-			DEFAULT_SETTINGS,
-			await this.loadData(),
+			DEFAULT_SETTINGS.defaultMapping,
+			saved.defaultMapping ?? {},
 		);
 	}
 

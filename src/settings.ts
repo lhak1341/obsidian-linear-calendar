@@ -2,7 +2,6 @@ import { App, PluginSettingTab, Setting, setIcon, type ColorComponent } from "ob
 import type LinearCalendarPlugin from "./main";
 import { COLOR_PALETTE } from "./constants";
 import { buildTagColorMap } from "./utils/colorUtils";
-import { FrontmatterScanner } from "./data/FrontmatterScanner";
 import type { AlignMode, ColumnMapping, DailyNoteStyle } from "./types";
 
 export class LinearCalendarSettingTab extends PluginSettingTab {
@@ -287,8 +286,7 @@ export class LinearCalendarSettingTab extends PluginSettingTab {
 		colorMap: Record<string, string>,
 		mapping: ColumnMapping,
 	): void {
-		const scanner = new FrontmatterScanner(this.app);
-		const items = scanner.scan(mapping, new Date().getFullYear());
+		const { items } = this.plugin.getCalendarData(new Date().getFullYear());
 		const autoMap = buildTagColorMap(items, this.plugin.settings);
 		const unpinned = [...autoMap.entries()].filter(([tag]) => !(tag in colorMap));
 

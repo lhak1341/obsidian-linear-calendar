@@ -57,12 +57,6 @@ export function parseDateString(value: unknown): Date | null {
 			return parsed;
 		}
 	}
-	if (typeof value === "number") {
-		const parsed = new Date(value);
-		if (!isNaN(parsed.getTime())) {
-			return parsed;
-		}
-	}
 	return null;
 }
 
