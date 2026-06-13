@@ -4,7 +4,7 @@ import { DEFAULT_SETTINGS, VIEW_TYPE_LINEAR_CALENDAR } from "./constants";
 import { LinearCalendarView } from "./view/LinearCalendarView";
 import { LinearCalendarSettingTab } from "./settings";
 import { FrontmatterScanner } from "./data/FrontmatterScanner";
-import { CalendarRenderer } from "./view/CalendarRenderer";
+import { CalendarRenderer, RenderConfig } from "./view/CalendarRenderer";
 import { buildTagColorMap } from "./utils/colorUtils";
 import { getDailyNoteMap } from "./utils/dailyNotes";
 
@@ -111,17 +111,16 @@ export default class LinearCalendarPlugin extends Plugin {
 		);
 
 		render = () => {
-			const dailyNoteMap = getDailyNoteMap(this.app);
-			renderer.render(
+			const config: RenderConfig = {
 				year,
-				[month],
+				months: [month],
 				hiddenCategories,
-				"horizontal",
-				"date",
-				0,
-				new Set(dailyNoteMap.keys()),
-				dailyNoteMap,
-			);
+				layout: "horizontal",
+				alignMode: "date",
+				rowHeight: 0,
+				dailyNoteMap: getDailyNoteMap(this.app),
+			};
+			renderer.render(config);
 		};
 
 		render();

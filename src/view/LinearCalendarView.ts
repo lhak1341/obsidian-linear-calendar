@@ -2,7 +2,7 @@ import { ItemView, Menu, Notice, TFile, WorkspaceLeaf, debounce, moment, normali
 import type { PluginSettings, ColumnMapping } from "../types";
 import { VIEW_TYPE_LINEAR_CALENDAR } from "../constants";
 import { FrontmatterScanner } from "../data/FrontmatterScanner";
-import { CalendarRenderer } from "./CalendarRenderer";
+import { CalendarRenderer, RenderConfig } from "./CalendarRenderer";
 import { createDailyNote, getDailyNoteMap } from "../utils/dailyNotes";
 
 interface ViewState {
@@ -244,17 +244,16 @@ export class LinearCalendarView extends ItemView {
 		if (!this.dailyNoteMapCache) {
 			this.dailyNoteMapCache = getDailyNoteMap(this.app);
 		}
-		const dailyNoteMap = this.dailyNoteMapCache;
-		this.calendarRenderer.render(
-			this.currentYear,
-			[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
-			this.hiddenCategories,
-			this.layout,
-			this.settings.alignMode,
-			this.rowHeight,
-			new Set(dailyNoteMap.keys()),
-			dailyNoteMap,
-		);
+		const config: RenderConfig = {
+			year: this.currentYear,
+			months: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+			hiddenCategories: this.hiddenCategories,
+			layout: this.layout,
+			alignMode: this.settings.alignMode,
+			rowHeight: this.rowHeight,
+			dailyNoteMap: this.dailyNoteMapCache,
+		};
+		this.calendarRenderer.render(config);
 	}
 
 	private showDayContextMenu(year: number, month: number, day: number, event: MouseEvent): void {

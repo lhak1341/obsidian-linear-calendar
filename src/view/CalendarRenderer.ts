@@ -8,6 +8,16 @@ import { BarRenderer } from "./BarRenderer";
 import { NowIndicator } from "./NowIndicator";
 import { Tooltip } from "./Tooltip";
 
+export interface RenderConfig {
+	year: number;
+	months: number[];
+	hiddenCategories: Set<string>;
+	layout: "horizontal" | "vertical";
+	alignMode: AlignMode;
+	rowHeight: number;
+	dailyNoteMap: Map<string, TFile>;
+}
+
 interface CalendarRendererCallbacks {
 	onDayDblClick?: (y: number, m: number, d: number) => void;
 	onDayContextMenu?: (y: number, m: number, d: number, e: MouseEvent) => void;
@@ -42,16 +52,10 @@ export class CalendarRenderer {
 		this.tooltip = new Tooltip(container.parentElement ?? container);
 	}
 
-	render(
-		year: number,
-		months: number[],
-		hiddenCategories: Set<string>,
-		layout: "horizontal" | "vertical",
-		alignMode: AlignMode,
-		rowHeight: number,
-		dailyNoteDates: Set<string>,
-		dailyNoteMap: Map<string, TFile>,
-	): void {
+	render(config: RenderConfig): void {
+		const { year, months, hiddenCategories, layout, alignMode, rowHeight, dailyNoteMap } = config;
+		const dailyNoteDates = new Set(dailyNoteMap.keys());
+
 		this.lastRenderedYear = year;
 		const allItems = this.source.scan(this.getMapping(), year);
 		const tagColorMap = buildTagColorMap(allItems, this.settings);

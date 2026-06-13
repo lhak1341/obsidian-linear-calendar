@@ -1,16 +1,16 @@
 # Graph Report - obsidian-linear-calendar  (2026-06-13)
 
 ## Corpus Check
-- 25 files · ~10,647 words
+- 25 files · ~10,701 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 248 nodes · 408 edges · 48 communities (13 shown, 35 thin omitted)
+- 250 nodes · 412 edges · 48 communities (12 shown, 36 thin omitted)
 - Extraction: 98% EXTRACTED · 2% INFERRED · 0% AMBIGUOUS · INFERRED: 9 edges (avg confidence: 0.88)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `0aa5944f`
+- Built from commit: `f7229bdd`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -90,19 +90,19 @@
 - **Work Project Lifecycle** — project_alpha_note, client_project_b_note, product_launch_note, quarterly_review_note [INFERRED 0.85]
 - **Daily Note Plugin Integrations** — daily_note_priority, periodic_notes_plugin, core_daily_notes_plugin [INFERRED 0.95]
 
-## Communities (48 total, 35 thin omitted)
+## Communities (48 total, 36 thin omitted)
 
 ### Community 0 - "Core Data & Constants"
-Cohesion: 0.16
-Nodes (21): DataSource, CacheEntry, FrontmatterScanner, COLOR_PALETTE, DEFAULT_MAPPING, DEFAULT_SETTINGS, AlignMode, CalendarItem (+13 more)
+Cohesion: 0.15
+Nodes (23): DataSource, CacheEntry, FrontmatterScanner, COLOR_PALETTE, DEFAULT_MAPPING, DEFAULT_SETTINGS, AlignMode, CalendarItem (+15 more)
 
 ### Community 1 - "Drag & Layout Utilities"
 Cohesion: 0.13
 Nodes (11): addDays(), buildOccupancy(), DragContext, DragHandler, findFreeRow(), formatDate(), GhostSeg, mDays() (+3 more)
 
 ### Community 3 - "View & Note Integration"
-Cohesion: 0.18
-Nodes (14): dateFromDayOfYear(), dayOfYear(), daysInYear(), isLeapYear(), monthBoundaries(), parseDateString(), projectAnniversaryDates(), d (+6 more)
+Cohesion: 0.17
+Nodes (15): dateFromDayOfYear(), dayOfYear(), daysInYear(), formatDateRange(), isLeapYear(), monthBoundaries(), parseDateString(), projectAnniversaryDates() (+7 more)
 
 ### Community 4 - "Rendering & Visual Styles"
 Cohesion: 0.12
@@ -120,13 +120,9 @@ Nodes (8): daysInMonth(), groupSegmentsByMonth(), MonthSegment, segmentByMonth()
 Cohesion: 0.28
 Nodes (8): AppInternal, CoreDailyNoteOptions, createDailyNote(), DailyPluginSettings, getDailyNoteMap(), getDailyNoteSettings(), ObsidianInternalPlugins, ObsidianPlugins
 
-### Community 9 - "Temporal Markers"
-Cohesion: 0.33
-Nodes (3): getContrastColor(), formatDateRange(), BarRenderer
-
 ### Community 14 - "Fragment 14"
-Cohesion: 0.4
-Nodes (4): Build & Test, Conventions, graphify, obsidian-linear-calendar
+Cohesion: 0.33
+Nodes (5): Build & Test, Conventions, graphify, obsidian-linear-calendar, Public API
 
 ### Community 15 - "Fragment 15"
 Cohesion: 0.4
@@ -137,21 +133,21 @@ Cohesion: 0.5
 Nodes (3): Daily note plugin priority, Moment, Utils
 
 ## Knowledge Gaps
-- **76 isolated node(s):** `DEFAULT_MAPPING`, `DailyPluginSettings`, `ObsidianPlugins`, `CoreDailyNoteOptions`, `ObsidianInternalPlugins` (+71 more)
+- **77 isolated node(s):** `DEFAULT_MAPPING`, `DailyPluginSettings`, `ObsidianPlugins`, `CoreDailyNoteOptions`, `ObsidianInternalPlugins` (+72 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **35 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **36 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `LinearCalendarView` connect `Data Scanning & Metadata` to `Core Data & Constants`, `Drag & Layout Utilities`?**
-  _High betweenness centrality (0.104) - this node is a cross-community bridge._
+  _High betweenness centrality (0.103) - this node is a cross-community bridge._
 - **Why does `GridRenderer` connect `Temporal Logic` to `Core Data & Constants`?**
   _High betweenness centrality (0.073) - this node is a cross-community bridge._
 - **Why does `DragHandler` connect `Drag & Layout Utilities` to `Core Data & Constants`?**
-  _High betweenness centrality (0.056) - this node is a cross-community bridge._
+  _High betweenness centrality (0.055) - this node is a cross-community bridge._
 - **What connects `DEFAULT_MAPPING`, `DailyPluginSettings`, `ObsidianPlugins` to the rest of the system?**
-  _76 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _77 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `Drag & Layout Utilities` be split into smaller, more focused modules?**
   _Cohesion score 0.13 - nodes in this community are weakly interconnected._
 - **Should `Rendering & Visual Styles` be split into smaller, more focused modules?**
