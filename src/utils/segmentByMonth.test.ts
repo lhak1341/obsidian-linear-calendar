@@ -51,6 +51,14 @@ describe("segmentByMonth", () => {
 		const segs = segmentByMonth(src);
 		segs.forEach((s) => expect(s.item).toBe(src));
 	});
+
+	it("13-month span crosses year boundary with correct count and boundaries", () => {
+		// Jan 15 2023 → Feb 10 2024: Jan23 + Feb–Dec23(11) + Jan24 + Feb24 = 14 segments
+		const segs = segmentByMonth(item("2023-01-15", "2024-02-10"));
+		expect(segs).toHaveLength(14);
+		expect(segs[0]).toMatchObject({ month: 0, startDay: 15, endDay: 31 });
+		expect(segs[segs.length - 1]).toMatchObject({ month: 1, startDay: 1, endDay: 10 });
+	});
 });
 
 describe("groupSegmentsByMonth", () => {

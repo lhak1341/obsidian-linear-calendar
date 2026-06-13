@@ -79,6 +79,20 @@ describe("parseDateString", () => {
 		const d = parseDateString(ts);
 		expect(d).not.toBeNull();
 	});
+	it("whitespace-only string → null", () => expect(parseDateString("   ")).toBeNull());
+	it("Infinity → null", () => expect(parseDateString(Infinity)).toBeNull());
+	it("undefined → null", () => expect(parseDateString(undefined)).toBeNull());
+	it("ISO 8601 with time component parses successfully", () => {
+		const d = parseDateString("2024-06-15T12:00:00Z");
+		expect(d).not.toBeNull();
+		expect(d!.getFullYear()).toBeGreaterThanOrEqual(2024);
+	});
+	it("invalid calendar date Feb 30 rolls to Mar 1 (JS behavior, not rejected)", () => {
+		const d = parseDateString("2024-02-30");
+		expect(d).not.toBeNull();
+		expect(d!.getMonth()).toBe(2); // March
+		expect(d!.getDate()).toBe(1);
+	});
 });
 
 describe("projectAnniversaryDates", () => {
