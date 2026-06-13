@@ -4,6 +4,7 @@ import { DEFAULT_SETTINGS, VIEW_TYPE_LINEAR_CALENDAR } from "./constants";
 import { LinearCalendarView } from "./view/LinearCalendarView";
 import { LinearCalendarSettingTab } from "./settings";
 import { FrontmatterScanner } from "./data/FrontmatterScanner";
+import { ObsidianNoteCreator } from "./NoteCreator";
 import { CalendarRenderer, RenderConfig } from "./view/CalendarRenderer";
 import { buildTagColorMap } from "./utils/colorUtils";
 import { getDailyNoteMap } from "./utils/dailyNotes";
@@ -21,6 +22,8 @@ export default class LinearCalendarPlugin extends Plugin {
 				leaf,
 				this.settings,
 				() => this.settings.defaultMapping,
+				this.scanner,
+				new ObsidianNoteCreator(this.app, this.settings, () => this.settings.defaultMapping),
 			);
 		});
 

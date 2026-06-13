@@ -1,0 +1,77 @@
+import { App, Notice, TFile, moment, normalizePath } from "obsidian";
+import type { PluginSettings, ColumnMapping } from "./types";
+
+export interface NoteCreator {
+	create(date: Date): Promise<void>;
+}
+
+export class ObsidianNoteCreator implements NoteCreator {
+	constructor(
+		private app: App,
+		private settings: PluginSettings,
+		private getMapping: () => ColumnMapping,
+	) {}
+
+	async create(date: Date): Promise<void> {
+		try {
+			const year = date.getFullYear();
+			const month = date.getMonth();
+			const day = date.getDate();
+			const pad = (n: number) => String(n).padStart(2, "0");
+			const dateStr = `${year}-${pad(month + 1)}-${pad(day)}`;
+			const mapping = this.getMapping();
+			const folder = this.settings.newEventFolder;
+			const fmt = this.settings.newEventDateFormat || "YYYY-MM-DD";
+			const datePart = (moment as unknown as (d: Date) => { format(f: string): string })(date).format(fmt);
+
+			if (folder && !this.app.vault.getAbstractFileByPath(folder)) {
+				await this.app.vault.createFolder(folder);
+			}
+
+			const base = folder ? `${folder}/${datePart} Untitled` : `${datePart} Untitled`;
+			let path = normalizePath(`${base}.md`);
+			let counter = 1;
+			while (this.app.vault.getAbstractFileByPath(path)) {
+				path = normalizePath(`${base} ${counter}.md`);
+				counter++;
+			}
+
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			const templater = (this.app as any).plugins?.getPlugin("templater-obsidian");
+			const templateSetting = this.settings.newEventTemplate;
+			const templateFile = templateSetting
+				? this.app.vault.getAbstractFileByPath(
+					normalizePath(templateSetting.endsWith(".md") ? templateSetting : `${templateSetting}.md`),
+				)
+				: null;
+
+			let file: TFile;
+			if (templater && templateFile instanceof TFile) {
+				file = await this.app.vault.create(path, "");
+				await templater.templater.write_template_to_file(templateFile, file);
+				await this.app.fileManager.processFrontMatter(file, (fm: Record<string, unknown>) => {
+					fm[mapping.startDateProp] = dateStr;
+					const existing = Array.isArray(fm.tags)
+						? (fm.tags as unknown[]).map(String)
+						: fm.tags ? [String(fm.tags)] : [];
+					if (!existing.includes("linear-calendar")) existing.unshift("linear-calendar");
+					fm.tags = existing;
+				});
+			} else {
+				const frontmatter = [
+					"---",
+					`tags: [linear-calendar]`,
+					`${mapping.startDateProp}: ${dateStr}`,
+					"---",
+					"",
+				].join("\n");
+				file = await this.app.vault.create(path, frontmatter);
+			}
+
+			await this.app.workspace.openLinkText(file.path, "", false);
+		} catch (err) {
+			console.error("[linear-calendar] create event failed:", err);
+			new Notice("Failed to create event note.");
+		}
+	}
+}
