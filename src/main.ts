@@ -6,6 +6,7 @@ import { LinearCalendarSettingTab } from "./settings";
 import { FrontmatterScanner } from "./data/FrontmatterScanner";
 import { ObsidianNoteCreator } from "./NoteCreator";
 import { CalendarRenderer, RenderConfig } from "./view/CalendarRenderer";
+import { writeDragDates } from "./utils/frontmatterUtils";
 import { buildTagColorMap } from "./utils/colorUtils";
 import { getDailyNoteMap } from "./utils/dailyNotes";
 
@@ -94,18 +95,8 @@ export default class LinearCalendarPlugin extends Plugin {
 					render();
 				},
 				onDropCommit: async (filePath, newStart, newEnd) => {
-					const mapping = this.settings.defaultMapping;
-					const file = this.app.vault.getAbstractFileByPath(filePath);
-					if (!file) return;
-					const pad = (n: number) => String(n).padStart(2, "0");
-					const fmt = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 					try {
-						await this.app.fileManager.processFrontMatter(file as import("obsidian").TFile, (fm) => {
-							fm[mapping.startDateProp] = fmt(newStart);
-							if (fmt(newStart) !== fmt(newEnd) || fm[mapping.endDateProp]) {
-								fm[mapping.endDateProp] = fmt(newEnd);
-							}
-						});
+						await writeDragDates(this.app, filePath, this.settings.defaultMapping, newStart, newEnd);
 					} catch (err) {
 						console.error("[linear-calendar] drag write failed:", err);
 					}

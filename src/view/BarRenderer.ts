@@ -14,14 +14,18 @@ interface RowAssignment {
 }
 
 export class BarRenderer {
-	private dragHandler: DragHandler;
+	private dragHandler: DragHandler | null;
 
 	constructor(
 		private app: App,
 		getYear: () => number,
-		onDropCommit: (filePath: string, newStart: Date, newEnd: Date) => Promise<void>,
+		onDropCommit?: (filePath: string, newStart: Date, newEnd: Date) => Promise<void>,
 	) {
-		this.dragHandler = new DragHandler(getYear, onDropCommit);
+		this.dragHandler = onDropCommit ? new DragHandler(getYear, onDropCommit) : null;
+	}
+
+	cleanup(): void {
+		this.dragHandler?.cleanup();
 	}
 
 	render(
@@ -32,8 +36,8 @@ export class BarRenderer {
 	): void {
 		const isVertical = monthRows[0]?.layout === "vertical";
 
-		this.dragHandler.cleanup();
-		if (!isVertical) this.dragHandler.setMonthRows(monthRows);
+		this.dragHandler?.cleanup();
+		if (!isVertical) this.dragHandler?.setMonthRows(monthRows);
 		const grouped = groupSegmentsByMonth(items);
 
 		for (const rowRef of monthRows) {
@@ -54,7 +58,7 @@ export class BarRenderer {
 
 				this.attachContextMenu(barEl, segment.item.filePath);
 
-				if (!isVertical && !segment.item.anniversary) {
+				if (!isVertical && !segment.item.anniversary && this.dragHandler) {
 					this.dragHandler.attach(
 						barEl,
 						segment.item.filePath,

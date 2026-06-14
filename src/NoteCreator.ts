@@ -25,7 +25,11 @@ export class ObsidianNoteCreator implements NoteCreator {
 			const datePart = (moment as unknown as (d: Date) => { format(f: string): string })(date).format(fmt);
 
 			if (folder && !this.app.vault.getAbstractFileByPath(folder)) {
-				await this.app.vault.createFolder(folder);
+				try {
+					await this.app.vault.createFolder(folder);
+				} catch (err) {
+					if (!this.app.vault.getAbstractFileByPath(folder)) throw err;
+				}
 			}
 
 			const base = folder ? `${folder}/${datePart} Untitled` : `${datePart} Untitled`;
@@ -48,7 +52,12 @@ export class ObsidianNoteCreator implements NoteCreator {
 			let file: TFile;
 			if (templater && templateFile instanceof TFile) {
 				file = await this.app.vault.create(path, "");
-				await templater.templater.write_template_to_file(templateFile, file);
+				try {
+					await templater.templater.write_template_to_file(templateFile, file);
+				} catch (err) {
+					await this.app.vault.delete(file);
+					throw err;
+				}
 				await this.app.fileManager.processFrontMatter(file, (fm: Record<string, unknown>) => {
 					fm[mapping.startDateProp] = dateStr;
 					const existing = Array.isArray(fm.tags)

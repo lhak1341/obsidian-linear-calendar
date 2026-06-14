@@ -45,7 +45,7 @@ export class CalendarRenderer {
 		this.barRenderer = new BarRenderer(
 			app,
 			() => this.lastRenderedYear,
-			callbacks.onDropCommit ?? (() => Promise.resolve()),
+			callbacks.onDropCommit,
 		);
 		this.nowIndicator = new NowIndicator();
 		// Anchor tooltip to container's parent to avoid overflow-x clipping
@@ -130,6 +130,7 @@ export class CalendarRenderer {
 	}
 
 	cleanup(): void {
+		this.barRenderer.cleanup();
 		this.nowIndicator.cleanup();
 		this.tooltip.cleanup();
 	}

@@ -5,6 +5,7 @@ import type { DataSource } from "../data/DataSource";
 import type { NoteCreator } from "../NoteCreator";
 import { CalendarRenderer, RenderConfig } from "./CalendarRenderer";
 import { createDailyNote, getDailyNoteMap } from "../utils/dailyNotes";
+import { writeDragDates } from "../utils/frontmatterUtils";
 
 interface ViewState {
 	year: number;
@@ -265,7 +266,7 @@ export class LinearCalendarView extends ItemView {
 	private showDayContextMenu(year: number, month: number, day: number, event: MouseEvent): void {
 		const pad = (n: number) => String(n).padStart(2, "0");
 		const dateKey = `${year}-${pad(month + 1)}-${pad(day)}`;
-		const dailyNoteMap = this.dailyNoteMapCache ?? new Map<string, TFile>();
+		const dailyNoteMap = this.dailyNoteMapCache ?? getDailyNoteMap(this.app);
 		const menu = new Menu();
 		if (!dailyNoteMap.has(dateKey)) {
 			menu.addItem((item) =>
@@ -291,18 +292,8 @@ export class LinearCalendarView extends ItemView {
 	}
 
 	private async commitDrop(filePath: string, newStart: Date, newEnd: Date): Promise<void> {
-		const mapping = this.getMapping();
-		const file = this.app.vault.getAbstractFileByPath(filePath) as TFile | null;
-		if (!file) return;
-		const pad = (n: number) => String(n).padStart(2, "0");
-		const fmt = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 		try {
-			await this.app.fileManager.processFrontMatter(file, (fm) => {
-				fm[mapping.startDateProp] = fmt(newStart);
-				if (fmt(newStart) !== fmt(newEnd) || fm[mapping.endDateProp]) {
-					fm[mapping.endDateProp] = fmt(newEnd);
-				}
-			});
+			await writeDragDates(this.app, filePath, this.getMapping(), newStart, newEnd);
 		} catch (err) {
 			console.error("[linear-calendar] drag write failed:", err);
 		}

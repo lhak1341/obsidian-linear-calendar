@@ -4,6 +4,10 @@
 
 - Always `import { moment } from 'obsidian'` — never `window.moment` (risks version mismatch)
 
+## Testing
+
+- `@vitest/coverage-v8` not installed; `npm test -- --coverage` fails — install it first or skip coverage
+
 ## Daily note plugin priority
 
 When reading daily note folder/format settings, check in order:
