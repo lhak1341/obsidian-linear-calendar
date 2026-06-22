@@ -64,7 +64,7 @@ export default class LinearCalendarPlugin extends Plugin {
 	/** Public API for other plugins — returns current-year items + resolved color map. */
 	getCalendarData(year: number): { items: CalendarItem[]; colorMap: Map<string, string> } {
 		const items = this.scanner.scan(this.settings.defaultMapping, year);
-		const colorMap = buildTagColorMap(items, this.settings);
+		const colorMap = buildTagColorMap(items, this.settings.colorMap);
 		return { items, colorMap };
 	}
 
@@ -86,7 +86,6 @@ export default class LinearCalendarPlugin extends Plugin {
 			container,
 			categoriesEl,
 			this.scanner,
-			this.settings,
 			() => this.settings.defaultMapping,
 			{
 				onCategoryToggle: (tag) => {
@@ -113,6 +112,10 @@ export default class LinearCalendarPlugin extends Plugin {
 				alignMode: "date",
 				rowHeight: 0,
 				dailyNoteMap: getDailyNoteMap(this.app),
+				colorMap: this.settings.colorMap,
+				iconMap: this.settings.iconMap,
+				dailyNoteColor: this.settings.dailyNoteColor,
+				dailyNoteStyle: this.settings.dailyNoteStyle,
 			};
 			renderer.render(config);
 		};

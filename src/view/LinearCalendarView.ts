@@ -83,7 +83,6 @@ export class LinearCalendarView extends ItemView {
 			scrollWrapper,
 			this.categoriesContainer,
 			this.source,
-			this.settings,
 			() => this.getMapping(),
 			{
 				onDayDblClick: (y, m, d) => this.createNoteForDate(y, m, d),
@@ -259,6 +258,10 @@ export class LinearCalendarView extends ItemView {
 			alignMode: this.settings.alignMode,
 			rowHeight: this.rowHeight,
 			dailyNoteMap: this.dailyNoteMapCache,
+			colorMap: this.settings.colorMap,
+			iconMap: this.settings.iconMap,
+			dailyNoteColor: this.settings.dailyNoteColor,
+			dailyNoteStyle: this.settings.dailyNoteStyle,
 		};
 		this.calendarRenderer.render(config);
 	}

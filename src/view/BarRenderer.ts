@@ -6,12 +6,8 @@ import { getContrastColor } from "../utils/colorUtils";
 import type { MonthRowRef } from "./GridRenderer";
 import type { MonthSegment } from "../utils/segmentByMonth";
 import { groupSegmentsByMonth } from "../utils/segmentByMonth";
+import { assignRowsForMonth } from "../utils/rowAssignment";
 import { DragHandler } from "./DragHandler";
-
-interface RowAssignment {
-	segment: MonthSegment;
-	row: number;
-}
 
 export class BarRenderer {
 	private dragHandler: DragHandler | null;
@@ -45,7 +41,7 @@ export class BarRenderer {
 			if (segments.length === 0) continue;
 
 			const maxRows = isVertical ? MAX_WATERFALL_COLS_VERT : MAX_WATERFALL_ROWS;
-			const assignments = this.assignRowsForMonth(segments, maxRows);
+			const assignments = assignRowsForMonth(segments, maxRows);
 
 			for (const { segment, row } of assignments) {
 				const barEl = this.createBarEl(rowRef, segment, row, isVertical);
@@ -152,33 +148,4 @@ export class BarRenderer {
 		});
 	}
 
-	private assignRowsForMonth(segments: MonthSegment[], maxRows = MAX_WATERFALL_ROWS): RowAssignment[] {
-		const sorted = [...segments].sort(
-			(a, b) => a.startDay - b.startDay,
-		);
-
-		const rowEnds: number[] = [];
-		const assignments: RowAssignment[] = [];
-
-		for (const segment of sorted) {
-			let placed = false;
-
-			for (let r = 0; r < rowEnds.length && r < maxRows; r++) {
-				if (rowEnds[r] < segment.startDay) {
-					rowEnds[r] = segment.endDay;
-					assignments.push({ segment, row: r });
-					placed = true;
-					break;
-				}
-			}
-
-			if (!placed && rowEnds.length < maxRows) {
-				const row = rowEnds.length;
-				rowEnds.push(segment.endDay);
-				assignments.push({ segment, row });
-			}
-		}
-
-		return assignments;
-	}
 }

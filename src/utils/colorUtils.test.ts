@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { getContrastColor, buildTagColorMap } from "./colorUtils";
-import type { CalendarItem, PluginSettings } from "../types";
+import type { CalendarItem } from "../types";
 import { COLOR_PALETTE } from "../constants";
 
 describe("getContrastColor", () => {
@@ -22,44 +22,32 @@ function makeItem(tag?: string): CalendarItem {
 	};
 }
 
-function makeSettings(colorMap: Record<string, string> = {}): PluginSettings {
-	return {
-		defaultMapping: { titleProp: "__filename__", startDateProp: "datestart", endDateProp: "dateend", iconProp: "icon", anniversaryProp: "anniversary" },
-		viewConfigs: {},
-		colorMap,
-		iconMap: {},
-		alignMode: "date",
-		dailyNoteColor: null,
-		dailyNoteStyle: "tint",
-	};
-}
-
 describe("buildTagColorMap", () => {
 	it("empty items → empty map", () => {
-		expect(buildTagColorMap([], makeSettings()).size).toBe(0);
+		expect(buildTagColorMap([], {}).size).toBe(0);
 	});
 
 	it("item with no tag → __uncategorized__ key", () => {
-		const map = buildTagColorMap([makeItem()], makeSettings());
+		const map = buildTagColorMap([makeItem()], {});
 		expect(map.has("__uncategorized__")).toBe(true);
 	});
 
 	it("assigns palette colors in order", () => {
 		const items = [makeItem("a"), makeItem("b"), makeItem("c")];
-		const map = buildTagColorMap(items, makeSettings());
+		const map = buildTagColorMap(items, {});
 		expect(map.get("a")).toBe(COLOR_PALETTE[0]);
 		expect(map.get("b")).toBe(COLOR_PALETTE[1]);
 		expect(map.get("c")).toBe(COLOR_PALETTE[2]);
 	});
 
 	it("user colorMap takes priority over palette", () => {
-		const map = buildTagColorMap([makeItem("work")], makeSettings({ work: "#ff0000" }));
+		const map = buildTagColorMap([makeItem("work")], { work: "#ff0000" });
 		expect(map.get("work")).toBe("#ff0000");
 	});
 
 	it("duplicate tags assigned same color, palette index not advanced", () => {
 		const items = [makeItem("a"), makeItem("a"), makeItem("b")];
-		const map = buildTagColorMap(items, makeSettings());
+		const map = buildTagColorMap(items, {});
 		expect(map.get("a")).toBe(COLOR_PALETTE[0]);
 		expect(map.get("b")).toBe(COLOR_PALETTE[1]);
 	});
@@ -67,7 +55,7 @@ describe("buildTagColorMap", () => {
 	it("wraps palette when more tags than colors", () => {
 		const tags = Array.from({ length: COLOR_PALETTE.length + 1 }, (_, i) => `tag${i}`);
 		const items = tags.map((t) => makeItem(t));
-		const map = buildTagColorMap(items, makeSettings());
+		const map = buildTagColorMap(items, {});
 		expect(map.get(`tag${COLOR_PALETTE.length}`)).toBe(COLOR_PALETTE[0]);
 	});
 });

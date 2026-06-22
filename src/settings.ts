@@ -287,7 +287,7 @@ export class LinearCalendarSettingTab extends PluginSettingTab {
 		mapping: ColumnMapping,
 	): void {
 		const { items } = this.plugin.getCalendarData(new Date().getFullYear());
-		const autoMap = buildTagColorMap(items, this.plugin.settings);
+		const autoMap = buildTagColorMap(items, this.plugin.settings.colorMap);
 		const unpinned = [...autoMap.entries()].filter(([tag]) => !(tag in colorMap));
 
 		if (unpinned.length === 0) return;

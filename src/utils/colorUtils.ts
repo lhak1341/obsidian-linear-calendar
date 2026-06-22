@@ -1,4 +1,4 @@
-import type { CalendarItem, PluginSettings } from "../types";
+import type { CalendarItem } from "../types";
 import { COLOR_PALETTE } from "../constants";
 
 /**
@@ -8,7 +8,7 @@ import { COLOR_PALETTE } from "../constants";
  */
 export function buildTagColorMap(
 	items: CalendarItem[],
-	settings: PluginSettings,
+	colorMap: Record<string, string>,
 ): Map<string, string> {
 	const map = new Map<string, string>();
 	let paletteIdx = 0;
@@ -17,7 +17,7 @@ export function buildTagColorMap(
 		const tag = item.tags?.[0] ?? "__uncategorized__";
 		if (map.has(tag)) continue;
 
-		const userColor = settings.colorMap[tag];
+		const userColor = colorMap[tag];
 		if (userColor) {
 			map.set(tag, userColor);
 		} else {

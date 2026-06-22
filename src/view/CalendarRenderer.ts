@@ -1,6 +1,6 @@
 import { App } from "obsidian";
 import type { TFile } from "obsidian";
-import type { CalendarItem, PluginSettings, ColumnMapping, AlignMode } from "../types";
+import type { CalendarItem, ColumnMapping, AlignMode, DailyNoteStyle } from "../types";
 import type { DataSource } from "../data/DataSource";
 import { buildTagColorMap } from "../utils/colorUtils";
 import { GridRenderer } from "./GridRenderer";
@@ -16,6 +16,10 @@ export interface RenderConfig {
 	alignMode: AlignMode;
 	rowHeight: number;
 	dailyNoteMap: Map<string, TFile>;
+	colorMap: Record<string, string>;
+	iconMap: Record<string, string>;
+	dailyNoteColor: string | null;
+	dailyNoteStyle: DailyNoteStyle;
 }
 
 interface CalendarRendererCallbacks {
@@ -37,7 +41,6 @@ export class CalendarRenderer {
 		container: HTMLElement,
 		private categoriesEl: HTMLElement | null,
 		private source: DataSource,
-		private settings: PluginSettings,
 		private getMapping: () => ColumnMapping,
 		private callbacks: CalendarRendererCallbacks = {},
 	) {
@@ -53,12 +56,13 @@ export class CalendarRenderer {
 	}
 
 	render(config: RenderConfig): void {
-		const { year, months, hiddenCategories, layout, alignMode, rowHeight, dailyNoteMap } = config;
+		const { year, months, hiddenCategories, layout, alignMode, rowHeight, dailyNoteMap,
+			colorMap, iconMap, dailyNoteColor, dailyNoteStyle } = config;
 		const dailyNoteDates = new Set(dailyNoteMap.keys());
 
 		this.lastRenderedYear = year;
 		const allItems = this.source.scan(this.getMapping(), year);
-		const tagColorMap = buildTagColorMap(allItems, this.settings);
+		const tagColorMap = buildTagColorMap(allItems, colorMap);
 
 		if (this.categoriesEl) {
 			this.renderCategories(allItems, year, months, tagColorMap, hiddenCategories);
@@ -85,23 +89,23 @@ export class CalendarRenderer {
 		if (months.length === 1) {
 			monthRows = [this.gridRenderer.renderMonth(
 				year, months[0], alignMode, dailyNoteDates,
-				this.settings.dailyNoteColor, this.settings.dailyNoteStyle,
+				dailyNoteColor, dailyNoteStyle,
 			)];
 		} else if (layout === "vertical") {
 			monthRows = this.gridRenderer.renderVertical(
-				year, dailyNoteDates, this.settings.dailyNoteColor,
-				this.settings.dailyNoteStyle, alignMode,
+				year, dailyNoteDates, dailyNoteColor,
+				dailyNoteStyle, alignMode,
 			);
 		} else {
 			monthRows = this.gridRenderer.render(
 				year, 0, alignMode, dailyNoteDates,
-				this.settings.dailyNoteColor, this.settings.dailyNoteStyle,
+				dailyNoteColor, dailyNoteStyle,
 			);
 		}
 
 		this.updateRowHeight(layout, rowHeight);
 
-		const tagIconMap = new Map(Object.entries(this.settings.iconMap));
+		const tagIconMap = new Map(Object.entries(iconMap));
 		this.barRenderer.render(monthRows, items, tagColorMap, tagIconMap);
 
 		this.nowIndicator.cleanup();

@@ -22,6 +22,7 @@ Thumbs.db
 # Misc
 .claude/
 .gemini/
+.codex/
 .fallow/
 temp/
 
