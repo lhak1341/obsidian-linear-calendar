@@ -28,6 +28,7 @@ Obsidian plugin — horizontal year-at-a-glance timeline rendered from note fron
 - In Settings UI, `Setting.then(cb)` is synchronous and returns `this` — use it mid-chain for raw DOM injection into `controlEl` (e.g. live-preview inputs) while still chaining `.addColorPicker()` / `.addExtraButton()`
 - Command `name` must not include plugin name (e.g. `"Open"` not `"Open Linear Calendar"`) — Obsidian prepends plugin name in palette automatically
 - Settings headings: use `new Setting(containerEl).setName("...").setHeading()` not `createEl("h2"/"h3")`; omit top-level plugin title (sidebar shows it); no "setting" or "option" in heading text
+- For responsive CSS, prefer `@container` over `@media` — Obsidian panels resize independently of viewport; `.lc-month-row` has `container-type: inline-size`; place `@container` blocks before `@media` blocks so the media query wins the cascade when both fire
 
 ## graphify
 

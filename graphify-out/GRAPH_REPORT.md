@@ -1,16 +1,16 @@
-# Graph Report - obsidian-linear-calendar  (2026-06-23)
+# Graph Report - obsidian-linear-calendar  (2026-06-24)
 
 ## Corpus Check
-- 28 files · ~10,147 words
+- 28 files · ~10,374 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 216 nodes · 387 edges · 21 communities (10 shown, 11 thin omitted)
+- 220 nodes · 395 edges · 21 communities (10 shown, 11 thin omitted)
 - Extraction: 99% EXTRACTED · 1% INFERRED · 0% AMBIGUOUS · INFERRED: 2 edges (avg confidence: 0.9)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `47d71e0d`
+- Built from commit: `32a10c20`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -36,9 +36,9 @@
 - [[_COMMUNITY_Community 20|Community 20]]
 
 ## God Nodes (most connected - your core abstractions)
-1. `LinearCalendarView` - 20 edges
+1. `LinearCalendarView` - 21 edges
 2. `GridRenderer` - 15 edges
-3. `LinearCalendarSettingTab` - 12 edges
+3. `LinearCalendarSettingTab` - 13 edges
 4. `DragHandler` - 12 edges
 5. `ColumnMapping` - 9 edges
 6. `BarRenderer` - 9 edges
@@ -77,9 +77,9 @@ Nodes (16): addDays(), findFreeRow(), GhostSeg, mDays(), newDatesFromDelta(), Ro
 Cohesion: 0.14
 Nodes (14): getContrastColor(), dayOfYear(), daysInYear(), formatDateRange(), isLeapYear(), monthBoundaries(), assignRowsForMonth(), RowAssignment (+6 more)
 
-### Community 4 - "Semantic Architecture"
-Cohesion: 0.19
-Nodes (3): computeSolidColor(), computeTint(), GridRenderer
+### Community 3 - "Grid Rendering & Interactions"
+Cohesion: 0.15
+Nodes (6): computeSolidColor(), computeTint(), GridRenderer, MONTH_NAMES, MonthRowRef, WEEKDAY_ABBR
 
 ### Community 5 - "Bar Rendering & Temporal Segmentation"
 Cohesion: 0.15
@@ -98,21 +98,21 @@ Cohesion: 0.4
 Nodes (4): Daily note plugin priority, Moment, Testing, Utils
 
 ## Knowledge Gaps
-- **35 isolated node(s):** `DEFAULT_MAPPING`, `DailyPluginSettings`, `ObsidianPlugins`, `CoreDailyNoteOptions`, `ObsidianInternalPlugins` (+30 more)
+- **36 isolated node(s):** `FONT_OPTIONS`, `DEFAULT_MAPPING`, `DailyPluginSettings`, `ObsidianPlugins`, `CoreDailyNoteOptions` (+31 more)
   These have ≤1 connection - possible missing edges or undocumented components.
 - **11 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `LinearCalendarView` connect `Grid Rendering & Interactions` to `Core Data & Constants`, `Date Utilities & Scanning`?**
-  _High betweenness centrality (0.120) - this node is a cross-community bridge._
-- **Why does `GridRenderer` connect `Semantic Architecture` to `Core Data & Constants`?**
-  _High betweenness centrality (0.094) - this node is a cross-community bridge._
-- **Why does `DragHandler` connect `Drag & Layout Utilities` to `View Lifecycle`?**
-  _High betweenness centrality (0.072) - this node is a cross-community bridge._
-- **What connects `DEFAULT_MAPPING`, `DailyPluginSettings`, `ObsidianPlugins` to the rest of the system?**
-  _35 weakly-connected nodes found - possible documentation gaps or missing edges._
+- **Why does `LinearCalendarView` connect `Semantic Architecture` to `Core Data & Constants`, `Date Utilities & Scanning`?**
+  _High betweenness centrality (0.125) - this node is a cross-community bridge._
+- **Why does `GridRenderer` connect `Grid Rendering & Interactions` to `Core Data & Constants`?**
+  _High betweenness centrality (0.093) - this node is a cross-community bridge._
+- **Why does `LinearCalendarSettingTab` connect `Settings Interface` to `Core Data & Constants`?**
+  _High betweenness centrality (0.073) - this node is a cross-community bridge._
+- **What connects `FONT_OPTIONS`, `DEFAULT_MAPPING`, `DailyPluginSettings` to the rest of the system?**
+  _36 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `Core Data & Constants` be split into smaller, more focused modules?**
   _Cohesion score 0.14 - nodes in this community are weakly interconnected._
 - **Should `Drag & Layout Utilities` be split into smaller, more focused modules?**

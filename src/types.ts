@@ -1,5 +1,7 @@
 export type AlignMode = "date" | "weekday";
 
+export type FontChoice = "plugin" | "obsidian-interface" | "obsidian-text" | "obsidian-monospace" | "custom";
+
 export interface CalendarItem {
 	filePath: string;
 	title: string;
@@ -32,4 +34,6 @@ export interface PluginSettings {
 	newEventFolder: string;
 	newEventDateFormat: string;
 	newEventTemplate: string;
+	font: FontChoice;
+	fontCustom: string;
 }

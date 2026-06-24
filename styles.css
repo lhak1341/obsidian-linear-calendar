@@ -8,7 +8,7 @@
 	height: 100%;
 	overflow: hidden;
 	background: var(--background-primary);
-	font-family: var(--font-interface);
+	font-family: var(--lc-font, var(--font-interface));
 	position: relative;
 }
 
@@ -199,6 +199,7 @@
 	grid-template-columns: 18px 1fr;
 	border-bottom: 1px solid var(--background-modifier-border);
 	min-height: 32px;
+	container-type: inline-size;
 }
 
 .lc-month-label {
@@ -577,6 +578,25 @@
 .lc-icon-preview svg {
 	width: 14px;
 	height: 14px;
+}
+
+/* ---- Narrow panel: stack day-number over weekday to save column width ---- */
+@container (max-width: 720px) {
+	.lc-day-cell {
+		flex-direction: column;
+		align-items: center;
+		padding-top: 2px;
+		gap: 0;
+	}
+
+	.lc-day-weekday {
+		margin-left: 0;
+		margin-top: -1px;
+	}
+
+	.lc-days-grid {
+		grid-template-rows: 24px;
+	}
 }
 
 /* ---- Mobile / narrow ---- */

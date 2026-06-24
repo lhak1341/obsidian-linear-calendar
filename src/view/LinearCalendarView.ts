@@ -72,6 +72,7 @@ export class LinearCalendarView extends ItemView {
 		const { contentEl } = this;
 		contentEl.empty();
 		contentEl.addClass("linear-calendar-container");
+		this.applyFont();
 
 		const toolbar = contentEl.createDiv({ cls: "linear-calendar-toolbar" });
 		this.buildToolbar(toolbar);
@@ -303,7 +304,19 @@ export class LinearCalendarView extends ItemView {
 	}
 
 	refresh(): void {
+		this.applyFont();
 		this.renderCalendar();
+	}
+
+	private applyFont(): void {
+		const { font, fontCustom } = this.settings;
+		let value: string | null = null;
+		if (font === "obsidian-interface") value = "var(--font-interface)";
+		else if (font === "obsidian-text") value = "var(--font-text)";
+		else if (font === "obsidian-monospace") value = "var(--font-monospace)";
+		else if (font === "custom" && fontCustom) value = fontCustom;
+		if (value) this.contentEl.style.setProperty("--lc-font", value);
+		else this.contentEl.style.removeProperty("--lc-font");
 	}
 
 	private handleKeydown(evt: KeyboardEvent): void {

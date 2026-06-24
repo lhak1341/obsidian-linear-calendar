@@ -2,7 +2,15 @@ import { App, PluginSettingTab, Setting, setIcon, type ColorComponent } from "ob
 import type LinearCalendarPlugin from "./main";
 import { COLOR_PALETTE } from "./constants";
 import { buildTagColorMap } from "./utils/colorUtils";
-import type { AlignMode, ColumnMapping, DailyNoteStyle } from "./types";
+import type { AlignMode, ColumnMapping, DailyNoteStyle, FontChoice } from "./types";
+
+const FONT_OPTIONS: Record<FontChoice, string> = {
+	"plugin":             "Plugin default",
+	"obsidian-interface": "Obsidian: Interface font",
+	"obsidian-text":      "Obsidian: Text font",
+	"obsidian-monospace": "Obsidian: Monospace font",
+	"custom":             "Custom…",
+};
 
 export class LinearCalendarSettingTab extends PluginSettingTab {
 	plugin: LinearCalendarPlugin;
@@ -17,12 +25,15 @@ export class LinearCalendarSettingTab extends PluginSettingTab {
 		containerEl.empty();
 		const mapping = this.plugin.settings.defaultMapping;
 		this.renderGeneralSettings(containerEl, mapping);
-		this.renderNewEventSettings(containerEl);
+		this.renderAppearanceSettings(containerEl);
 		this.renderDailyNoteSettings(containerEl);
 		this.renderColorMapSection(containerEl, mapping);
+		this.renderNewEventSettings(containerEl);
 	}
 
 	private renderGeneralSettings(containerEl: HTMLElement, mapping: ColumnMapping): void {
+		new Setting(containerEl).setName("Data Mapping").setHeading();
+
 		new Setting(containerEl)
 			.setName("Column alignment")
 			.setDesc("Date: day 1 aligns across months. Weekday: same weekday aligns across months.")
@@ -165,7 +176,7 @@ export class LinearCalendarSettingTab extends PluginSettingTab {
 	}
 
 	private renderDailyNoteSettings(containerEl: HTMLElement): void {
-		new Setting(containerEl).setName("Daily Note Indicator").setHeading();
+		new Setting(containerEl).setName("Daily Notes").setHeading();
 
 		const isCustomColor = this.plugin.settings.dailyNoteColor !== null;
 		new Setting(containerEl)
@@ -210,6 +221,35 @@ export class LinearCalendarSettingTab extends PluginSettingTab {
 						await this.plugin.saveSettings();
 					}),
 			);
+	}
+
+	private renderAppearanceSettings(containerEl: HTMLElement): void {
+		new Setting(containerEl).setName("Appearance").setHeading();
+
+		let customFontEl: Setting;
+		new Setting(containerEl)
+			.setName("Font")
+			.setDesc("Font family for the calendar UI.")
+			.addDropdown((drop) => {
+				Object.entries(FONT_OPTIONS).forEach(([v, label]) => drop.addOption(v, label));
+				drop.setValue(this.plugin.settings.font).onChange(async (value) => {
+					this.plugin.settings.font = value as FontChoice;
+					customFontEl.settingEl.style.display = value === "custom" ? "" : "none";
+					await this.plugin.saveSettings();
+				});
+			});
+		customFontEl = new Setting(containerEl)
+			.setName("")
+			.addText((text) =>
+				text
+					.setPlaceholder('e.g. Inter, "DM Sans"')
+					.setValue(this.plugin.settings.fontCustom)
+					.onChange(async (value) => {
+						this.plugin.settings.fontCustom = value.trim();
+						await this.plugin.saveSettings();
+					}),
+			);
+		customFontEl.settingEl.style.display = this.plugin.settings.font === "custom" ? "" : "none";
 	}
 
 	private renderColorMapSection(containerEl: HTMLElement, mapping: ColumnMapping): void {

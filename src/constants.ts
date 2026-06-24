@@ -21,6 +21,8 @@ export const DEFAULT_SETTINGS: PluginSettings = {
 	newEventFolder: "",
 	newEventDateFormat: "YYYY-MM-DD",
 	newEventTemplate: "",
+	font: "plugin",
+	fontCustom: "",
 };
 
 // Google Calendar / Material Design palette
