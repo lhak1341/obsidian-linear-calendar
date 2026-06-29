@@ -12,7 +12,7 @@ export async function writeDragDates(
 	if (!(file instanceof TFile)) return;
 	const pad = (n: number) => String(n).padStart(2, "0");
 	const fmt = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-	await app.fileManager.processFrontMatter(file, (fm) => {
+	await app.fileManager.processFrontMatter(file, (fm: Record<string, unknown>) => {
 		fm[mapping.startDateProp] = fmt(newStart);
 		if (fmt(newStart) !== fmt(newEnd) || fm[mapping.endDateProp]) {
 			fm[mapping.endDateProp] = fmt(newEnd);

@@ -61,7 +61,7 @@ export class LinearCalendarView extends ItemView {
 	}
 
 	getDisplayText(): string {
-		return "Linear Calendar";
+		return "Linear calendar";
 	}
 
 	getIcon(): string {
@@ -109,7 +109,7 @@ export class LinearCalendarView extends ItemView {
 
 		this.renderCalendar();
 
-		requestAnimationFrame(() => this.scrollToNow());
+		window.requestAnimationFrame(() => this.scrollToNow());
 
 		contentEl.tabIndex = 0;
 		this.registerDomEvent(contentEl, "keydown", (evt: KeyboardEvent) => {
@@ -126,9 +126,9 @@ export class LinearCalendarView extends ItemView {
 				}
 				const fm = this.app.metadataCache.getFileCache(file);
 				const fmTags = Array.isArray(fm?.frontmatter?.tags)
-					? (fm!.frontmatter!.tags as unknown[]).map(String)
+					? (fm.frontmatter.tags as unknown[]).map(String)
 					: typeof fm?.frontmatter?.tags === "string"
-						? [String(fm!.frontmatter!.tags)]
+						? [String(fm.frontmatter.tags)]
 						: [];
 				const inlineTags = (fm?.tags ?? []).map((t) => t.tag);
 				const isCalendar = [...fmTags, ...inlineTags].some(
@@ -226,9 +226,9 @@ export class LinearCalendarView extends ItemView {
 				"aria-label": "Row height",
 			},
 		});
-		(slider as HTMLInputElement).value = String(this.rowHeight);
-		this.registerDomEvent(slider as HTMLInputElement, "input", () => {
-			this.rowHeight = Number((slider as HTMLInputElement).value);
+		(slider).value = String(this.rowHeight);
+		this.registerDomEvent(slider, "input", () => {
+			this.rowHeight = Number((slider).value);
 			this.calendarRenderer.updateRowHeight(this.layout, this.rowHeight);
 		});
 
@@ -242,7 +242,7 @@ export class LinearCalendarView extends ItemView {
 			this.layout = this.layout === "horizontal" ? "vertical" : "horizontal";
 			this.updateLayoutToggleIcon();
 			this.renderCalendar();
-			requestAnimationFrame(() => this.scrollToNow());
+			window.requestAnimationFrame(() => this.scrollToNow());
 		});
 	}
 

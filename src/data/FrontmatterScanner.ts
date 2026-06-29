@@ -93,7 +93,7 @@ export class FrontmatterScanner implements DataSource {
 
 	private processFile(file: TFile, mapping: ColumnMapping): CalendarItem | null {
 		const cache = this.app.metadataCache.getFileCache(file);
-		const fm = cache?.frontmatter;
+		const fm: Record<string, unknown> | undefined = cache?.frontmatter;
 		if (!fm) return null;
 
 		// Gate: only process notes tagged #linear-calendar
@@ -119,11 +119,12 @@ export class FrontmatterScanner implements DataSource {
 		const parsedEnd = endRaw !== undefined ? parseDateString(endRaw) : null;
 		dateEnd = parsedEnd ?? new Date(dateStart);
 
+		const titleRaw = fm[mapping.titleProp];
 		const title =
 			mapping.titleProp === "__filename__"
 				? file.basename
-				: typeof fm[mapping.titleProp] === "string"
-					? fm[mapping.titleProp]
+				: typeof titleRaw === "string"
+					? titleRaw
 					: file.basename;
 
 		const tags: string[] = [];
@@ -141,9 +142,10 @@ export class FrontmatterScanner implements DataSource {
 			}
 		}
 
+		const iconRaw = fm[mapping.iconProp];
 		const icon =
-			mapping.iconProp && typeof fm[mapping.iconProp] === "string"
-				? fm[mapping.iconProp]
+			mapping.iconProp && typeof iconRaw === "string"
+				? iconRaw
 				: undefined;
 
 		const anniversary =

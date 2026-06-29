@@ -45,12 +45,13 @@ export default class LinearCalendarPlugin extends Plugin {
 		);
 	}
 
-	async onunload(): Promise<void> {
-		this.app.workspace.detachLeavesOfType(VIEW_TYPE_LINEAR_CALENDAR);
+	onunload(): void {
+
 	}
 
 	async loadSettings(): Promise<void> {
-		const saved = (await this.loadData()) ?? {};
+		// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+		const saved: Partial<PluginSettings> = (await this.loadData()) ?? {};
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, saved);
 		this.settings.defaultMapping = Object.assign(
 			{},
@@ -160,7 +161,7 @@ export default class LinearCalendarPlugin extends Plugin {
 		}
 
 		if (leaf) {
-			workspace.revealLeaf(leaf);
+			await workspace.revealLeaf(leaf);
 		}
 	}
 }

@@ -1,3 +1,4 @@
+/* eslint-disable obsidianmd/no-static-styles-assignment -- CSS grid layout values (template-columns/rows, minWidth, gridRow, gridColumn) are computed at render time and cannot be expressed as static CSS classes */
 import type { AlignMode, DailyNoteStyle } from "../types";
 import { MAX_WATERFALL_COLS_VERT } from "../constants";
 
@@ -267,14 +268,14 @@ export class GridRenderer {
 
 			let singleClickTimer: ReturnType<typeof setTimeout> | null = null;
 			cellEl.addEventListener("click", () => {
-				singleClickTimer = setTimeout(() => {
+				singleClickTimer = window.setTimeout(() => {
 					this.onDayClick?.(year, month, day);
 					singleClickTimer = null;
 				}, 220);
 			});
 			cellEl.addEventListener("dblclick", () => {
 				if (singleClickTimer) {
-					clearTimeout(singleClickTimer);
+					window.clearTimeout(singleClickTimer);
 					singleClickTimer = null;
 				}
 				this.onDayDblClick?.(year, month, day);

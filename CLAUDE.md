@@ -26,6 +26,7 @@ Obsidian plugin — horizontal year-at-a-glance timeline rendered from note fron
 - Sticky headers need `z-index` > 5 (bars use `z-index: 5`) or they get painted over on scroll
 - To fill a cell with a dynamic background, put the class on the container or use `position: absolute; inset: 0` — `width/height: 100%` on a `<span>` inside a flex column is unreliable
 - In Settings UI, `Setting.then(cb)` is synchronous and returns `this` — use it mid-chain for raw DOM injection into `controlEl` (e.g. live-preview inputs) while still chaining `.addColorPicker()` / `.addExtraButton()`
+- All Obsidian components are thenable (`BaseComponent.then()` exists for fluent chaining) — returning a component from a `void`-typed callback (forEach, Setting.addDropdown, etc.) triggers `no-misused-promises`; use block body `{ comp.method(); }` to discard the return
 - Command `name` must not include plugin name (e.g. `"Open"` not `"Open Linear Calendar"`) — Obsidian prepends plugin name in palette automatically
 - Settings headings: use `new Setting(containerEl).setName("...").setHeading()` not `createEl("h2"/"h3")`; omit top-level plugin title (sidebar shows it); no "setting" or "option" in heading text
 - For responsive CSS, prefer `@container` over `@media` — Obsidian panels resize independently of viewport; `.lc-month-row` has `container-type: inline-size`; place `@container` blocks before `@media` blocks so the media query wins the cascade when both fire

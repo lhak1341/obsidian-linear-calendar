@@ -39,7 +39,7 @@ export class NowIndicator {
 			if (year !== new Date().getFullYear()) return;
 		}
 
-		this.rafId = requestAnimationFrame(() => {
+		this.rafId = window.requestAnimationFrame(() => {
 			this.rafId = null;
 			this.markToday(this.currentMonthRows, new Date());
 		});
@@ -73,9 +73,10 @@ export class NowIndicator {
 			this.markedElements.push(numSpan as HTMLElement);
 		}
 
+		// eslint-disable-next-line obsidianmd/no-static-styles-assignment
 		daysGrid.style.position = "relative";
 
-		const outline = document.createElement("div");
+		const outline = activeDocument.createElement("div");
 		outline.className = "lc-today-column";
 		// Percentage-based left/width reflows with the grid on container resize.
 		// Grid uses repeat(totalCols, 1fr) so each column is exactly 100%/totalCols wide.

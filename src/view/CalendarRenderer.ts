@@ -78,7 +78,7 @@ export class CalendarRenderer {
 
 		this.gridRenderer.setDayClickHandler((y, m, d) => {
 			const file = dailyNoteMap.get(`${y}-${pad(m + 1)}-${pad(d)}`);
-			if (file) this.app.workspace.openLinkText(file.path, "", false);
+			if (file) void this.app.workspace.openLinkText(file.path, "", false);
 		});
 		if (this.callbacks.onDayDblClick) {
 			this.gridRenderer.setDayDblClickHandler(this.callbacks.onDayDblClick);
@@ -117,9 +117,10 @@ export class CalendarRenderer {
 
 		if (months.length === 1) {
 			const grid = this.gridRenderer.getContainer();
+			// eslint-disable-next-line obsidianmd/no-static-styles-assignment
 			grid.style.width = "100%";
 			const daysInMonth = new Date(year, months[0] + 1, 0).getDate();
-			const daysGridEl = grid.querySelector(".lc-days-grid") as HTMLElement | null;
+			const daysGridEl = grid.querySelector<HTMLElement>(".lc-days-grid");
 			if (daysGridEl) {
 				daysGridEl.style.gridTemplateColumns = `repeat(${daysInMonth}, 1fr)`;
 			}
@@ -228,7 +229,7 @@ export class CalendarRenderer {
 			chip.addEventListener("mouseenter", (evt) => {
 				const nameEl = chip.querySelector<HTMLElement>(".lc-category-name");
 				if (nameEl && getComputedStyle(nameEl).display !== "none") return;
-				this.tooltip.showForChip(displayName, evt as MouseEvent);
+				this.tooltip.showForChip(displayName, evt);
 			});
 			chip.addEventListener("mouseleave", () => this.tooltip.hide());
 			chip.createSpan({ cls: "lc-category-dot" }).style.backgroundColor = color;

@@ -1,3 +1,4 @@
+/* eslint-disable obsidianmd/no-static-styles-assignment -- style.display is used for show/hide; tooltip visibility is fully imperative and cannot be expressed as a CSS class without an extra selector layer */
 export class Tooltip {
 	private el: HTMLElement;
 	private attached = false;
@@ -14,14 +15,14 @@ export class Tooltip {
 		container.addEventListener("mouseenter", (evt) => {
 			const target = evt.target as HTMLElement;
 			if (!target.classList.contains("calendar-bar")) return;
-			this.show(target, evt as MouseEvent);
+			this.show(target, evt);
 		}, true);
 
 		container.addEventListener("mousemove", (evt) => {
 			const target = evt.target as HTMLElement;
 			if (!target.classList.contains("calendar-bar")) return;
 			if (this.el.style.display === "block") {
-				this.reposition(evt as MouseEvent);
+				this.reposition(evt);
 			}
 		}, true);
 

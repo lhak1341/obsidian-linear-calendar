@@ -49,7 +49,7 @@ export class BarRenderer {
 
 				barEl.addEventListener("click", (evt) => {
 					if (barEl.dataset.justDragged) return;
-					this.app.workspace.openLinkText(segment.item.filePath, "", evt.metaKey || evt.ctrlKey);
+					void this.app.workspace.openLinkText(segment.item.filePath, "", evt.metaKey || evt.ctrlKey);
 				});
 
 				this.attachContextMenu(barEl, segment.item.filePath);
@@ -88,7 +88,9 @@ export class BarRenderer {
 		if (isVertical) {
 			barEl.style.gridRow = `${rowRef.weekdayOffset + segment.startDay} / span ${span}`;
 			barEl.style.gridColumn = `${row + 2}`;  // col 1 = date header
+			// eslint-disable-next-line obsidianmd/no-static-styles-assignment
 			barEl.style.height = "100%";
+			// eslint-disable-next-line obsidianmd/no-static-styles-assignment
 			barEl.style.pointerEvents = "auto";
 		} else {
 			barEl.style.gridColumn = `${rowRef.weekdayOffset + segment.startDay} / span ${span}`;
@@ -130,18 +132,18 @@ export class BarRenderer {
 			const menu = new Menu();
 			menu.addItem((item) =>
 				item.setTitle("Open note").setIcon("file-text").onClick(() => {
-					this.app.workspace.openLinkText(filePath, "", false);
+					void this.app.workspace.openLinkText(filePath, "", false);
 				}),
 			);
 			menu.addItem((item) =>
 				item.setTitle("Open in new tab").setIcon("file-plus").onClick(() => {
-					this.app.workspace.openLinkText(filePath, "", true);
+					void this.app.workspace.openLinkText(filePath, "", true);
 				}),
 			);
 			menu.addSeparator();
 			menu.addItem((item) =>
 				item.setTitle("Copy link").setIcon("link").onClick(() => {
-					navigator.clipboard.writeText(`[[${filePath}]]`);
+					void navigator.clipboard.writeText(`[[${filePath}]]`);
 				}),
 			);
 			menu.showAtMouseEvent(evt);

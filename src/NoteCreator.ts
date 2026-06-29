@@ -1,4 +1,9 @@
 import { App, Notice, TFile, moment, normalizePath } from "obsidian";
+
+interface TemplaterPlugin {
+	templater: { write_template_to_file(template: TFile, target: TFile): Promise<void> };
+}
+type AppWithPlugins = App & { plugins?: { getPlugin(id: string): TemplaterPlugin | null } };
 import type { PluginSettings, ColumnMapping } from "./types";
 
 export interface NoteCreator {
@@ -40,8 +45,7 @@ export class ObsidianNoteCreator implements NoteCreator {
 				counter++;
 			}
 
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
-			const templater = (this.app as any).plugins?.getPlugin("templater-obsidian");
+			const templater = (this.app as AppWithPlugins).plugins?.getPlugin("templater-obsidian");
 			const templateSetting = this.settings.newEventTemplate;
 			const templateFile = templateSetting
 				? this.app.vault.getAbstractFileByPath(
@@ -55,14 +59,14 @@ export class ObsidianNoteCreator implements NoteCreator {
 				try {
 					await templater.templater.write_template_to_file(templateFile, file);
 				} catch (err) {
-					await this.app.vault.delete(file);
+					await this.app.fileManager.trashFile(file);
 					throw err;
 				}
 				await this.app.fileManager.processFrontMatter(file, (fm: Record<string, unknown>) => {
 					fm[mapping.startDateProp] = dateStr;
 					const existing = Array.isArray(fm.tags)
 						? (fm.tags as unknown[]).map(String)
-						: fm.tags ? [String(fm.tags)] : [];
+						: (typeof fm.tags === "string" || typeof fm.tags === "number") ? [String(fm.tags)] : [];
 					if (!existing.includes("linear-calendar")) existing.unshift("linear-calendar");
 					fm.tags = existing;
 				});
