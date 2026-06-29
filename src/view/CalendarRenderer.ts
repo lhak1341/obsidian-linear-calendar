@@ -29,12 +29,15 @@ interface CalendarRendererCallbacks {
 	onDropCommit?: (filePath: string, newStart: Date, newEnd: Date) => Promise<void>;
 }
 
+const pad = (n: number) => String(n).padStart(2, "0");
+
 export class CalendarRenderer {
 	private gridRenderer: GridRenderer;
 	private barRenderer: BarRenderer;
 	private nowIndicator: NowIndicator;
 	private tooltip: Tooltip;
 	private lastRenderedYear = new Date().getFullYear();
+	private lastCategoriesSig: string | null = null;
 
 	constructor(
 		private app: App,
@@ -73,7 +76,6 @@ export class CalendarRenderer {
 			return tag ? !hiddenCategories.has(tag) : !hiddenCategories.has("__uncategorized__");
 		});
 
-		const pad = (n: number) => String(n).padStart(2, "0");
 		this.gridRenderer.setDayClickHandler((y, m, d) => {
 			const file = dailyNoteMap.get(`${y}-${pad(m + 1)}-${pad(d)}`);
 			if (file) this.app.workspace.openLinkText(file.path, "", false);
@@ -108,7 +110,7 @@ export class CalendarRenderer {
 		const tagIconMap = new Map(Object.entries(iconMap));
 		this.barRenderer.render(monthRows, items, tagColorMap, tagIconMap);
 
-		this.nowIndicator.cleanup();
+		// NowIndicator manages its own interval lifecycle; only restarts on year change.
 		this.nowIndicator.render(monthRows, year);
 
 		this.tooltip.attach(this.gridRenderer.getContainer());
@@ -121,7 +123,37 @@ export class CalendarRenderer {
 			if (daysGridEl) {
 				daysGridEl.style.gridTemplateColumns = `repeat(${daysInMonth}, 1fr)`;
 			}
+			// Keep totalCols in sync with the actual grid so NowIndicator's
+			// percentage-based left/width uses the right denominator.
+			monthRows[0].totalCols = daysInMonth;
 		}
+	}
+
+	/** Rebuild only bars and category chips; preserves the day-cell grid DOM. */
+	renderBars(config: RenderConfig): void {
+		const { year, months, hiddenCategories, colorMap, iconMap } = config;
+		const monthRows = this.gridRenderer.getMonthRows();
+		if (monthRows.length === 0) return;
+
+		const allItems = this.source.scan(this.getMapping(), year);
+		const tagColorMap = buildTagColorMap(allItems, colorMap);
+
+		if (this.categoriesEl) {
+			this.renderCategories(allItems, year, months, tagColorMap, hiddenCategories);
+		}
+
+		const items = allItems.filter((item) => {
+			const tag = item.tags?.[0];
+			return tag ? !hiddenCategories.has(tag) : !hiddenCategories.has("__uncategorized__");
+		});
+
+		for (const rowRef of monthRows) {
+			rowRef.barsContainer.empty();
+		}
+
+		const tagIconMap = new Map(Object.entries(iconMap));
+		this.barRenderer.cleanup();
+		this.barRenderer.render(monthRows, items, tagColorMap, tagIconMap);
 	}
 
 	updateRowHeight(layout: "horizontal" | "vertical", rowHeight: number): void {
@@ -147,7 +179,6 @@ export class CalendarRenderer {
 		hiddenCategories: Set<string>,
 	): void {
 		const el = this.categoriesEl!;
-		el.empty();
 
 		const countItems = months.length === 12
 			? allItems
@@ -166,7 +197,23 @@ export class CalendarRenderer {
 			categories.set(tag, (categories.get(tag) ?? 0) + 1);
 		}
 
-		if (categories.size <= 1) return;
+		if (categories.size <= 1) {
+			if (this.lastCategoriesSig !== null) {
+				el.empty();
+				this.lastCategoriesSig = null;
+			}
+			return;
+		}
+
+		// Skip the DOM rebuild when categories and hidden state are unchanged.
+		const sig = [...categories.entries()]
+			.sort((a, b) => a[0].localeCompare(b[0]))
+			.map(([k, v]) => `${k}:${v}`)
+			.join("|") + ";" + [...hiddenCategories].sort().join(",");
+		if (sig === this.lastCategoriesSig) return;
+		this.lastCategoriesSig = sig;
+
+		el.empty();
 
 		for (const [tag, count] of categories) {
 			const isHidden = hiddenCategories.has(tag);
@@ -178,6 +225,12 @@ export class CalendarRenderer {
 			const chip = el.createDiv({
 				cls: `lc-category-chip${isHidden ? " lc-category-hidden" : ""}`,
 			});
+			chip.addEventListener("mouseenter", (evt) => {
+				const nameEl = chip.querySelector<HTMLElement>(".lc-category-name");
+				if (nameEl && getComputedStyle(nameEl).display !== "none") return;
+				this.tooltip.showForChip(displayName, evt as MouseEvent);
+			});
+			chip.addEventListener("mouseleave", () => this.tooltip.hide());
 			chip.createSpan({ cls: "lc-category-dot" }).style.backgroundColor = color;
 			chip.createSpan({ cls: "lc-category-name", text: displayName });
 			chip.createSpan({ cls: "lc-category-count", text: String(count) });

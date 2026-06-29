@@ -80,7 +80,14 @@ export class Tooltip {
 		this.el.style.left = `${left}px`;
 	}
 
-	private hide(): void {
+	showForChip(name: string, evt: MouseEvent): void {
+		this.el.empty();
+		this.el.createDiv({ cls: "tooltip-title", text: name });
+		this.el.style.display = "block";
+		this.reposition(evt);
+	}
+
+	hide(): void {
 		this.el.style.display = "none";
 	}
 

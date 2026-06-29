@@ -5,22 +5,44 @@ export class NowIndicator {
 	private createdElements: HTMLElement[] = [];
 	private intervalId: number | null = null;
 	private rafId: number | null = null;
+	private currentMonthRows: MonthRowRef[] = [];
+	private activeYear: number | null = null;
 
 	render(monthRows: MonthRowRef[], year: number): void {
-		this.cleanup();
+		this.currentMonthRows = monthRows;
 
-		const today = new Date();
-		if (today.getFullYear() !== year) return;
+		if (year !== this.activeYear) {
+			// Year changed — restart the hourly interval.
+			if (this.intervalId !== null) {
+				window.clearInterval(this.intervalId);
+				this.intervalId = null;
+			}
+			this.clearMarks();
+			this.activeYear = year;
+
+			if (year !== new Date().getFullYear()) return;
+
+			// Interval uses this.currentMonthRows so it always references the
+			// latest DOM nodes even when the grid is rebuilt between ticks.
+			this.intervalId = window.setInterval(() => {
+				this.clearMarks();
+				this.markToday(this.currentMonthRows, new Date());
+			}, 3600_000);
+		} else {
+			// Same year, DOM was rebuilt — cancel any pending RAF and clear
+			// stale marks from orphaned nodes without touching the interval.
+			if (this.rafId !== null) {
+				cancelAnimationFrame(this.rafId);
+				this.rafId = null;
+			}
+			this.clearMarks();
+			if (year !== new Date().getFullYear()) return;
+		}
 
 		this.rafId = requestAnimationFrame(() => {
 			this.rafId = null;
-			this.markToday(monthRows, today);
+			this.markToday(this.currentMonthRows, new Date());
 		});
-
-		this.intervalId = window.setInterval(() => {
-			this.clearMarks();
-			this.markToday(monthRows, new Date());
-		}, 3600_000);
 	}
 
 	private markToday(monthRows: MonthRowRef[], date: Date): void {
@@ -55,8 +77,11 @@ export class NowIndicator {
 
 		const outline = document.createElement("div");
 		outline.className = "lc-today-column";
-		outline.style.left = `${cell.offsetLeft}px`;
-		outline.style.width = `${cell.offsetWidth}px`;
+		// Percentage-based left/width reflows with the grid on container resize.
+		// Grid uses repeat(totalCols, 1fr) so each column is exactly 100%/totalCols wide.
+		const colIdx = row.weekdayOffset + day - 1; // 0-indexed column
+		outline.style.left = `${(colIdx / row.totalCols) * 100}%`;
+		outline.style.width = `${100 / row.totalCols}%`;
 		daysGrid.appendChild(outline);
 		this.createdElements.push(outline);
 	}
@@ -106,5 +131,6 @@ export class NowIndicator {
 			this.intervalId = null;
 		}
 		this.clearMarks();
+		this.activeYear = null;
 	}
 }

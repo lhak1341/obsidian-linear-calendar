@@ -35,6 +35,14 @@ export default class LinearCalendarPlugin extends Plugin {
 		});
 
 		this.addSettingTab(new LinearCalendarSettingTab(this.app, this));
+
+		// Keep scanner cache consistent with vault mutations.
+		this.registerEvent(
+			this.app.vault.on("delete", (file) => this.scanner.evictFile(file.path)),
+		);
+		this.registerEvent(
+			this.app.vault.on("rename", (_file, oldPath) => this.scanner.evictFile(oldPath)),
+		);
 	}
 
 	async onunload(): Promise<void> {
@@ -53,6 +61,7 @@ export default class LinearCalendarPlugin extends Plugin {
 
 	async saveSettings(): Promise<void> {
 		await this.saveData(this.settings);
+		this.scanner.invalidateMapping();
 		for (const leaf of this.app.workspace.getLeavesOfType(
 			VIEW_TYPE_LINEAR_CALENDAR,
 		)) {

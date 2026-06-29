@@ -20,8 +20,8 @@ interface ViewState {
  *   getState()         — persists { year, hiddenCategories, rowHeight, layout } across reloads
  *   setState(s, r)     — restores persisted state, then re-renders
  *
- * Re-render triggers: vault create/delete/metadataCache changed (debounced 300ms),
- *   year nav buttons, layout toggle, category chip clicks, ResizeObserver (debounced 200ms).
+ * Re-render triggers: metadataCache changed for calendar files (debounced 300ms),
+ *   vault create/delete/rename, year nav buttons, layout toggle.
  *
  * Lifecycle: onOpen builds DOM once; renderCalendar() clears and repaints the grid each call.
  *   onClose cleans up CalendarRenderer (NowIndicator timer, Tooltip listener).
@@ -94,7 +94,7 @@ export class LinearCalendarView extends ItemView {
 					} else {
 						this.hiddenCategories.add(tag);
 					}
-					this.renderCalendar();
+					this.renderBarsOnly();
 				},
 				onDropCommit: (filePath, newStart, newEnd) => this.commitDrop(filePath, newStart, newEnd),
 			},
@@ -118,7 +118,25 @@ export class LinearCalendarView extends ItemView {
 
 		const debouncedRender = debounce(() => this.renderCalendar(), 300, true);
 		this.registerEvent(
-			this.app.metadataCache.on("changed", () => debouncedRender()),
+			this.app.metadataCache.on("changed", (file) => {
+				// Skip re-render for files that have never been (and aren't now) calendar notes.
+				if (this.source.hasCalendarEntry(file.path)) {
+					debouncedRender();
+					return;
+				}
+				const fm = this.app.metadataCache.getFileCache(file);
+				const fmTags = Array.isArray(fm?.frontmatter?.tags)
+					? (fm!.frontmatter!.tags as unknown[]).map(String)
+					: typeof fm?.frontmatter?.tags === "string"
+						? [String(fm!.frontmatter!.tags)]
+						: [];
+				const inlineTags = (fm?.tags ?? []).map((t) => t.tag);
+				const isCalendar = [...fmTags, ...inlineTags].some(
+					(t) => t === "linear-calendar" || t === "#linear-calendar" ||
+						t.startsWith("linear-calendar/") || t.startsWith("#linear-calendar/"),
+				);
+				if (isCalendar) debouncedRender();
+			}),
 		);
 		this.registerEvent(
 			this.app.vault.on("create", () => { this.dailyNoteMapCache = null; debouncedRender(); }),
@@ -129,12 +147,6 @@ export class LinearCalendarView extends ItemView {
 		this.registerEvent(
 			this.app.vault.on("rename", () => { this.dailyNoteMapCache = null; debouncedRender(); }),
 		);
-
-		const ro = new ResizeObserver(
-			debounce(() => this.renderCalendar(), 200, true),
-		);
-		ro.observe(scrollWrapper);
-		this.register(() => ro.disconnect());
 	}
 
 	async onClose(): Promise<void> {
@@ -265,6 +277,26 @@ export class LinearCalendarView extends ItemView {
 			dailyNoteStyle: this.settings.dailyNoteStyle,
 		};
 		this.calendarRenderer.render(config);
+	}
+
+	private renderBarsOnly(): void {
+		if (!this.dailyNoteMapCache) {
+			this.dailyNoteMapCache = getDailyNoteMap(this.app);
+		}
+		const config: RenderConfig = {
+			year: this.currentYear,
+			months: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+			hiddenCategories: this.hiddenCategories,
+			layout: this.layout,
+			alignMode: this.settings.alignMode,
+			rowHeight: this.rowHeight,
+			dailyNoteMap: this.dailyNoteMapCache,
+			colorMap: this.settings.colorMap,
+			iconMap: this.settings.iconMap,
+			dailyNoteColor: this.settings.dailyNoteColor,
+			dailyNoteStyle: this.settings.dailyNoteStyle,
+		};
+		this.calendarRenderer.renderBars(config);
 	}
 
 	private showDayContextMenu(year: number, month: number, day: number, event: MouseEvent): void {

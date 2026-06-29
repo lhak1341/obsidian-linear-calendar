@@ -10,6 +10,7 @@
 	background: var(--background-primary);
 	font-family: var(--lc-font, var(--font-interface));
 	position: relative;
+	container-type: inline-size;
 }
 
 /* ---- Toolbar ---- */
@@ -134,7 +135,8 @@
 	align-items: center;
 	gap: 4px;
 	margin-left: auto;
-	flex-wrap: nowrap;
+	flex-wrap: wrap;
+	justify-content: flex-end;
 }
 
 .lc-categories:empty {
@@ -172,6 +174,10 @@
 .lc-category-name {
 	color: var(--text-normal);
 	font-weight: 500;
+	max-width: 120px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
 }
 
 .lc-category-count {
@@ -580,6 +586,13 @@
 	height: 14px;
 }
 
+/* ---- Narrow panel: compact category chips (dot + count only; name in tooltip) ---- */
+@container (max-width: 800px) {
+	.lc-category-name {
+		display: none;
+	}
+}
+
 /* ---- Narrow panel: stack day-number over weekday to save column width ---- */
 @container (max-width: 720px) {
 	.lc-day-cell {
@@ -602,13 +615,11 @@
 /* ---- Mobile / narrow ---- */
 @media (max-width: 600px) {
 	.linear-calendar-toolbar {
-		flex-wrap: wrap;
 		gap: 4px;
 	}
 
-	.lc-categories {
+	.linear-calendar-container .lc-categories {
 		margin-left: 0;
-		flex-wrap: wrap;
 	}
 
 	.lc-day-weekday {

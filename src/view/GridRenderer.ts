@@ -104,7 +104,8 @@ export class GridRenderer {
 		// Per-month containers — each holds day cells (col 1) + bars (cols 2+)
 		for (let m = 0; m < 12; m++) {
 			const daysInMonth = new Date(year, m + 1, 0).getDate();
-			const weekdayOffset = alignMode === "weekday" ? new Date(year, m, 1).getDay() : 0;
+			const firstDow = new Date(year, m, 1).getDay();
+			const weekdayOffset = alignMode === "weekday" ? firstDow : 0;
 
 			const monthCol = this.containerEl.createDiv({ cls: "lc-vert-month-col" });
 			monthCol.style.gridColumn = `${m + 1}`;
@@ -117,7 +118,7 @@ export class GridRenderer {
 				cellEl.style.gridColumn = "1";
 				cellEl.style.gridRow = `${weekdayOffset + d}`;
 				cellEl.dataset.day = String(d);
-				this.populateDayCell(cellEl, year, m, d, dailyNoteDates, dailyNoteColor, dailyNoteStyle);
+				this.populateDayCell(cellEl, year, m, d, firstDow, dailyNoteDates, dailyNoteColor, dailyNoteStyle);
 			}
 
 			this.monthRows.push({
@@ -183,9 +184,9 @@ export class GridRenderer {
 		const daysGrid = row.createDiv({ cls: "lc-days-grid" });
 		daysGrid.style.gridTemplateColumns = colTemplate;
 
-		const weekdayOffset = alignMode === "weekday"
-			? new Date(year, month, 1).getDay()
-			: 0;
+		// Compute first-of-month DOW once; derive per-day DOW by modular arithmetic.
+		const firstDow = new Date(year, month, 1).getDay();
+		const weekdayOffset = alignMode === "weekday" ? firstDow : 0;
 
 		if (alignMode === "date") {
 			for (let d = 1; d <= 31; d++) {
@@ -193,14 +194,14 @@ export class GridRenderer {
 				cellEl.style.gridColumn = `${d}`;
 				cellEl.style.gridRow = "1";
 				if (d > daysInMonth) { cellEl.addClass("lc-day-empty"); continue; }
-				this.populateDayCell(cellEl, year, month, d, dailyNoteDates, dailyNoteColor, dailyNoteStyle);
+				this.populateDayCell(cellEl, year, month, d, firstDow, dailyNoteDates, dailyNoteColor, dailyNoteStyle);
 			}
 		} else {
 			for (let d = 1; d <= daysInMonth; d++) {
 				const cellEl = daysGrid.createDiv({ cls: "lc-day-cell" });
 				cellEl.style.gridColumn = `${weekdayOffset + d}`;
 				cellEl.style.gridRow = "1";
-				this.populateDayCell(cellEl, year, month, d, dailyNoteDates, dailyNoteColor, dailyNoteStyle);
+				this.populateDayCell(cellEl, year, month, d, firstDow, dailyNoteDates, dailyNoteColor, dailyNoteStyle);
 			}
 		}
 
@@ -227,11 +228,12 @@ export class GridRenderer {
 		year: number,
 		month: number,
 		day: number,
+		firstDow: number,
 		dailyNoteDates: Set<string>,
 		dailyNoteColor: string | null,
 		dailyNoteStyle: DailyNoteStyle,
 	): void {
-		const dow = new Date(year, month, day).getDay();
+		const dow = (firstDow + day - 1) % 7;
 		if (dow === 0 || dow === 6) cellEl.addClass("lc-day-weekend");
 
 		const dateKey = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
