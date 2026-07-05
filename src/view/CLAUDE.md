@@ -3,6 +3,7 @@
 ## Category toggle re-render scope
 
 - `onCategoryToggle` must call `renderBarsOnly()`, not `renderCalendar()` — `populateDayCell()` never receives `hiddenCategories`, so the day cell DOM is invariant under category filter changes; only bars and chips need rebuilding.
+- `lastCategoriesSig` in `renderCategories()` guards chip DOM rebuilds — include ALL visual chip properties (color, icon, etc.) in the sig or a change to that property will be silently skipped on re-render
 
 ## Tracking a CSS grid column with a positioned overlay
 

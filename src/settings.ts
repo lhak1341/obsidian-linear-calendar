@@ -139,6 +139,19 @@ export class LinearCalendarSettingTab extends PluginSettingTab {
 						await this.plugin.saveSettings();
 					}),
 			);
+
+		new Setting(containerEl)
+			.setName("Description property")
+			.setDesc("Frontmatter property shown as a third line in the hover tooltip. Leave empty to hide.")
+			.addText((text) =>
+				text
+					.setPlaceholder("description")
+					.setValue(mapping.descriptionProp)
+					.onChange(async (value) => {
+						mapping.descriptionProp = value.trim();
+						await this.plugin.saveSettings();
+					}),
+			);
 	}
 
 	private renderNewEventSettings(containerEl: HTMLElement): void {

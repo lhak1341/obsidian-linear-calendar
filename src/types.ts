@@ -11,6 +11,7 @@ export interface CalendarItem {
 	tags?: string[];
 	icon?: string;
 	anniversary?: boolean;
+	description?: string;
 }
 
 export interface ColumnMapping {
@@ -19,6 +20,7 @@ export interface ColumnMapping {
 	endDateProp: string;
 	iconProp: string;
 	anniversaryProp: string;
+	descriptionProp: string;
 }
 
 export type DailyNoteStyle = "tint" | "border-top";

@@ -28,21 +28,14 @@ function getDailyNoteSettings(app: App): { folder: string; format: string; templ
 	try {
 		const { plugins, internalPlugins } = app as AppInternal;
 
-		// 1. lhak-periodic-notes (fork)
-		const lhakPN = plugins?.getPlugin("lhak-periodic-notes");
-		if (lhakPN?.settings?.daily?.enabled) {
-			const { format, folder, template } = lhakPN.settings.daily;
+		// 1. obsidian-calendar-notes (personal plugin replacing lhak-periodic-notes / periodic-notes)
+		const calendarNotes = plugins?.getPlugin("obsidian-calendar-notes");
+		if (calendarNotes?.settings?.daily?.enabled) {
+			const { format, folder, template } = calendarNotes.settings.daily;
 			return { format: format || defaultFormat, folder: (folder || "").trim(), template: (template || "").trim() };
 		}
 
-		// 2. periodic-notes (original)
-		const periodicNotes = plugins?.getPlugin("periodic-notes");
-		if (periodicNotes?.settings?.daily?.enabled) {
-			const { format, folder, template } = periodicNotes.settings.daily;
-			return { format: format || defaultFormat, folder: (folder || "").trim(), template: (template || "").trim() };
-		}
-
-		// 3. built-in daily-notes core plugin
+		// 2. built-in daily-notes core plugin
 		const opts = internalPlugins?.getPluginById("daily-notes")?.instance?.options ?? {};
 		return { format: opts.format || defaultFormat, folder: (opts.folder || "").trim(), template: (opts.template || "").trim() };
 	} catch {

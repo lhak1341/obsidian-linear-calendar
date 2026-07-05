@@ -124,6 +124,7 @@ export class BarRenderer {
 		barEl.dataset.tags = segment.item.tags?.join(", ") ?? "";
 		barEl.dataset.tagColor = tagColorMap.get(tag) ?? COLOR_PALETTE[0];
 		barEl.dataset.filePath = segment.item.filePath;
+		barEl.dataset.description = segment.item.description ?? "";
 	}
 
 	private attachContextMenu(barEl: HTMLElement, filePath: string): void {

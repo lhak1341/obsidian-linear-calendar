@@ -151,6 +151,9 @@ export class FrontmatterScanner implements DataSource {
 		const anniversary =
 			mapping.anniversaryProp ? fm[mapping.anniversaryProp] === true : false;
 
+		const descRaw = mapping.descriptionProp ? fm[mapping.descriptionProp] : undefined;
+		const description = typeof descRaw === "string" && descRaw.trim() ? descRaw.trim() : undefined;
+
 		return {
 			filePath: file.path,
 			title,
@@ -159,6 +162,7 @@ export class FrontmatterScanner implements DataSource {
 			tags,
 			icon,
 			anniversary: anniversary || undefined,
+			description,
 		};
 	}
 }

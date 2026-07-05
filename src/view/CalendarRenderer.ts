@@ -206,10 +206,10 @@ export class CalendarRenderer {
 			return;
 		}
 
-		// Skip the DOM rebuild when categories and hidden state are unchanged.
+		// Skip the DOM rebuild when categories, colors, and hidden state are all unchanged.
 		const sig = [...categories.entries()]
 			.sort((a, b) => a[0].localeCompare(b[0]))
-			.map(([k, v]) => `${k}:${v}`)
+			.map(([k, v]) => `${k}:${v}:${tagColorMap.get(k) ?? ""}`)
 			.join("|") + ";" + [...hiddenCategories].sort().join(",");
 		if (sig === this.lastCategoriesSig) return;
 		this.lastCategoriesSig = sig;

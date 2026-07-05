@@ -481,16 +481,17 @@
 	margin-bottom: 1px;
 }
 
+.tooltip-meta {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 5px;
+	margin-top: 1px;
+}
+
 .tooltip-dates {
 	color: var(--text-muted);
 	font-size: 10px;
-}
-
-.tooltip-tags {
-	display: flex;
-	flex-wrap: wrap;
-	gap: 4px;
-	margin-top: 3px;
 }
 
 .tooltip-tag-chip {
@@ -506,6 +507,13 @@
 	height: 7px;
 	border-radius: 50%;
 	flex-shrink: 0;
+}
+
+.tooltip-description {
+	color: var(--text-muted);
+	font-size: 10px;
+	margin-top: 4px;
+	white-space: pre-wrap;
 }
 
 /* ---- Scrollbar ---- */

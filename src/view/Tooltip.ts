@@ -40,19 +40,24 @@ export class Tooltip {
 		const dateRange = barEl.dataset.dateRange ?? "";
 		const tags = barEl.dataset.tags ?? "";
 		const tagColor = barEl.dataset.tagColor ?? "";
+		const description = barEl.dataset.description ?? "";
 
 		this.el.empty();
 		this.el.createDiv({ cls: "tooltip-title", text: title });
-		this.el.createDiv({ cls: "tooltip-dates", text: dateRange });
+
+		const metaRow = this.el.createDiv({ cls: "tooltip-meta" });
+		metaRow.createSpan({ cls: "tooltip-dates", text: dateRange });
 		if (tags) {
-			const tagRow = this.el.createDiv({ cls: "tooltip-tags" });
 			for (const tag of tags.split(", ")) {
-				const chip = tagRow.createSpan({ cls: "tooltip-tag-chip" });
+				const chip = metaRow.createSpan({ cls: "tooltip-tag-chip" });
 				const dot = chip.createSpan({ cls: "tooltip-tag-dot" });
 				dot.style.backgroundColor = tagColor || "#888";
-				const shortName = tag.replace(/^linear-calendar\//, "");
-				chip.createSpan({ text: shortName });
+				chip.createSpan({ text: tag.replace(/^linear-calendar\//, "") });
 			}
+		}
+
+		if (description) {
+			this.el.createDiv({ cls: "tooltip-description", text: description });
 		}
 
 		this.el.style.display = "block";

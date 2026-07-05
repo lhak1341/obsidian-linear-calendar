@@ -1,7 +1,7 @@
-# Graph Report - obsidian-linear-calendar  (2026-06-29)
+# Graph Report - obsidian-linear-calendar  (2026-07-06)
 
 ## Corpus Check
-- 30 files · ~11,548 words
+- 30 files · ~11,637 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
@@ -10,7 +10,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `2c81a3da`
+- Built from commit: `fa5ba53d`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
