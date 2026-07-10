@@ -6,8 +6,18 @@ interface TemplaterPlugin {
 type AppWithPlugins = App & { plugins?: { getPlugin(id: string): TemplaterPlugin | null } };
 import type { PluginSettings, ColumnMapping } from "./types";
 
+export interface CreateEventOptions {
+	title?: string;
+	/** Full subtag, e.g. "linear-calendar/work". Omit for the bare "linear-calendar" gate tag. */
+	tag?: string;
+	anniversary?: boolean;
+	icon?: string;
+	dateEnd?: Date;
+	description?: string;
+}
+
 export interface NoteCreator {
-	create(date: Date): Promise<void>;
+	create(date: Date, options?: CreateEventOptions): Promise<void>;
 }
 
 export class ObsidianNoteCreator implements NoteCreator {
@@ -17,7 +27,7 @@ export class ObsidianNoteCreator implements NoteCreator {
 		private getMapping: () => ColumnMapping,
 	) {}
 
-	async create(date: Date): Promise<void> {
+	async create(date: Date, options: CreateEventOptions = {}): Promise<void> {
 		try {
 			const year = date.getFullYear();
 			const month = date.getMonth();
@@ -29,6 +39,16 @@ export class ObsidianNoteCreator implements NoteCreator {
 			const fmt = this.settings.newEventDateFormat || "YYYY-MM-DD";
 			const datePart = (moment as unknown as (d: Date) => { format(f: string): string })(date).format(fmt);
 
+			const trimmedTitle = options.title?.trim();
+			// Filenames can't contain these characters on any OS Obsidian runs on.
+			const safeTitle = trimmedTitle ? trimmedTitle.replace(/[\\/:*?"<>|]/g, "-") : "Untitled";
+			const calendarTag = options.tag?.trim() || "linear-calendar";
+			const trimmedIcon = options.icon?.trim();
+			const trimmedDescription = options.description?.trim();
+			const endDateStr = options.dateEnd
+				? `${options.dateEnd.getFullYear()}-${pad(options.dateEnd.getMonth() + 1)}-${pad(options.dateEnd.getDate())}`
+				: undefined;
+
 			if (folder && !this.app.vault.getAbstractFileByPath(folder)) {
 				try {
 					await this.app.vault.createFolder(folder);
@@ -37,7 +57,7 @@ export class ObsidianNoteCreator implements NoteCreator {
 				}
 			}
 
-			const base = folder ? `${folder}/${datePart} Untitled` : `${datePart} Untitled`;
+			const base = folder ? `${folder}/${datePart} ${safeTitle}` : `${datePart} ${safeTitle}`;
 			let path = normalizePath(`${base}.md`);
 			let counter = 1;
 			while (this.app.vault.getAbstractFileByPath(path)) {
@@ -64,21 +84,28 @@ export class ObsidianNoteCreator implements NoteCreator {
 				}
 				await this.app.fileManager.processFrontMatter(file, (fm: Record<string, unknown>) => {
 					fm[mapping.startDateProp] = dateStr;
+					if (endDateStr) fm[mapping.endDateProp] = endDateStr;
+					if (mapping.titleProp !== "__filename__" && trimmedTitle) fm[mapping.titleProp] = trimmedTitle;
+					if (trimmedIcon && mapping.iconProp) fm[mapping.iconProp] = trimmedIcon;
+					if (trimmedDescription && mapping.descriptionProp) fm[mapping.descriptionProp] = trimmedDescription;
+					if (options.anniversary && mapping.anniversaryProp) fm[mapping.anniversaryProp] = true;
 					const existing = Array.isArray(fm.tags)
 						? (fm.tags as unknown[]).map(String)
 						: (typeof fm.tags === "string" || typeof fm.tags === "number") ? [String(fm.tags)] : [];
-					if (!existing.includes("linear-calendar")) existing.unshift("linear-calendar");
+					if (!existing.includes(calendarTag)) existing.unshift(calendarTag);
 					fm.tags = existing;
 				});
 			} else {
-				const frontmatter = [
-					"---",
-					`tags: [linear-calendar]`,
-					`${mapping.startDateProp}: ${dateStr}`,
-					"---",
-					"",
-				].join("\n");
-				file = await this.app.vault.create(path, frontmatter);
+				const lines = ["---", `tags: [${calendarTag}]`, `${mapping.startDateProp}: ${dateStr}`];
+				if (endDateStr) lines.push(`${mapping.endDateProp}: ${endDateStr}`);
+				if (mapping.titleProp !== "__filename__" && trimmedTitle) lines.push(`${mapping.titleProp}: ${trimmedTitle}`);
+				if (trimmedIcon && mapping.iconProp) lines.push(`${mapping.iconProp}: ${trimmedIcon}`);
+				if (trimmedDescription && mapping.descriptionProp) {
+					lines.push(`${mapping.descriptionProp}: ${JSON.stringify(trimmedDescription)}`);
+				}
+				if (options.anniversary && mapping.anniversaryProp) lines.push(`${mapping.anniversaryProp}: true`);
+				lines.push("---", "");
+				file = await this.app.vault.create(path, lines.join("\n"));
 			}
 
 			await this.app.workspace.openLinkText(file.path, "", false);

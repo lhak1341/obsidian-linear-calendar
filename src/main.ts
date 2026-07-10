@@ -5,18 +5,29 @@ import { LinearCalendarView } from "./view/LinearCalendarView";
 import { LinearCalendarSettingTab } from "./settings";
 import { FrontmatterScanner } from "./data/FrontmatterScanner";
 import { ObsidianNoteCreator } from "./NoteCreator";
+import { CreateEventModal } from "./CreateEventModal";
 import { CalendarRenderer, RenderConfig } from "./view/CalendarRenderer";
 import { writeDragDates } from "./utils/frontmatterUtils";
 import { buildTagColorMap } from "./utils/colorUtils";
 import { getDailyNoteMap } from "./utils/dailyNotes";
 
+/** Handle returned by {@link LinearCalendarPlugin.mountMonthStrip} for host-driven month navigation. */
+export interface MonthStripHandle {
+	next(): void;
+	prev(): void;
+	today(): void;
+	destroy(): void;
+}
+
 export default class LinearCalendarPlugin extends Plugin {
 	settings: PluginSettings = DEFAULT_SETTINGS;
 	private scanner!: FrontmatterScanner;
+	private noteCreator!: ObsidianNoteCreator;
 
 	async onload(): Promise<void> {
 		await this.loadSettings();
 		this.scanner = new FrontmatterScanner(this.app);
+		this.noteCreator = new ObsidianNoteCreator(this.app, this.settings, () => this.settings.defaultMapping);
 
 		this.registerView(VIEW_TYPE_LINEAR_CALENDAR, (leaf: WorkspaceLeaf) => {
 			return new LinearCalendarView(
@@ -24,7 +35,7 @@ export default class LinearCalendarPlugin extends Plugin {
 				this.settings,
 				() => this.settings.defaultMapping,
 				this.scanner,
-				new ObsidianNoteCreator(this.app, this.settings, () => this.settings.defaultMapping),
+				this.noteCreator,
 			);
 		});
 
@@ -32,6 +43,12 @@ export default class LinearCalendarPlugin extends Plugin {
 			id: "open-linear-calendar",
 			name: "Open",
 			callback: () => this.activateView(),
+		});
+
+		this.addCommand({
+			id: "create-event",
+			name: "Create event",
+			callback: () => new CreateEventModal(this.app, this.noteCreator, this.settings).open(),
 		});
 
 		this.addSettingTab(new LinearCalendarSettingTab(this.app, this));
@@ -50,7 +67,7 @@ export default class LinearCalendarPlugin extends Plugin {
 	}
 
 	async loadSettings(): Promise<void> {
-		// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+		// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- loadData() returns unknown; shape is trusted plugin-authored settings JSON
 		const saved: Partial<PluginSettings> = (await this.loadData()) ?? {};
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, saved);
 		this.settings.defaultMapping = Object.assign(
@@ -79,14 +96,20 @@ export default class LinearCalendarPlugin extends Plugin {
 	}
 
 	/**
-	 * Public API — mount a full single-month calendar strip (current month) into
-	 * `container`. Uses LC's own renderers so styles, bars, tooltips, and the
-	 * now-indicator all work exactly as in the full view.
-	 * Returns a cleanup function; call it when the host view closes.
+	 * Public API — mount a full single-month calendar strip into `container`,
+	 * starting on the current month. Uses LC's own renderers so styles, bars,
+	 * tooltips, and the now-indicator all work exactly as in the full view.
+	 * `onMonthChange` fires on mount and after every navigation with the
+	 * displayed year/month, so a host view can render its own month label.
+	 * Returns a handle to navigate months and to clean up when the host view closes.
 	 */
-	mountMonthStrip(container: HTMLElement, categoriesEl: HTMLElement): () => void {
-		const year = new Date().getFullYear();
-		const month = new Date().getMonth();
+	mountMonthStrip(
+		container: HTMLElement,
+		categoriesEl: HTMLElement,
+		onMonthChange?: (year: number, month: number) => void,
+	): MonthStripHandle {
+		let year = new Date().getFullYear();
+		let month = new Date().getMonth();
 		const hiddenCategories = new Set<string>();
 
 		let render!: () => void;
@@ -126,8 +149,10 @@ export default class LinearCalendarPlugin extends Plugin {
 				iconMap: this.settings.iconMap,
 				dailyNoteColor: this.settings.dailyNoteColor,
 				dailyNoteStyle: this.settings.dailyNoteStyle,
+				japaneseWeekdayLabels: this.settings.japaneseWeekdayLabels,
 			};
 			renderer.render(config);
+			onMonthChange?.(year, month);
 		};
 
 		render();
@@ -142,9 +167,25 @@ export default class LinearCalendarPlugin extends Plugin {
 		});
 		ro.observe(container);
 
-		return () => {
-			renderer.cleanup();
-			ro.disconnect();
+		const shiftMonth = (delta: number) => {
+			const total = year * 12 + month + delta;
+			year = Math.floor(total / 12);
+			month = ((total % 12) + 12) % 12;
+			render();
+		};
+
+		return {
+			next: () => shiftMonth(1),
+			prev: () => shiftMonth(-1),
+			today: () => {
+				year = new Date().getFullYear();
+				month = new Date().getMonth();
+				render();
+			},
+			destroy: () => {
+				renderer.cleanup();
+				ro.disconnect();
+			},
 		};
 	}
 

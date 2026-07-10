@@ -1,4 +1,3 @@
-/* eslint-disable obsidianmd/no-static-styles-assignment -- style.display/cursor on drag elements are imperative show/hide; cannot use CSS classes without extra state tracking */
 import type { MonthRowRef } from "./GridRenderer";
 import {
 	segmentDates, findFreeRow, newDatesFromDelta,
@@ -27,7 +26,7 @@ function buildOccupancy(container: HTMLElement): RowOccupancy {
 	const bars = container.querySelectorAll(".calendar-bar:not(.lc-drag-ghost)");
 	for (const bar of bars) {
 		const el = bar as HTMLElement;
-		if (el.style.display === "none") continue;
+		if (el.hasClass("lc-hidden")) continue;
 		const row = parseInt(el.style.gridRow) - 2;
 		if (isNaN(row) || row < 0) continue;
 		const match = el.style.gridColumn.match(/(\d+)\s*\/\s*span\s*(\d+)/);
@@ -74,13 +73,8 @@ export class DragHandler {
 		originalStart: Date,
 		originalEnd: Date,
 	): void {
-		const leftHandle = activeDocument.createElement("div");
-		leftHandle.className = "lc-drag-handle lc-drag-handle-left";
-		barEl.appendChild(leftHandle);
-
-		const rightHandle = activeDocument.createElement("div");
-		rightHandle.className = "lc-drag-handle lc-drag-handle-right";
-		barEl.appendChild(rightHandle);
+		const leftHandle = barEl.createDiv({ cls: "lc-drag-handle lc-drag-handle-left" });
+		const rightHandle = barEl.createDiv({ cls: "lc-drag-handle lc-drag-handle-right" });
 
 		const initDrag = (e: MouseEvent, mode: DragContext["mode"]) => {
 			e.stopPropagation();
@@ -158,7 +152,7 @@ export class DragHandler {
 		}
 
 		barEl.addClass("lc-dragging");
-		activeDocument.body.style.cursor = mode === "move" ? "grabbing" : "col-resize";
+		activeDocument.body.addClass(mode === "move" ? "lc-drag-cursor-grabbing" : "lc-drag-cursor-resize");
 
 		activeDocument.addEventListener("mousemove", this.boundMouseMove);
 		activeDocument.addEventListener("mouseup", this.boundMouseUp);
@@ -195,9 +189,9 @@ export class DragHandler {
 		if (homeSeg) {
 			const span = homeSeg.endDay - homeSeg.startDay + 1;
 			barEl.style.gridColumn = `${homeOffset + homeSeg.startDay} / span ${span}`;
-			barEl.style.display = "";
+			barEl.removeClass("lc-hidden");
 		} else {
-			barEl.style.display = "none";
+			barEl.addClass("lc-hidden");
 		}
 
 		// Update ghosts — reuse pooled elements
@@ -216,13 +210,10 @@ export class DragHandler {
 			let ghost: HTMLElement;
 			if (gi < this.ghostPool.length) {
 				ghost = this.ghostPool[gi];
-				ghost.style.display = "";
+				ghost.removeClass("lc-hidden");
 			} else {
-				ghost = activeDocument.createElement("div");
-				ghost.className = "calendar-bar lc-drag-ghost";
-				const label = activeDocument.createElement("span");
-				label.className = "calendar-bar-label";
-				ghost.appendChild(label);
+				ghost = createDiv({ cls: "calendar-bar lc-drag-ghost" });
+				ghost.createSpan({ cls: "calendar-bar-label" });
 				this.ghostPool.push(ghost);
 			}
 
@@ -241,7 +232,7 @@ export class DragHandler {
 
 		// Hide unused ghosts
 		for (let i = gi; i < this.activeGhostCount; i++) {
-			this.ghostPool[i].style.display = "none";
+			this.ghostPool[i].addClass("lc-hidden");
 		}
 		this.activeGhostCount = gi;
 	}
@@ -257,7 +248,7 @@ export class DragHandler {
 	private async onMouseUp(): Promise<void> {
 		activeDocument.removeEventListener("mousemove", this.boundMouseMove);
 		activeDocument.removeEventListener("mouseup", this.boundMouseUp);
-		activeDocument.body.style.cursor = "";
+		activeDocument.body.removeClass("lc-drag-cursor-grabbing", "lc-drag-cursor-resize");
 
 		if (!this.ctx) return;
 
@@ -268,7 +259,7 @@ export class DragHandler {
 		this.clearGhosts();
 		this.occupancyCache.clear();
 
-		barEl.style.display = "";
+		barEl.removeClass("lc-hidden");
 		barEl.removeClass("lc-dragging");
 		barEl.dataset.justDragged = "true";
 		window.requestAnimationFrame(() => { delete barEl.dataset.justDragged; });

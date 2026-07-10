@@ -24,6 +24,7 @@ export const DEFAULT_SETTINGS: PluginSettings = {
 	newEventTemplate: "",
 	font: "plugin",
 	fontCustom: "",
+	japaneseWeekdayLabels: false,
 };
 
 // Google Calendar / Material Design palette

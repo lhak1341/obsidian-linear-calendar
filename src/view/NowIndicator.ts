@@ -73,17 +73,12 @@ export class NowIndicator {
 			this.markedElements.push(numSpan as HTMLElement);
 		}
 
-		// eslint-disable-next-line obsidianmd/no-static-styles-assignment
-		daysGrid.style.position = "relative";
-
-		const outline = activeDocument.createElement("div");
-		outline.className = "lc-today-column";
+		const outline = daysGrid.createDiv({ cls: "lc-today-column" });
 		// Percentage-based left/width reflows with the grid on container resize.
 		// Grid uses repeat(totalCols, 1fr) so each column is exactly 100%/totalCols wide.
 		const colIdx = row.weekdayOffset + day - 1; // 0-indexed column
 		outline.style.left = `${(colIdx / row.totalCols) * 100}%`;
 		outline.style.width = `${100 / row.totalCols}%`;
-		daysGrid.appendChild(outline);
 		this.createdElements.push(outline);
 	}
 

@@ -38,4 +38,5 @@ export interface PluginSettings {
 	newEventTemplate: string;
 	font: FontChoice;
 	fontCustom: string;
+	japaneseWeekdayLabels: boolean;
 }

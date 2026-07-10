@@ -1,4 +1,3 @@
-/* eslint-disable obsidianmd/no-static-styles-assignment -- CSS grid layout values (template-columns/rows, minWidth, gridRow, gridColumn) are computed at render time and cannot be expressed as static CSS classes */
 import type { AlignMode, DailyNoteStyle } from "../types";
 import { MAX_WATERFALL_COLS_VERT } from "../constants";
 
@@ -21,6 +20,7 @@ const MONTH_NAMES = [
 ];
 
 const WEEKDAY_ABBR = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
+const WEEKDAY_KANJI = ["日", "月", "火", "水", "木", "金", "土"];
 
 
 export interface MonthRowRef {
@@ -55,7 +55,7 @@ export class GridRenderer {
 		this.onDayContextMenu = handler;
 	}
 
-	render(year: number, colMinWidth = 0, alignMode: AlignMode = "date", dailyNoteDates: Set<string> = new Set(), dailyNoteColor: string | null = null, dailyNoteStyle: DailyNoteStyle = "tint"): MonthRowRef[] {
+	render(year: number, colMinWidth = 0, alignMode: AlignMode = "date", dailyNoteDates: Set<string> = new Set(), dailyNoteColor: string | null = null, dailyNoteStyle: DailyNoteStyle = "tint", japaneseWeekdayLabels = false): MonthRowRef[] {
 		this.containerEl.empty();
 		this.monthRows = [];
 
@@ -75,22 +75,20 @@ export class GridRenderer {
 
 		for (let m = 0; m < 12; m++) {
 			const days = new Date(year, m + 1, 0).getDate();
-			const rowRef = this.renderMonthRow(year, m, days, colTemplate, alignMode, totalCols, dailyNoteDates, dailyNoteColor, dailyNoteStyle);
+			const rowRef = this.renderMonthRow(year, m, days, colTemplate, alignMode, totalCols, dailyNoteDates, dailyNoteColor, dailyNoteStyle, japaneseWeekdayLabels);
 			this.monthRows.push(rowRef);
 		}
 
 		return this.monthRows;
 	}
 
-	renderVertical(year: number, dailyNoteDates: Set<string> = new Set(), dailyNoteColor: string | null = null, dailyNoteStyle: DailyNoteStyle = "tint", alignMode: AlignMode = "date"): MonthRowRef[] {
+	renderVertical(year: number, dailyNoteDates: Set<string> = new Set(), dailyNoteColor: string | null = null, dailyNoteStyle: DailyNoteStyle = "tint", alignMode: AlignMode = "date", japaneseWeekdayLabels = false): MonthRowRef[] {
 		this.containerEl.empty();
 		this.monthRows = [];
 
 		this.containerEl.removeClass("linear-calendar-grid");
 		this.containerEl.addClass("lc-vert-grid");
-		this.containerEl.style.gridTemplateColumns = "repeat(12, 1fr)";
-		this.containerEl.style.gridTemplateRows = "auto 1fr";
-		this.containerEl.style.minWidth = "";
+		this.containerEl.style.removeProperty("min-width");
 
 		const totalRows = this.computeAlignedSize(year, alignMode);
 
@@ -99,7 +97,6 @@ export class GridRenderer {
 			const header = this.containerEl.createDiv({ cls: "lc-vert-month-header" });
 			header.textContent = MONTH_NAMES[m];
 			header.style.gridColumn = `${m + 1}`;
-			header.style.gridRow = "1";
 		}
 
 		// Per-month containers — each holds day cells (col 1) + bars (cols 2+)
@@ -110,16 +107,14 @@ export class GridRenderer {
 
 			const monthCol = this.containerEl.createDiv({ cls: "lc-vert-month-col" });
 			monthCol.style.gridColumn = `${m + 1}`;
-			monthCol.style.gridRow = "2";
 			monthCol.style.gridTemplateRows = `repeat(${totalRows}, var(--lc-vert-row-h, 20px))`;
 			monthCol.style.gridTemplateColumns = `22px repeat(${MAX_WATERFALL_COLS_VERT}, 16px)`;
 
 			for (let d = 1; d <= daysInMonth; d++) {
 				const cellEl = monthCol.createDiv({ cls: "lc-vert-day-cell" });
-				cellEl.style.gridColumn = "1";
 				cellEl.style.gridRow = `${weekdayOffset + d}`;
 				cellEl.dataset.day = String(d);
-				this.populateDayCell(cellEl, year, m, d, firstDow, dailyNoteDates, dailyNoteColor, dailyNoteStyle);
+				this.populateDayCell(cellEl, year, m, d, firstDow, dailyNoteDates, dailyNoteColor, dailyNoteStyle, japaneseWeekdayLabels);
 			}
 
 			this.monthRows.push({
@@ -143,6 +138,7 @@ export class GridRenderer {
 		dailyNoteDates: Set<string> = new Set(),
 		dailyNoteColor: string | null = null,
 		dailyNoteStyle: DailyNoteStyle = "tint",
+		japaneseWeekdayLabels = false,
 	): MonthRowRef {
 		this.containerEl.empty();
 		this.monthRows = [];
@@ -150,7 +146,7 @@ export class GridRenderer {
 		this.containerEl.addClass("linear-calendar-grid");
 		this.containerEl.style.removeProperty("grid-template-columns");
 		this.containerEl.style.removeProperty("grid-template-rows");
-		this.containerEl.style.minWidth = "";
+		this.containerEl.style.removeProperty("min-width");
 
 		const totalCols = this.computeAlignedSize(year, alignMode);
 		const colTemplate = `repeat(${totalCols}, 1fr)`;
@@ -158,7 +154,7 @@ export class GridRenderer {
 
 		const rowRef = this.renderMonthRow(
 			year, month, daysInMonth, colTemplate, alignMode, totalCols,
-			dailyNoteDates, dailyNoteColor, dailyNoteStyle,
+			dailyNoteDates, dailyNoteColor, dailyNoteStyle, japaneseWeekdayLabels,
 		);
 		this.monthRows.push(rowRef);
 		return rowRef;
@@ -174,6 +170,7 @@ export class GridRenderer {
 		dailyNoteDates: Set<string>,
 		dailyNoteColor: string | null,
 		dailyNoteStyle: DailyNoteStyle,
+		japaneseWeekdayLabels: boolean,
 	): MonthRowRef {
 		const row = this.containerEl.createDiv({ cls: "lc-month-row" });
 
@@ -193,16 +190,14 @@ export class GridRenderer {
 			for (let d = 1; d <= 31; d++) {
 				const cellEl = daysGrid.createDiv({ cls: "lc-day-cell" });
 				cellEl.style.gridColumn = `${d}`;
-				cellEl.style.gridRow = "1";
 				if (d > daysInMonth) { cellEl.addClass("lc-day-empty"); continue; }
-				this.populateDayCell(cellEl, year, month, d, firstDow, dailyNoteDates, dailyNoteColor, dailyNoteStyle);
+				this.populateDayCell(cellEl, year, month, d, firstDow, dailyNoteDates, dailyNoteColor, dailyNoteStyle, japaneseWeekdayLabels);
 			}
 		} else {
 			for (let d = 1; d <= daysInMonth; d++) {
 				const cellEl = daysGrid.createDiv({ cls: "lc-day-cell" });
 				cellEl.style.gridColumn = `${weekdayOffset + d}`;
-				cellEl.style.gridRow = "1";
-				this.populateDayCell(cellEl, year, month, d, firstDow, dailyNoteDates, dailyNoteColor, dailyNoteStyle);
+				this.populateDayCell(cellEl, year, month, d, firstDow, dailyNoteDates, dailyNoteColor, dailyNoteStyle, japaneseWeekdayLabels);
 			}
 		}
 
@@ -233,6 +228,7 @@ export class GridRenderer {
 		dailyNoteDates: Set<string>,
 		dailyNoteColor: string | null,
 		dailyNoteStyle: DailyNoteStyle,
+		japaneseWeekdayLabels: boolean,
 	): void {
 		const dow = (firstDow + day - 1) % 7;
 		if (dow === 0 || dow === 6) cellEl.addClass("lc-day-weekend");
@@ -242,7 +238,7 @@ export class GridRenderer {
 		if (hasDailyNote) cellEl.addClass("lc-has-daily-note");
 
 		cellEl.createSpan({ cls: "lc-day-num", text: String(day) });
-		cellEl.createSpan({ cls: "lc-day-weekday", text: WEEKDAY_ABBR[dow] });
+		cellEl.createSpan({ cls: "lc-day-weekday", text: (japaneseWeekdayLabels ? WEEKDAY_KANJI : WEEKDAY_ABBR)[dow] });
 
 		this.attachCellHandlers(cellEl, year, month, day, hasDailyNote, dailyNoteColor, dailyNoteStyle);
 	}

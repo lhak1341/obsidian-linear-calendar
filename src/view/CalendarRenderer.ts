@@ -20,6 +20,7 @@ export interface RenderConfig {
 	iconMap: Record<string, string>;
 	dailyNoteColor: string | null;
 	dailyNoteStyle: DailyNoteStyle;
+	japaneseWeekdayLabels: boolean;
 }
 
 interface CalendarRendererCallbacks {
@@ -60,7 +61,7 @@ export class CalendarRenderer {
 
 	render(config: RenderConfig): void {
 		const { year, months, hiddenCategories, layout, alignMode, rowHeight, dailyNoteMap,
-			colorMap, iconMap, dailyNoteColor, dailyNoteStyle } = config;
+			colorMap, iconMap, dailyNoteColor, dailyNoteStyle, japaneseWeekdayLabels } = config;
 		const dailyNoteDates = new Set(dailyNoteMap.keys());
 
 		this.lastRenderedYear = year;
@@ -91,17 +92,17 @@ export class CalendarRenderer {
 		if (months.length === 1) {
 			monthRows = [this.gridRenderer.renderMonth(
 				year, months[0], alignMode, dailyNoteDates,
-				dailyNoteColor, dailyNoteStyle,
+				dailyNoteColor, dailyNoteStyle, japaneseWeekdayLabels,
 			)];
 		} else if (layout === "vertical") {
 			monthRows = this.gridRenderer.renderVertical(
 				year, dailyNoteDates, dailyNoteColor,
-				dailyNoteStyle, alignMode,
+				dailyNoteStyle, alignMode, japaneseWeekdayLabels,
 			);
 		} else {
 			monthRows = this.gridRenderer.render(
 				year, 0, alignMode, dailyNoteDates,
-				dailyNoteColor, dailyNoteStyle,
+				dailyNoteColor, dailyNoteStyle, japaneseWeekdayLabels,
 			);
 		}
 
@@ -117,8 +118,6 @@ export class CalendarRenderer {
 
 		if (months.length === 1) {
 			const grid = this.gridRenderer.getContainer();
-			// eslint-disable-next-line obsidianmd/no-static-styles-assignment
-			grid.style.width = "100%";
 			const daysInMonth = new Date(year, months[0] + 1, 0).getDate();
 			const daysGridEl = grid.querySelector<HTMLElement>(".lc-days-grid");
 			if (daysGridEl) {

@@ -196,6 +196,7 @@
 .linear-calendar-grid {
 	display: flex;
 	flex-direction: column;
+	width: 100%;
 	padding: 0;
 }
 
@@ -229,6 +230,7 @@
    31 columns. Row 1 = day header (16px). Rows 2+ = bars (12px). */
 .lc-days-grid {
 	display: grid;
+	position: relative;
 	/* grid-template-columns set inline by GridRenderer */
 	grid-template-rows: 18px;
 	grid-auto-rows: 17px;
@@ -461,6 +463,18 @@
 	z-index: 20 !important;
 }
 
+.lc-hidden {
+	display: none;
+}
+
+body.lc-drag-cursor-grabbing {
+	cursor: grabbing;
+}
+
+body.lc-drag-cursor-resize {
+	cursor: col-resize;
+}
+
 /* ---- Tooltip ---- */
 .linear-calendar-tooltip {
 	position: absolute;
@@ -545,7 +559,20 @@
 	display: flex;
 	gap: 4px;
 	flex-wrap: wrap;
+	flex-shrink: 0;
 	margin-right: 8px;
+}
+
+/* "Add tag color" packs a text input, 12 swatches, a color picker, an icon
+   input, and a button into one row — wider than the control column at
+   typical panel widths. Obsidian's default `justify-content: flex-end` +
+   `flex-wrap: nowrap` + `overflow: visible` lets the overflow spill left
+   past the control box, over the name/description text. Wrap onto a second
+   line instead, packed from the left, so it stays inside the row. */
+.lc-add-tag-color .setting-item-control {
+	flex-wrap: wrap;
+	justify-content: flex-start;
+	row-gap: 8px;
 }
 
 .lc-color-swatch {
@@ -672,12 +699,14 @@
 .lc-vert-grid {
 	display: grid;
 	grid-template-columns: repeat(12, 1fr);
+	grid-template-rows: auto 1fr;
 	row-gap: 0;
 	column-gap: 1px;
 	width: 100%;
 }
 
 .lc-vert-month-header {
+	grid-row: 1;
 	font-size: 10px;
 	font-weight: 700;
 	text-align: center;
@@ -694,6 +723,7 @@
 
 /* Per-month container: left = date header, right = bars */
 .lc-vert-month-col {
+	grid-row: 2;
 	display: grid;
 	overflow: hidden;
 	row-gap: 2px;
@@ -745,12 +775,14 @@
 	border-radius: 2px;
 	overflow: hidden;
 	min-height: 0;
+	height: 100%;
 	display: flex;
 	flex-direction: column;
 	align-items: center;
 	justify-content: flex-start;
 	padding: 4px 2px;
 	box-sizing: border-box;
+	pointer-events: auto;
 }
 
 .calendar-bar-vert .calendar-bar-icon {
@@ -793,4 +825,106 @@
 .lc-today-vert-col {
 	box-shadow: inset 0 0 0 1.5px var(--color-accent);
 	border-radius: 2px;
+}
+
+/* ---- Create event modal ---- */
+/* Obsidian borders every .setting-item that isn't the literal first child of
+   its parent — with row wrapper divs in between, that produces dividers
+   before some fields but not others, no relation to grouping. !important is
+   needed because Obsidian's own border/padding rules tie or beat plain class
+   selectors on specificity. One clean divider above the action buttons. */
+.lc-create-event-modal .setting-item {
+	border-top: none !important;
+}
+
+.lc-create-event-modal > .setting-item:last-child {
+	border-top: 1px solid var(--background-modifier-border) !important;
+	margin-top: 8px;
+}
+
+/* Stack label above control (instead of Obsidian's default name-left/
+   control-right) for every field except the Anniversary toggle (reads better
+   with the switch on the right, like a normal checkbox row) and the trailing
+   Cancel/Create row (buttons belong right-aligned, Obsidian's default). */
+.lc-create-event-modal .setting-item:not(.mod-toggle):not(.lc-create-event-actions) {
+	display: flex;
+	flex-direction: column;
+	align-items: stretch;
+	gap: 4px;
+	padding: 0 0 16px 0 !important;
+}
+
+.lc-create-event-modal .setting-item:not(.mod-toggle):not(.lc-create-event-actions) .setting-item-info {
+	margin-right: 0;
+}
+
+.lc-create-event-modal .setting-item:not(.mod-toggle):not(.lc-create-event-actions) .setting-item-control {
+	justify-content: flex-start;
+}
+
+.lc-create-event-modal .setting-item:not(.mod-toggle):not(.lc-create-event-actions) .setting-item-control > * {
+	width: 100%;
+}
+
+.lc-create-event-modal .mod-toggle {
+	padding: 0 0 16px 0 !important;
+}
+
+.lc-create-event-actions .setting-item-info {
+	display: none;
+}
+
+.lc-create-event-row {
+	display: flex;
+	gap: var(--size-4-2);
+}
+
+.lc-create-event-row .setting-item {
+	flex: 1;
+	min-width: 0;
+	padding-bottom: 0 !important;
+}
+
+/* Obsidian's dropdown auto-sizes itself via --dropdown-fitted-width with a
+   `select.dropdown` rule that out-specifies a plain class selector; match its
+   specificity to force it to fill the row column like the other inputs. */
+.lc-create-event-row .setting-item-control select.dropdown {
+	width: 100%;
+}
+
+.lc-create-event-hint {
+	margin: -12px 0 16px;
+}
+
+.lc-create-event-row .lc-icon-input-wrap {
+	width: 100%;
+}
+
+.lc-create-event-row .lc-icon-input {
+	width: auto;
+	flex: 1;
+	min-width: 0;
+}
+
+.lc-create-event-modal textarea {
+	width: 100%;
+}
+
+.lc-create-event-filename {
+	font-size: var(--font-ui-smaller);
+	color: var(--text-muted);
+	margin: 4px 0 12px;
+	word-break: break-all;
+}
+
+/* Lucide icon suggest popover — icon + name on one centered row */
+.lc-icon-suggest-item {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.lc-icon-suggest-icon {
+	display: inline-flex;
+	align-items: center;
 }

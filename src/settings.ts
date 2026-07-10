@@ -3,6 +3,7 @@ import type LinearCalendarPlugin from "./main";
 import { COLOR_PALETTE } from "./constants";
 import { buildTagColorMap } from "./utils/colorUtils";
 import type { AlignMode, ColumnMapping, DailyNoteStyle, FontChoice } from "./types";
+import { IconSuggest } from "./IconSuggest";
 
 const FONT_OPTIONS: Record<FontChoice, string> = {
 	"plugin":             "Plugin default",
@@ -20,13 +21,16 @@ export class LinearCalendarSettingTab extends PluginSettingTab {
 		this.plugin = plugin;
 	}
 
-	/** Re-renders the settings tab. Wraps the deprecated display() in one place. */
+	/** Re-renders the settings tab. */
 	private refresh(): void {
-		// eslint-disable-next-line @typescript-eslint/no-deprecated
-		this.display();
+		this.renderAll();
 	}
 
 	display(): void {
+		this.renderAll();
+	}
+
+	private renderAll(): void {
 		const { containerEl } = this;
 		containerEl.empty();
 		const mapping = this.plugin.settings.defaultMapping;
@@ -39,8 +43,9 @@ export class LinearCalendarSettingTab extends PluginSettingTab {
 
 	private renderGeneralSettings(containerEl: HTMLElement, mapping: ColumnMapping): void {
 		new Setting(containerEl).setName("Data mapping").setHeading();
+		const items = containerEl.createDiv("setting-group").createDiv("setting-items");
 
-		new Setting(containerEl)
+		new Setting(items)
 			.setName("Column alignment")
 			.setDesc("Date: day 1 aligns across months. Weekday: same weekday aligns across months.")
 			.addDropdown((dd) =>
@@ -55,7 +60,7 @@ export class LinearCalendarSettingTab extends PluginSettingTab {
 			);
 
 		const isFilename = mapping.titleProp === "__filename__";
-		new Setting(containerEl)
+		new Setting(items)
 			.setName("Title source")
 			.setDesc("What to use as the bar label.")
 			.addDropdown((dd) =>
@@ -71,7 +76,7 @@ export class LinearCalendarSettingTab extends PluginSettingTab {
 			);
 
 		if (!isFilename) {
-			new Setting(containerEl)
+			new Setting(items)
 				.setName("Title property name")
 				.setDesc("Frontmatter key for bar labels.")
 				.addText((text) =>
@@ -85,12 +90,11 @@ export class LinearCalendarSettingTab extends PluginSettingTab {
 				);
 		}
 
-		new Setting(containerEl)
+		new Setting(items)
 			.setName("Start date property")
 			.setDesc("Frontmatter property for event start date.")
 			.addText((text) =>
 				text
-					// eslint-disable-next-line obsidianmd/ui/sentence-case
 					.setPlaceholder("datestart")
 					.setValue(mapping.startDateProp)
 					.onChange(async (value) => {
@@ -99,12 +103,11 @@ export class LinearCalendarSettingTab extends PluginSettingTab {
 					}),
 			);
 
-		new Setting(containerEl)
+		new Setting(items)
 			.setName("End date property")
 			.setDesc("Frontmatter property for event end date. Events without this are single-day.")
 			.addText((text) =>
 				text
-					// eslint-disable-next-line obsidianmd/ui/sentence-case
 					.setPlaceholder("dateend")
 					.setValue(mapping.endDateProp)
 					.onChange(async (value) => {
@@ -113,9 +116,8 @@ export class LinearCalendarSettingTab extends PluginSettingTab {
 					}),
 			);
 
-		new Setting(containerEl)
+		new Setting(items)
 			.setName("Icon property")
-			// eslint-disable-next-line obsidianmd/ui/sentence-case
 			.setDesc("Frontmatter property for Lucide icon name displayed on bars.")
 			.addText((text) =>
 				text
@@ -127,7 +129,7 @@ export class LinearCalendarSettingTab extends PluginSettingTab {
 					}),
 			);
 
-		new Setting(containerEl)
+		new Setting(items)
 			.setName("Anniversary property")
 			.setDesc("Frontmatter boolean property. When true, the event repeats on the same date every subsequent year (shown with a dashed border).")
 			.addText((text) =>
@@ -140,7 +142,7 @@ export class LinearCalendarSettingTab extends PluginSettingTab {
 					}),
 			);
 
-		new Setting(containerEl)
+		new Setting(items)
 			.setName("Description property")
 			.setDesc("Frontmatter property shown as a third line in the hover tooltip. Leave empty to hide.")
 			.addText((text) =>
@@ -156,8 +158,9 @@ export class LinearCalendarSettingTab extends PluginSettingTab {
 
 	private renderNewEventSettings(containerEl: HTMLElement): void {
 		new Setting(containerEl).setName("New event").setHeading();
+		const items = containerEl.createDiv("setting-group").createDiv("setting-items");
 
-		new Setting(containerEl)
+		new Setting(items)
 			.setName("New event folder")
 			.setDesc("Folder where new events are created via right-click. Leave empty to use vault root.")
 			.addText((text) =>
@@ -170,12 +173,11 @@ export class LinearCalendarSettingTab extends PluginSettingTab {
 					}),
 			);
 
-		new Setting(containerEl)
+		new Setting(items)
 			.setName("Filename date format")
 			.setDesc("Moment.js format for the date prefix in new event filenames.")
 			.addText((text) =>
 				text
-					// eslint-disable-next-line obsidianmd/ui/sentence-case
 					.setPlaceholder("YYYY-MM-DD")
 					.setValue(this.plugin.settings.newEventDateFormat)
 					.onChange(async (value) => {
@@ -184,9 +186,8 @@ export class LinearCalendarSettingTab extends PluginSettingTab {
 					}),
 			);
 
-		new Setting(containerEl)
+		new Setting(items)
 			.setName("Templater template")
-			// eslint-disable-next-line obsidianmd/ui/sentence-case
 			.setDesc("Path to a Templater template file to apply when creating new events. Leave empty to use plain frontmatter. Requires the Templater plugin.")
 			.addText((text) =>
 				text
@@ -201,9 +202,10 @@ export class LinearCalendarSettingTab extends PluginSettingTab {
 
 	private renderDailyNoteSettings(containerEl: HTMLElement): void {
 		new Setting(containerEl).setName("Daily notes").setHeading();
+		const items = containerEl.createDiv("setting-group").createDiv("setting-items");
 
 		const isCustomColor = this.plugin.settings.dailyNoteColor !== null;
-		new Setting(containerEl)
+		new Setting(items)
 			.setName("Highlight color")
 			.setDesc("Color used to tint days that have a daily note.")
 			.addDropdown((dd) =>
@@ -220,7 +222,7 @@ export class LinearCalendarSettingTab extends PluginSettingTab {
 			);
 
 		if (isCustomColor) {
-			new Setting(containerEl)
+			new Setting(items)
 				.setName("Custom color")
 				.addColorPicker((picker) =>
 					picker
@@ -232,7 +234,7 @@ export class LinearCalendarSettingTab extends PluginSettingTab {
 				);
 		}
 
-		new Setting(containerEl)
+		new Setting(items)
 			.setName("Indicator style")
 			.setDesc("How to mark days that have a daily note.")
 			.addDropdown((dd) =>
@@ -249,9 +251,10 @@ export class LinearCalendarSettingTab extends PluginSettingTab {
 
 	private renderAppearanceSettings(containerEl: HTMLElement): void {
 		new Setting(containerEl).setName("Appearance").setHeading();
+		const items = containerEl.createDiv("setting-group").createDiv("setting-items");
 
 		let customFontEl: Setting;
-		new Setting(containerEl)
+		new Setting(items)
 			.setName("Font")
 			.setDesc("Font family for the calendar UI.")
 			.addDropdown((drop) => {
@@ -262,11 +265,10 @@ export class LinearCalendarSettingTab extends PluginSettingTab {
 					void this.plugin.saveSettings();
 				});
 			});
-		customFontEl = new Setting(containerEl)
+		customFontEl = new Setting(items)
 			.setName("")
 			.addText((text) =>
 				text
-					// eslint-disable-next-line obsidianmd/ui/sentence-case
 					.setPlaceholder('e.g. Inter, "DM Sans"')
 					.setValue(this.plugin.settings.fontCustom)
 					.onChange((value) => {
@@ -275,6 +277,18 @@ export class LinearCalendarSettingTab extends PluginSettingTab {
 					}),
 			);
 		customFontEl.settingEl.style.display = this.plugin.settings.font === "custom" ? "" : "none";
+
+		new Setting(items)
+			.setName("Japanese weekday labels")
+			.setDesc("Show weekdays as single kanji characters (日/月/火/水/木/金/土)")
+			.addToggle((toggle) =>
+				toggle
+					.setValue(this.plugin.settings.japaneseWeekdayLabels)
+					.onChange(async (value) => {
+						this.plugin.settings.japaneseWeekdayLabels = value;
+						await this.plugin.saveSettings();
+					}),
+			);
 	}
 
 	private renderColorMapSection(containerEl: HTMLElement, mapping: ColumnMapping): void {
@@ -294,10 +308,14 @@ export class LinearCalendarSettingTab extends PluginSettingTab {
 		containerEl: HTMLElement,
 		colorMap: Record<string, string>,
 	): void {
+		const entries = Object.entries(colorMap);
+		if (entries.length === 0) return;
+
 		const iconMap = this.plugin.settings.iconMap;
-		for (const [tag, color] of Object.entries(colorMap)) {
+		const items = containerEl.createDiv("setting-group").createDiv("setting-items");
+		for (const [tag, color] of entries) {
 			const shortName = tag.replace(/^linear-calendar\//, "");
-			new Setting(containerEl)
+			new Setting(items)
 				.setName("")
 				.then((setting) => {
 					const nameEl = setting.nameEl;
@@ -316,6 +334,7 @@ export class LinearCalendarSettingTab extends PluginSettingTab {
 					});
 					const iconPreview = iconWrap.createSpan({ cls: "lc-icon-preview" });
 					if (iconMap[tag]) setIcon(iconPreview, iconMap[tag]);
+					new IconSuggest(this.app, iconInput);
 					iconInput.addEventListener("input", () => {
 						iconPreview.empty();
 						const val = iconInput.value.trim();
@@ -362,10 +381,11 @@ export class LinearCalendarSettingTab extends PluginSettingTab {
 			text: "Auto-assigned colors from your notes. Pin to customize.",
 			cls: "setting-item-description",
 		});
+		const detectedItems = containerEl.createDiv("setting-group").createDiv("setting-items");
 
 		for (const [tag, color] of unpinned) {
 			const shortName = tag === "__uncategorized__" ? "Other" : tag.replace(/^linear-calendar\//, "");
-			new Setting(containerEl)
+			new Setting(detectedItems)
 				.setName("")
 				.then((setting) => {
 					const nameEl = setting.nameEl;
@@ -394,19 +414,20 @@ export class LinearCalendarSettingTab extends PluginSettingTab {
 		let newTagPicker: ColorComponent;
 		let newIconValue = "";
 
-		const addSetting = new Setting(containerEl)
+		const items = containerEl.createDiv("setting-group").createDiv("setting-items");
+		const addSetting = new Setting(items)
 			.setName("Add tag color")
-			.setDesc('Subtag name (without "linear-calendar/" prefix)');
+			.setDesc('Subtag name (without "linear-calendar/" prefix)')
+			.then((setting) => setting.settingEl.addClass("lc-add-tag-color"));
 
 		addSetting.addText((text) => {
-			// eslint-disable-next-line obsidianmd/ui/sentence-case
-			text.setPlaceholder("e.g. work");
+			text.setPlaceholder("E.g. work");
 			newTagInput = text.inputEl;
 		});
 
 		this.addSwatches(addSetting.controlEl, newTagColor, (c) => {
 			newTagColor = c;
-			// eslint-disable-next-line @typescript-eslint/no-misused-promises
+			// eslint-disable-next-line @typescript-eslint/no-misused-promises -- BaseComponent's chaining then() duck-types as thenable; this is a plain truthiness check, not a Promise
 			if (newTagPicker) newTagPicker.setValue(c);
 		});
 
@@ -422,6 +443,7 @@ export class LinearCalendarSettingTab extends PluginSettingTab {
 				attr: { type: "text", placeholder: "Icon (optional)" },
 			});
 			const iconPreview = iconWrap.createSpan({ cls: "lc-icon-preview" });
+			new IconSuggest(this.app, iconInput);
 			iconInput.addEventListener("input", () => {
 				iconPreview.empty();
 				const val = iconInput.value.trim();

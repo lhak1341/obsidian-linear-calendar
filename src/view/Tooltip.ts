@@ -1,11 +1,10 @@
-/* eslint-disable obsidianmd/no-static-styles-assignment -- style.display is used for show/hide; tooltip visibility is fully imperative and cannot be expressed as a CSS class without an extra selector layer */
 export class Tooltip {
 	private el: HTMLElement;
 	private attached = false;
+	private visible = false;
 
 	constructor(parentEl: HTMLElement) {
-		this.el = parentEl.createDiv({ cls: "linear-calendar-tooltip" });
-		this.el.style.display = "none";
+		this.el = parentEl.createDiv({ cls: "linear-calendar-tooltip lc-hidden" });
 	}
 
 	attach(container: HTMLElement): void {
@@ -21,7 +20,7 @@ export class Tooltip {
 		container.addEventListener("mousemove", (evt) => {
 			const target = evt.target as HTMLElement;
 			if (!target.classList.contains("calendar-bar")) return;
-			if (this.el.style.display === "block") {
+			if (this.visible) {
 				this.reposition(evt);
 			}
 		}, true);
@@ -60,7 +59,8 @@ export class Tooltip {
 			this.el.createDiv({ cls: "tooltip-description", text: description });
 		}
 
-		this.el.style.display = "block";
+		this.visible = true;
+		this.el.removeClass("lc-hidden");
 		this.reposition(evt);
 	}
 
@@ -89,12 +89,14 @@ export class Tooltip {
 	showForChip(name: string, evt: MouseEvent): void {
 		this.el.empty();
 		this.el.createDiv({ cls: "tooltip-title", text: name });
-		this.el.style.display = "block";
+		this.visible = true;
+		this.el.removeClass("lc-hidden");
 		this.reposition(evt);
 	}
 
 	hide(): void {
-		this.el.style.display = "none";
+		this.visible = false;
+		this.el.addClass("lc-hidden");
 	}
 
 	cleanup(): void {

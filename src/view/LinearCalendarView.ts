@@ -3,6 +3,7 @@ import type { PluginSettings, ColumnMapping } from "../types";
 import { VIEW_TYPE_LINEAR_CALENDAR } from "../constants";
 import type { DataSource } from "../data/DataSource";
 import type { NoteCreator } from "../NoteCreator";
+import { CreateEventModal } from "../CreateEventModal";
 import { CalendarRenderer, RenderConfig } from "./CalendarRenderer";
 import { createDailyNote, getDailyNoteMap } from "../utils/dailyNotes";
 import { writeDragDates } from "../utils/frontmatterUtils";
@@ -275,6 +276,7 @@ export class LinearCalendarView extends ItemView {
 			iconMap: this.settings.iconMap,
 			dailyNoteColor: this.settings.dailyNoteColor,
 			dailyNoteStyle: this.settings.dailyNoteStyle,
+			japaneseWeekdayLabels: this.settings.japaneseWeekdayLabels,
 		};
 		this.calendarRenderer.render(config);
 	}
@@ -295,6 +297,7 @@ export class LinearCalendarView extends ItemView {
 			iconMap: this.settings.iconMap,
 			dailyNoteColor: this.settings.dailyNoteColor,
 			dailyNoteStyle: this.settings.dailyNoteStyle,
+			japaneseWeekdayLabels: this.settings.japaneseWeekdayLabels,
 		};
 		this.calendarRenderer.renderBars(config);
 	}
@@ -322,7 +325,7 @@ export class LinearCalendarView extends ItemView {
 		menu.addItem((item) =>
 			item.setTitle("Create event")
 				.setIcon("calendar-plus")
-				.onClick(() => this.createNoteForDate(year, month, day))
+				.onClick(() => new CreateEventModal(this.app, this.noteCreator, this.settings, new Date(year, month, day)).open())
 		);
 		menu.showAtMouseEvent(event);
 	}

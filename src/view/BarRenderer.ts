@@ -88,10 +88,6 @@ export class BarRenderer {
 		if (isVertical) {
 			barEl.style.gridRow = `${rowRef.weekdayOffset + segment.startDay} / span ${span}`;
 			barEl.style.gridColumn = `${row + 2}`;  // col 1 = date header
-			// eslint-disable-next-line obsidianmd/no-static-styles-assignment
-			barEl.style.height = "100%";
-			// eslint-disable-next-line obsidianmd/no-static-styles-assignment
-			barEl.style.pointerEvents = "auto";
 		} else {
 			barEl.style.gridColumn = `${rowRef.weekdayOffset + segment.startDay} / span ${span}`;
 			barEl.style.gridRow = `${row + 2}`;

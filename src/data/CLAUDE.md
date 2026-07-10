@@ -12,6 +12,10 @@ Check both when gating on tags (see FrontmatterScanner.ts).
 - Signature is `(file: TFile, data, oldData)` — always capture the `TFile` arg; `() => handler()` silently discards it and defeats file-level filtering.
 - Use `source.hasCalendarEntry(file.path)` to fast-path known calendar files; fall back to tag inspection for new files not yet in cache.
 
+## Category = tags[0]
+
+Category comes from the first `linear-calendar/*` subtag surviving the filter in `processFile()` — when writing tags programmatically, put the desired category subtag first in the array.
+
 ## FrontmatterScanner cache management (concrete type only)
 
 - `evictFile(path)` — O(1) deletion; call from Plugin vault `delete` and `rename` handlers in `main.ts`
