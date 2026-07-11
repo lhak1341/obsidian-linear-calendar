@@ -86,6 +86,7 @@ export class LinearCalendarView extends ItemView {
 			this.categoriesContainer,
 			this.source,
 			() => this.getMapping(),
+			() => this.settings,
 			{
 				onDayDblClick: (y, m, d) => this.createNoteForDate(y, m, d),
 				onDayContextMenu: (y, m, d, e) => this.showDayContextMenu(y, m, d, e),
@@ -272,34 +273,12 @@ export class LinearCalendarView extends ItemView {
 			alignMode: this.settings.alignMode,
 			rowHeight: this.rowHeight,
 			dailyNoteMap: this.dailyNoteMapCache,
-			colorMap: this.settings.colorMap,
-			iconMap: this.settings.iconMap,
-			dailyNoteColor: this.settings.dailyNoteColor,
-			dailyNoteStyle: this.settings.dailyNoteStyle,
-			japaneseWeekdayLabels: this.settings.japaneseWeekdayLabels,
 		};
 		this.calendarRenderer.render(config);
 	}
 
 	private renderBarsOnly(): void {
-		if (!this.dailyNoteMapCache) {
-			this.dailyNoteMapCache = getDailyNoteMap(this.app);
-		}
-		const config: RenderConfig = {
-			year: this.currentYear,
-			months: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
-			hiddenCategories: this.hiddenCategories,
-			layout: this.layout,
-			alignMode: this.settings.alignMode,
-			rowHeight: this.rowHeight,
-			dailyNoteMap: this.dailyNoteMapCache,
-			colorMap: this.settings.colorMap,
-			iconMap: this.settings.iconMap,
-			dailyNoteColor: this.settings.dailyNoteColor,
-			dailyNoteStyle: this.settings.dailyNoteStyle,
-			japaneseWeekdayLabels: this.settings.japaneseWeekdayLabels,
-		};
-		this.calendarRenderer.renderBars(config);
+		this.calendarRenderer.renderBars();
 	}
 
 	private showDayContextMenu(year: number, month: number, day: number, event: MouseEvent): void {

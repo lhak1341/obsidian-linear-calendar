@@ -16,8 +16,8 @@
     "hash": "a5b82f9a82435789cbfd62a6fc6f85f0"
   },
   "/Users/lhak/workspace/github.com/lhak1341/obsidian-linear-calendar/src/main.ts": {
-    "mtime": 1783699167.260613,
-    "hash": "06fdd84f4f186da099e83a0c365baeca"
+    "mtime": 1783737964.218886,
+    "hash": "5e35ed2380335b7a9ea36271e394f40d"
   },
   "/Users/lhak/workspace/github.com/lhak1341/obsidian-linear-calendar/src/settings.ts": {
     "mtime": 1783707529.9200706,
@@ -60,52 +60,52 @@
     "hash": "0fd7aaca7af8b5d64ae12433221da14c"
   },
   "/Users/lhak/workspace/github.com/lhak1341/obsidian-linear-calendar/src/utils/rowAssignment.ts": {
-    "mtime": 1782153030.184286,
-    "hash": "c4ee2d25b354bbceae41b8dc2184b889"
+    "mtime": 1783737278.5061944,
+    "hash": "e3b2f19c463906f136e2beaf927137df"
   },
   "/Users/lhak/workspace/github.com/lhak1341/obsidian-linear-calendar/src/utils/colorUtils.ts": {
     "mtime": 1782152581.656108,
     "hash": "61b40cdbc4fa6ef128f2d959c19b5baa"
   },
   "/Users/lhak/workspace/github.com/lhak1341/obsidian-linear-calendar/src/view/GridRenderer.ts": {
-    "mtime": 1783695994.159822,
-    "hash": "8801cedb44fece785a6629a4c3ff203c"
+    "mtime": 1783738279.217788,
+    "hash": "90d3c8430a1703afd9ba6f692d1d7cac"
   },
   "/Users/lhak/workspace/github.com/lhak1341/obsidian-linear-calendar/src/view/LinearCalendarView.ts": {
-    "mtime": 1783699172.3946018,
-    "hash": "b6af5250972f34491961769175166c04"
+    "mtime": 1783737960.86488,
+    "hash": "e770a840d0009b8f90995738f6934f33"
   },
   "/Users/lhak/workspace/github.com/lhak1341/obsidian-linear-calendar/src/view/DragHandler.ts": {
-    "mtime": 1783696314.8946228,
-    "hash": "f064e989e4c03d9278285dda6c974c77"
+    "mtime": 1783737315.9365737,
+    "hash": "dfae7b53166d647e6edadb741e69f5a9"
   },
   "/Users/lhak/workspace/github.com/lhak1341/obsidian-linear-calendar/src/view/NowIndicator.ts": {
     "mtime": 1783696059.6549292,
     "hash": "21d0ec73ca11a7b129084d57d1f2ff0b"
   },
   "/Users/lhak/workspace/github.com/lhak1341/obsidian-linear-calendar/src/view/CalendarRenderer.ts": {
-    "mtime": 1783697174.3359857,
-    "hash": "10b6965c68fa2c297eb305eb52ff8c4e"
+    "mtime": 1783738295.0997255,
+    "hash": "ff6e50437e98cb06dc19009fa5a49d80"
   },
   "/Users/lhak/workspace/github.com/lhak1341/obsidian-linear-calendar/src/view/Tooltip.ts": {
     "mtime": 1783696378.7640104,
     "hash": "59a388b9b36565f6e6141915887197ee"
   },
   "/Users/lhak/workspace/github.com/lhak1341/obsidian-linear-calendar/src/view/BarRenderer.ts": {
-    "mtime": 1783695774.1557415,
-    "hash": "a05117476f09d4b47043fdf8d188d61d"
+    "mtime": 1783737295.5937512,
+    "hash": "4920b3b26dcc594c6ede95d3a5c51b1c"
   },
   "/Users/lhak/workspace/github.com/lhak1341/obsidian-linear-calendar/src/data/DataSource.ts": {
     "mtime": 1782658572.474296,
     "hash": "eedfa0188b009dfbae48e0e832cb9225"
   },
   "/Users/lhak/workspace/github.com/lhak1341/obsidian-linear-calendar/src/data/FrontmatterScanner.ts": {
-    "mtime": 1783272404.0286317,
-    "hash": "7e99e9850d309df959a9cd5c4b467886"
+    "mtime": 1783737479.5625746,
+    "hash": "b26df6fad027c79ef30ead755097b06d"
   },
   "/Users/lhak/workspace/github.com/lhak1341/obsidian-linear-calendar/CLAUDE.md": {
-    "mtime": 1783706767.5431128,
-    "hash": "bcf635a43628131076900667ee1e1ac2"
+    "mtime": 1783738596.9650865,
+    "hash": "be294856ad7279723f3f9153e97f7945"
   },
   "/Users/lhak/workspace/github.com/lhak1341/obsidian-linear-calendar/docs/adr/0001-no-calendar-widget-factory.md": {
     "mtime": 1781369631.9012663,

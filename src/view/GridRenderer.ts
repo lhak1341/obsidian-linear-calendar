@@ -32,6 +32,24 @@ export interface MonthRowRef {
 	layout: "horizontal" | "vertical";
 }
 
+export interface GridRenderCallbacks {
+	onDayClick: (year: number, month: number, day: number) => void;
+	onDayDblClick?: (year: number, month: number, day: number) => void;
+	onDayContextMenu?: (year: number, month: number, day: number, event: MouseEvent) => void;
+}
+
+export interface GridRenderOptions {
+	year: number;
+	months: number[];
+	layout: "horizontal" | "vertical";
+	alignMode: AlignMode;
+	dailyNoteDates: Set<string>;
+	dailyNoteColor: string | null;
+	dailyNoteStyle: DailyNoteStyle;
+	japaneseWeekdayLabels: boolean;
+	callbacks: GridRenderCallbacks;
+}
+
 export class GridRenderer {
 	private containerEl: HTMLElement;
 	private monthRows: MonthRowRef[] = [];
@@ -43,54 +61,76 @@ export class GridRenderer {
 		this.containerEl = parentEl.createDiv({ cls: "linear-calendar-grid" });
 	}
 
-	setDayClickHandler(handler: (year: number, month: number, day: number) => void): void {
-		this.onDayClick = handler;
-	}
+	render(options: GridRenderOptions): MonthRowRef[] {
+		const { year, months, layout, alignMode, dailyNoteDates, dailyNoteColor, dailyNoteStyle, japaneseWeekdayLabels, callbacks } = options;
 
-	setDayDblClickHandler(handler: (year: number, month: number, day: number) => void): void {
-		this.onDayDblClick = handler;
-	}
+		this.onDayClick = callbacks.onDayClick;
+		this.onDayDblClick = callbacks.onDayDblClick;
+		this.onDayContextMenu = callbacks.onDayContextMenu;
 
-	setDayContextMenuHandler(handler: (year: number, month: number, day: number, event: MouseEvent) => void): void {
-		this.onDayContextMenu = handler;
-	}
-
-	render(year: number, colMinWidth = 0, alignMode: AlignMode = "date", dailyNoteDates: Set<string> = new Set(), dailyNoteColor: string | null = null, dailyNoteStyle: DailyNoteStyle = "tint", japaneseWeekdayLabels = false): MonthRowRef[] {
-		this.containerEl.empty();
-		this.monthRows = [];
-
-		this.containerEl.removeClass("lc-vert-grid");
-		this.containerEl.addClass("linear-calendar-grid");
-		this.containerEl.style.removeProperty("grid-template-columns");
-		this.containerEl.style.removeProperty("grid-template-rows");
-
-		const totalCols = this.computeAlignedSize(year, alignMode);
-
-		const colTemplate =
-			colMinWidth > 0
-				? `repeat(${totalCols}, minmax(${colMinWidth}px, 1fr))`
-				: `repeat(${totalCols}, 1fr)`;
-
-		this.containerEl.style.minWidth = colMinWidth > 0 ? "max-content" : "";
-
-		for (let m = 0; m < 12; m++) {
-			const days = new Date(year, m + 1, 0).getDate();
-			const rowRef = this.renderMonthRow(year, m, days, colTemplate, alignMode, totalCols, dailyNoteDates, dailyNoteColor, dailyNoteStyle, japaneseWeekdayLabels);
-			this.monthRows.push(rowRef);
+		if (months.length === 1) {
+			this.monthRows = [this.renderSingleMonth(
+				year, months[0], alignMode, dailyNoteDates,
+				dailyNoteColor, dailyNoteStyle, japaneseWeekdayLabels,
+			)];
+		} else if (layout === "vertical") {
+			this.monthRows = this.renderVerticalGrid(
+				year, dailyNoteDates, dailyNoteColor,
+				dailyNoteStyle, alignMode, japaneseWeekdayLabels,
+			);
+		} else {
+			this.monthRows = this.renderFullYear(
+				year, alignMode, dailyNoteDates,
+				dailyNoteColor, dailyNoteStyle, japaneseWeekdayLabels,
+			);
 		}
 
 		return this.monthRows;
 	}
 
-	renderVertical(year: number, dailyNoteDates: Set<string> = new Set(), dailyNoteColor: string | null = null, dailyNoteStyle: DailyNoteStyle = "tint", alignMode: AlignMode = "date", japaneseWeekdayLabels = false): MonthRowRef[] {
+	private renderFullYear(
+		year: number,
+		alignMode: AlignMode,
+		dailyNoteDates: Set<string>,
+		dailyNoteColor: string | null,
+		dailyNoteStyle: DailyNoteStyle,
+		japaneseWeekdayLabels: boolean,
+	): MonthRowRef[] {
 		this.containerEl.empty();
-		this.monthRows = [];
+		this.containerEl.removeClass("lc-vert-grid");
+		this.containerEl.addClass("linear-calendar-grid");
+		this.containerEl.style.removeProperty("grid-template-columns");
+		this.containerEl.style.removeProperty("grid-template-rows");
+		this.containerEl.style.removeProperty("min-width");
+
+		const totalCols = this.computeAlignedSize(year, alignMode);
+		const colTemplate = `repeat(${totalCols}, 1fr)`;
+
+		const rows: MonthRowRef[] = [];
+		for (let m = 0; m < 12; m++) {
+			const days = new Date(year, m + 1, 0).getDate();
+			rows.push(this.renderMonthRow(year, m, days, colTemplate, alignMode, totalCols, dailyNoteDates, dailyNoteColor, dailyNoteStyle, japaneseWeekdayLabels));
+		}
+
+		return rows;
+	}
+
+	private renderVerticalGrid(
+		year: number,
+		dailyNoteDates: Set<string>,
+		dailyNoteColor: string | null,
+		dailyNoteStyle: DailyNoteStyle,
+		alignMode: AlignMode,
+		japaneseWeekdayLabels: boolean,
+	): MonthRowRef[] {
+		this.containerEl.empty();
 
 		this.containerEl.removeClass("linear-calendar-grid");
 		this.containerEl.addClass("lc-vert-grid");
 		this.containerEl.style.removeProperty("min-width");
 
 		const totalRows = this.computeAlignedSize(year, alignMode);
+		const rows: MonthRowRef[] = [];
 
 		// Month headers (row 1)
 		for (let m = 0; m < 12; m++) {
@@ -117,7 +157,7 @@ export class GridRenderer {
 				this.populateDayCell(cellEl, year, m, d, firstDow, dailyNoteDates, dailyNoteColor, dailyNoteStyle, japaneseWeekdayLabels);
 			}
 
-			this.monthRows.push({
+			rows.push({
 				month: m,
 				barsContainer: monthCol,
 				daysInMonth,
@@ -127,21 +167,19 @@ export class GridRenderer {
 			});
 		}
 
-		return this.monthRows;
+		return rows;
 	}
 
-	/** Render a single month into the container — for embedding in other views. */
-	renderMonth(
+	private renderSingleMonth(
 		year: number,
 		month: number,
-		alignMode: AlignMode = "date",
-		dailyNoteDates: Set<string> = new Set(),
-		dailyNoteColor: string | null = null,
-		dailyNoteStyle: DailyNoteStyle = "tint",
-		japaneseWeekdayLabels = false,
+		alignMode: AlignMode,
+		dailyNoteDates: Set<string>,
+		dailyNoteColor: string | null,
+		dailyNoteStyle: DailyNoteStyle,
+		japaneseWeekdayLabels: boolean,
 	): MonthRowRef {
 		this.containerEl.empty();
-		this.monthRows = [];
 		this.containerEl.removeClass("lc-vert-grid");
 		this.containerEl.addClass("linear-calendar-grid");
 		this.containerEl.style.removeProperty("grid-template-columns");
@@ -152,12 +190,10 @@ export class GridRenderer {
 		const colTemplate = `repeat(${totalCols}, 1fr)`;
 		const daysInMonth = new Date(year, month + 1, 0).getDate();
 
-		const rowRef = this.renderMonthRow(
+		return this.renderMonthRow(
 			year, month, daysInMonth, colTemplate, alignMode, totalCols,
 			dailyNoteDates, dailyNoteColor, dailyNoteStyle, japaneseWeekdayLabels,
 		);
-		this.monthRows.push(rowRef);
-		return rowRef;
 	}
 
 	private renderMonthRow(

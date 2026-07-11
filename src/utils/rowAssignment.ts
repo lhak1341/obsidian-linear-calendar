@@ -1,4 +1,5 @@
 import type { MonthSegment } from "./segmentByMonth";
+import type { RowOccupancy } from "./dragUtils";
 
 export interface RowAssignment {
 	segment: MonthSegment;
@@ -40,4 +41,14 @@ export function assignRowsForMonth(
 	}
 
 	return assignments;
+}
+
+/** Reshape row assignments into the row->intervals map DragHandler's findFreeRow expects. */
+export function rowAssignmentsToOccupancy(assignments: RowAssignment[]): RowOccupancy {
+	const occ: RowOccupancy = new Map();
+	for (const { segment, row } of assignments) {
+		if (!occ.has(row)) occ.set(row, []);
+		occ.get(row)!.push([segment.startDay, segment.endDay]);
+	}
+	return occ;
 }

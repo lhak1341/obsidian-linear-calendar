@@ -6,7 +6,7 @@ import { getContrastColor } from "../utils/colorUtils";
 import type { MonthRowRef } from "./GridRenderer";
 import type { MonthSegment } from "../utils/segmentByMonth";
 import { groupSegmentsByMonth } from "../utils/segmentByMonth";
-import { assignRowsForMonth } from "../utils/rowAssignment";
+import { assignRowsForMonth, type RowAssignment } from "../utils/rowAssignment";
 import { DragHandler } from "./DragHandler";
 
 export class BarRenderer {
@@ -33,8 +33,8 @@ export class BarRenderer {
 		const isVertical = monthRows[0]?.layout === "vertical";
 
 		this.dragHandler?.cleanup();
-		if (!isVertical) this.dragHandler?.setMonthRows(monthRows);
 		const grouped = groupSegmentsByMonth(items);
+		const assignmentsByMonth = new Map<number, RowAssignment[]>();
 
 		for (const rowRef of monthRows) {
 			const segments = grouped.get(rowRef.month) ?? [];
@@ -42,6 +42,7 @@ export class BarRenderer {
 
 			const maxRows = isVertical ? MAX_WATERFALL_COLS_VERT : MAX_WATERFALL_ROWS;
 			const assignments = assignRowsForMonth(segments, maxRows);
+			assignmentsByMonth.set(rowRef.month, assignments);
 
 			for (const { segment, row } of assignments) {
 				const barEl = this.createBarEl(rowRef, segment, row, isVertical);
@@ -68,6 +69,8 @@ export class BarRenderer {
 				}
 			}
 		}
+
+		if (!isVertical) this.dragHandler?.setMonthRows(monthRows, assignmentsByMonth);
 	}
 
 	private createBarEl(

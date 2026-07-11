@@ -4,12 +4,14 @@ Obsidian plugin — horizontal year-at-a-glance timeline rendered from note fron
 
 ## Public API
 - `mountMonthStrip(container, categoriesEl, onMonthChange?)` (returns `MonthStripHandle`: `next/prev/today/destroy`) and `getCalendarData(year)` on `LinearCalendarPlugin` are consumed by `obsidian-lhak-dashboard` at runtime; signature changes require coordinating both repos
+- Types used internally by `mountMonthStrip`/`getCalendarData` (e.g. `RenderConfig`) are not part of that coordinated surface — only the two signatures above and `MonthStripHandle` are
 
 ## Build & Test
 
 - `npm run build` — production build → main.js
 - `npm run deploy` — build + copy main.js, manifest.json, styles.css to test-vault plugin dir
 - `npm test` (vitest) — pure-logic modules in `src/utils/` only; no Obsidian mocking needed
+- `npm run lint` — if the rtk proxy mangles `eslint`'s output (`JSON parse failed: EOF`), run `./node_modules/.bin/eslint 'src/**/*.ts' --ignore-pattern 'src/**/*.test.ts'` directly
 - Files outside `src/utils/` are Obsidian-coupled — test manually in test-vault; pure functions inside them can be extracted to `src/utils/` and tested (see `dragUtils.ts`)
 - Verifying an `AbstractInputSuggest` popover manually: `obsidian-cli dev:screenshot` blurs the input and closes the popover before capture — check `getComputedStyle`/`querySelectorAll('.suggestion-item')` instead of relying on the screenshot
 - `obsidian-cli eval code="app.setting.open()"` throws "Converting circular structure to JSON" from auto-serializing the return value — harmless, settings still opens; ignore it
@@ -38,6 +40,7 @@ Obsidian plugin — horizontal year-at-a-glance timeline rendered from note fron
 - Restyling `Setting` outside `PluginSettingTab` (e.g. in a `Modal`): Obsidian's own `.setting-item` border/padding rules and `select.dropdown` fitted-width tie or beat plain class-selector overrides on specificity — use `!important` or match the selector (e.g. `select.dropdown`), verify via `getComputedStyle` in the live vault, not just visually
 - For responsive CSS, prefer `@container` over `@media` — Obsidian panels resize independently of viewport; `.lc-month-row` has `container-type: inline-size`; place `@container` blocks before `@media` blocks so the media query wins the cascade when both fire
 - `setTooltip` does not fire in cross-plugin embeds (e.g. `mountMonthStrip`); use `Tooltip.showForChip()` instead — it works anywhere via direct event listeners
+- `mountMonthStrip`'s `alignMode` is hardcoded to `"date"` regardless of `settings.alignMode` — intentional for the single-month embed context, not an oversight; don't fold it into settings-accessor refactors
 - `@media` and `@container` rules on shared `.lc-*` classes must be scoped to `.linear-calendar-container` (e.g. `.linear-calendar-container .lc-categories`) to prevent bleeding into dashboard embeds
 - `eslint-plugin-obsidianmd` recommended config bans eslint-disable comments for `no-static-styles-assignment`, `ui/sentence-case`, `no-deprecated` — fix the underlying code/config instead of suppressing (move literal styles to CSS classes; add `brands`/`ignoreRegex` to `eslint.config.mjs` for placeholder text; avoid calling the deprecated method directly)
 

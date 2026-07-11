@@ -120,6 +120,7 @@ export default class LinearCalendarPlugin extends Plugin {
 			categoriesEl,
 			this.scanner,
 			() => this.settings.defaultMapping,
+			() => this.settings,
 			{
 				onCategoryToggle: (tag) => {
 					if (hiddenCategories.has(tag)) hiddenCategories.delete(tag);
@@ -145,11 +146,6 @@ export default class LinearCalendarPlugin extends Plugin {
 				alignMode: "date",
 				rowHeight: 0,
 				dailyNoteMap: getDailyNoteMap(this.app),
-				colorMap: this.settings.colorMap,
-				iconMap: this.settings.iconMap,
-				dailyNoteColor: this.settings.dailyNoteColor,
-				dailyNoteStyle: this.settings.dailyNoteStyle,
-				japaneseWeekdayLabels: this.settings.japaneseWeekdayLabels,
 			};
 			renderer.render(config);
 			onMonthChange?.(year, month);

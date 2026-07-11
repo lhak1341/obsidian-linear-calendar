@@ -3,6 +3,7 @@ import {
 	segmentDates, findFreeRow, newDatesFromDelta,
 	type RowOccupancy,
 } from "../utils/dragUtils";
+import { rowAssignmentsToOccupancy, type RowAssignment } from "../utils/rowAssignment";
 
 interface DragContext {
 	barEl: HTMLElement;
@@ -21,27 +22,10 @@ interface DragContext {
 	dayWidth: number;
 }
 
-function buildOccupancy(container: HTMLElement): RowOccupancy {
-	const occ: RowOccupancy = new Map();
-	const bars = container.querySelectorAll(".calendar-bar:not(.lc-drag-ghost)");
-	for (const bar of bars) {
-		const el = bar as HTMLElement;
-		if (el.hasClass("lc-hidden")) continue;
-		const row = parseInt(el.style.gridRow) - 2;
-		if (isNaN(row) || row < 0) continue;
-		const match = el.style.gridColumn.match(/(\d+)\s*\/\s*span\s*(\d+)/);
-		if (!match) continue;
-		const s = parseInt(match[1]);
-		const e = s + parseInt(match[2]) - 1;
-		if (!occ.has(row)) occ.set(row, []);
-		occ.get(row)!.push([s, e]);
-	}
-	return occ;
-}
-
 export class DragHandler {
 	private ctx: DragContext | null = null;
 	private monthRows: MonthRowRef[] = [];
+	private assignmentsByMonth = new Map<number, RowAssignment[]>();
 	/** Pre-built occupancy maps per month, computed once at drag start */
 	private occupancyCache = new Map<number, RowOccupancy>();
 	/** Reusable ghost pool — update in place, hide extras */
@@ -59,8 +43,9 @@ export class DragHandler {
 		this.boundMouseUp = () => { void this.onMouseUp(); };
 	}
 
-	setMonthRows(rows: MonthRowRef[]): void {
+	setMonthRows(rows: MonthRowRef[], assignments: Map<number, RowAssignment[]>): void {
 		this.monthRows = rows;
+		this.assignmentsByMonth = assignments;
 	}
 
 	attach(
@@ -147,8 +132,8 @@ export class DragHandler {
 
 		// Pre-build occupancy maps for all months (once per drag)
 		this.occupancyCache.clear();
-		for (const row of this.monthRows) {
-			this.occupancyCache.set(row.month, buildOccupancy(row.barsContainer));
+		for (const [month, assignments] of this.assignmentsByMonth) {
+			this.occupancyCache.set(month, rowAssignmentsToOccupancy(assignments));
 		}
 
 		barEl.addClass("lc-dragging");

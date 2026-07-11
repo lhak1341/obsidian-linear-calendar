@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { assignRowsForMonth } from "./rowAssignment";
+import { assignRowsForMonth, rowAssignmentsToOccupancy } from "./rowAssignment";
 import type { MonthSegment } from "./segmentByMonth";
 
 function seg(startDay: number, endDay: number): MonthSegment {
@@ -88,5 +88,31 @@ describe("assignRowsForMonth", () => {
 		const s = seg(5, 15);
 		const [result] = assignRowsForMonth([s], 8);
 		expect(result.segment).toBe(s);
+	});
+});
+
+describe("rowAssignmentsToOccupancy", () => {
+	it("empty input → empty map", () => {
+		expect(rowAssignmentsToOccupancy([])).toEqual(new Map());
+	});
+
+	it("groups intervals by row", () => {
+		const a = seg(1, 10);
+		const b = seg(11, 20);
+		const c = seg(1, 31);
+		const occ = rowAssignmentsToOccupancy([
+			{ segment: a, row: 0 },
+			{ segment: b, row: 0 },
+			{ segment: c, row: 1 },
+		]);
+		expect(occ.get(0)).toEqual([[1, 10], [11, 20]]);
+		expect(occ.get(1)).toEqual([[1, 31]]);
+	});
+
+	it("round-trips assignRowsForMonth's output into the shape findFreeRow expects", () => {
+		const assignments = assignRowsForMonth([seg(1, 10), seg(1, 10), seg(11, 20)], 8);
+		const occ = rowAssignmentsToOccupancy(assignments);
+		expect(occ.get(0)).toEqual([[1, 10], [11, 20]]);
+		expect(occ.get(1)).toEqual([[1, 10]]);
 	});
 });

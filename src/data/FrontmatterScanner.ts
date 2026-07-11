@@ -10,8 +10,6 @@ interface CacheEntry {
 
 export class FrontmatterScanner implements DataSource {
 	private cache = new Map<string, CacheEntry>();
-	private generation = 0;
-	private lastGeneration = -1;
 	private sortedItems: CalendarItem[] | null = null;
 	private sortedYear: number | null = null;
 
@@ -19,7 +17,6 @@ export class FrontmatterScanner implements DataSource {
 
 	// Called from main.ts after settings save to force a fresh scan.
 	invalidateMapping(): void {
-		this.generation++;
 		this.cache.clear();
 		this.sortedItems = null;
 	}
@@ -37,11 +34,6 @@ export class FrontmatterScanner implements DataSource {
 	}
 
 	scan(mapping: ColumnMapping, year: number): CalendarItem[] {
-		if (this.generation !== this.lastGeneration) {
-			// Cache was already cleared in invalidateMapping(); just sync the counter.
-			this.lastGeneration = this.generation;
-		}
-
 		const files = this.app.vault.getMarkdownFiles();
 
 		for (const file of files) {

@@ -1,6 +1,6 @@
 import { App } from "obsidian";
 import type { TFile } from "obsidian";
-import type { CalendarItem, ColumnMapping, AlignMode, DailyNoteStyle } from "../types";
+import type { CalendarItem, ColumnMapping, PluginSettings, AlignMode } from "../types";
 import type { DataSource } from "../data/DataSource";
 import { buildTagColorMap } from "../utils/colorUtils";
 import { GridRenderer } from "./GridRenderer";
@@ -16,11 +16,6 @@ export interface RenderConfig {
 	alignMode: AlignMode;
 	rowHeight: number;
 	dailyNoteMap: Map<string, TFile>;
-	colorMap: Record<string, string>;
-	iconMap: Record<string, string>;
-	dailyNoteColor: string | null;
-	dailyNoteStyle: DailyNoteStyle;
-	japaneseWeekdayLabels: boolean;
 }
 
 interface CalendarRendererCallbacks {
@@ -39,6 +34,7 @@ export class CalendarRenderer {
 	private tooltip: Tooltip;
 	private lastRenderedYear = new Date().getFullYear();
 	private lastCategoriesSig: string | null = null;
+	private current: RenderConfig | null = null;
 
 	constructor(
 		private app: App,
@@ -46,6 +42,7 @@ export class CalendarRenderer {
 		private categoriesEl: HTMLElement | null,
 		private source: DataSource,
 		private getMapping: () => ColumnMapping,
+		private getSettings: () => PluginSettings,
 		private callbacks: CalendarRendererCallbacks = {},
 	) {
 		this.gridRenderer = new GridRenderer(container);
@@ -60,8 +57,9 @@ export class CalendarRenderer {
 	}
 
 	render(config: RenderConfig): void {
-		const { year, months, hiddenCategories, layout, alignMode, rowHeight, dailyNoteMap,
-			colorMap, iconMap, dailyNoteColor, dailyNoteStyle, japaneseWeekdayLabels } = config;
+		this.current = config;
+		const { year, months, hiddenCategories, layout, alignMode, rowHeight, dailyNoteMap } = config;
+		const { colorMap, iconMap, dailyNoteColor, dailyNoteStyle, japaneseWeekdayLabels } = this.getSettings();
 		const dailyNoteDates = new Set(dailyNoteMap.keys());
 
 		this.lastRenderedYear = year;
@@ -77,34 +75,18 @@ export class CalendarRenderer {
 			return tag ? !hiddenCategories.has(tag) : !hiddenCategories.has("__uncategorized__");
 		});
 
-		this.gridRenderer.setDayClickHandler((y, m, d) => {
-			const file = dailyNoteMap.get(`${y}-${pad(m + 1)}-${pad(d)}`);
-			if (file) void this.app.workspace.openLinkText(file.path, "", false);
+		const monthRows = this.gridRenderer.render({
+			year, months, layout, alignMode,
+			dailyNoteDates, dailyNoteColor, dailyNoteStyle, japaneseWeekdayLabels,
+			callbacks: {
+				onDayClick: (y, m, d) => {
+					const file = dailyNoteMap.get(`${y}-${pad(m + 1)}-${pad(d)}`);
+					if (file) void this.app.workspace.openLinkText(file.path, "", false);
+				},
+				onDayDblClick: this.callbacks.onDayDblClick,
+				onDayContextMenu: this.callbacks.onDayContextMenu,
+			},
 		});
-		if (this.callbacks.onDayDblClick) {
-			this.gridRenderer.setDayDblClickHandler(this.callbacks.onDayDblClick);
-		}
-		if (this.callbacks.onDayContextMenu) {
-			this.gridRenderer.setDayContextMenuHandler(this.callbacks.onDayContextMenu);
-		}
-
-		let monthRows;
-		if (months.length === 1) {
-			monthRows = [this.gridRenderer.renderMonth(
-				year, months[0], alignMode, dailyNoteDates,
-				dailyNoteColor, dailyNoteStyle, japaneseWeekdayLabels,
-			)];
-		} else if (layout === "vertical") {
-			monthRows = this.gridRenderer.renderVertical(
-				year, dailyNoteDates, dailyNoteColor,
-				dailyNoteStyle, alignMode, japaneseWeekdayLabels,
-			);
-		} else {
-			monthRows = this.gridRenderer.render(
-				year, 0, alignMode, dailyNoteDates,
-				dailyNoteColor, dailyNoteStyle, japaneseWeekdayLabels,
-			);
-		}
 
 		this.updateRowHeight(layout, rowHeight);
 
@@ -129,11 +111,13 @@ export class CalendarRenderer {
 		}
 	}
 
-	/** Rebuild only bars and category chips; preserves the day-cell grid DOM. */
-	renderBars(config: RenderConfig): void {
-		const { year, months, hiddenCategories, colorMap, iconMap } = config;
+	/** Rebuild only bars and category chips using the config from the last render(); preserves the day-cell grid DOM. */
+	renderBars(): void {
 		const monthRows = this.gridRenderer.getMonthRows();
-		if (monthRows.length === 0) return;
+		if (!this.current || monthRows.length === 0) return;
+
+		const { year, months, hiddenCategories } = this.current;
+		const { colorMap, iconMap } = this.getSettings();
 
 		const allItems = this.source.scan(this.getMapping(), year);
 		const tagColorMap = buildTagColorMap(allItems, colorMap);
