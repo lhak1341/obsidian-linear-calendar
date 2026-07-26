@@ -1,6 +1,6 @@
 import type { App, TFile } from "obsidian";
 import type { CalendarItem, ColumnMapping } from "../types";
-import type { DataSource } from "./DataSource";
+import type { DataSource, ScannerCache } from "./DataSource";
 import { parseDateString, projectAnniversaryDates } from "../utils/dateUtils";
 
 interface CacheEntry {
@@ -8,7 +8,7 @@ interface CacheEntry {
 	item: CalendarItem | null; // null = file has no valid calendar data
 }
 
-export class FrontmatterScanner implements DataSource {
+export class FrontmatterScanner implements DataSource, ScannerCache {
 	private cache = new Map<string, CacheEntry>();
 	private sortedItems: CalendarItem[] | null = null;
 	private sortedYear: number | null = null;

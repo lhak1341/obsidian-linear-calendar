@@ -16,8 +16,8 @@ Check both when gating on tags (see FrontmatterScanner.ts).
 
 Category comes from the first `linear-calendar/*` subtag surviving the filter in `processFile()` — when writing tags programmatically, put the desired category subtag first in the array.
 
-## FrontmatterScanner cache management (concrete type only)
+## Cache lifecycle (ScannerCache interface)
 
 - `evictFile(path)` — O(1) deletion; call from Plugin vault `delete` and `rename` handlers in `main.ts`
 - `invalidateMapping()` — bumps generation counter + clears cache; call from `saveSettings()` before `view.refresh()`
-- Neither method is on the DataSource interface — callers must hold a FrontmatterScanner reference
+- Both methods live on `ScannerCache` (`DataSource.ts`), separate from `DataSource` itself — `main.ts` depends on `DataSource & ScannerCache`; `LinearCalendarView`/`CalendarRenderer` only need plain `DataSource` since they never touch cache lifecycle

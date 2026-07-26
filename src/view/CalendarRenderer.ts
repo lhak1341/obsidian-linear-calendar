@@ -3,6 +3,7 @@ import type { TFile } from "obsidian";
 import type { CalendarItem, ColumnMapping, PluginSettings, AlignMode } from "../types";
 import type { DataSource } from "../data/DataSource";
 import { buildTagColorMap } from "../utils/colorUtils";
+import { formatTagLabel } from "../utils/tagUtils";
 import { GridRenderer } from "./GridRenderer";
 import { BarRenderer } from "./BarRenderer";
 import { NowIndicator } from "./NowIndicator";
@@ -63,17 +64,7 @@ export class CalendarRenderer {
 		const dailyNoteDates = new Set(dailyNoteMap.keys());
 
 		this.lastRenderedYear = year;
-		const allItems = this.source.scan(this.getMapping(), year);
-		const tagColorMap = buildTagColorMap(allItems, colorMap);
-
-		if (this.categoriesEl) {
-			this.renderCategories(allItems, year, months, tagColorMap, hiddenCategories);
-		}
-
-		const items = allItems.filter((item) => {
-			const tag = item.tags?.[0];
-			return tag ? !hiddenCategories.has(tag) : !hiddenCategories.has("__uncategorized__");
-		});
+		const { items, tagColorMap } = this.prepareVisibleItems(year, months, hiddenCategories, colorMap);
 
 		const monthRows = this.gridRenderer.render({
 			year, months, layout, alignMode,
@@ -96,7 +87,7 @@ export class CalendarRenderer {
 		// NowIndicator manages its own interval lifecycle; only restarts on year change.
 		this.nowIndicator.render(monthRows, year);
 
-		this.tooltip.attach(this.gridRenderer.getContainer());
+		this.tooltip.attach(this.gridRenderer.getContainer(), this.barRenderer.getBarInfo.bind(this.barRenderer));
 
 		if (months.length === 1) {
 			const grid = this.gridRenderer.getContainer();
@@ -119,17 +110,7 @@ export class CalendarRenderer {
 		const { year, months, hiddenCategories } = this.current;
 		const { colorMap, iconMap } = this.getSettings();
 
-		const allItems = this.source.scan(this.getMapping(), year);
-		const tagColorMap = buildTagColorMap(allItems, colorMap);
-
-		if (this.categoriesEl) {
-			this.renderCategories(allItems, year, months, tagColorMap, hiddenCategories);
-		}
-
-		const items = allItems.filter((item) => {
-			const tag = item.tags?.[0];
-			return tag ? !hiddenCategories.has(tag) : !hiddenCategories.has("__uncategorized__");
-		});
+		const { items, tagColorMap } = this.prepareVisibleItems(year, months, hiddenCategories, colorMap);
 
 		for (const rowRef of monthRows) {
 			rowRef.barsContainer.empty();
@@ -153,6 +134,28 @@ export class CalendarRenderer {
 		this.barRenderer.cleanup();
 		this.nowIndicator.cleanup();
 		this.tooltip.cleanup();
+	}
+
+	/** Scan, resolve tag colors, render category chips, and filter out hidden categories — shared by render() and renderBars(). */
+	private prepareVisibleItems(
+		year: number,
+		months: number[],
+		hiddenCategories: Set<string>,
+		colorMap: Record<string, string>,
+	): { items: CalendarItem[]; tagColorMap: Map<string, string> } {
+		const allItems = this.source.scan(this.getMapping(), year);
+		const tagColorMap = buildTagColorMap(allItems, colorMap);
+
+		if (this.categoriesEl) {
+			this.renderCategories(allItems, year, months, tagColorMap, hiddenCategories);
+		}
+
+		const items = allItems.filter((item) => {
+			const tag = item.tags?.[0];
+			return tag ? !hiddenCategories.has(tag) : !hiddenCategories.has("__uncategorized__");
+		});
+
+		return { items, tagColorMap };
 	}
 
 	private renderCategories(
@@ -203,7 +206,7 @@ export class CalendarRenderer {
 			const isHidden = hiddenCategories.has(tag);
 			const displayName = tag === "__uncategorized__"
 				? "Other"
-				: tag.replace(/^linear-calendar\//, "");
+				: formatTagLabel(tag);
 			const color = tagColorMap.get(tag) ?? "#888";
 
 			const chip = el.createDiv({

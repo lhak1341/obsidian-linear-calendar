@@ -1,3 +1,7 @@
+import { formatDateRange } from "../utils/dateUtils";
+import { formatTagLabel } from "../utils/tagUtils";
+import type { BarInfo } from "./BarRenderer";
+
 export class Tooltip {
 	private el: HTMLElement;
 	private attached = false;
@@ -7,14 +11,16 @@ export class Tooltip {
 		this.el = parentEl.createDiv({ cls: "linear-calendar-tooltip lc-hidden" });
 	}
 
-	attach(container: HTMLElement): void {
+	attach(container: HTMLElement, getBarInfo: (el: HTMLElement) => BarInfo | undefined): void {
 		if (this.attached) return;
 		this.attached = true;
 
 		container.addEventListener("mouseenter", (evt) => {
 			const target = evt.target as HTMLElement;
 			if (!target.classList.contains("calendar-bar")) return;
-			this.show(target, evt);
+			const barInfo = getBarInfo(target);
+			if (!barInfo) return;
+			this.show(barInfo, evt);
 		}, true);
 
 		container.addEventListener("mousemove", (evt) => {
@@ -34,29 +40,25 @@ export class Tooltip {
 		}, true);
 	}
 
-	private show(barEl: HTMLElement, evt: MouseEvent): void {
-		const title = barEl.dataset.title ?? "";
-		const dateRange = barEl.dataset.dateRange ?? "";
-		const tags = barEl.dataset.tags ?? "";
-		const tagColor = barEl.dataset.tagColor ?? "";
-		const description = barEl.dataset.description ?? "";
+	private show(barInfo: BarInfo, evt: MouseEvent): void {
+		const { item, tagColor } = barInfo;
 
 		this.el.empty();
-		this.el.createDiv({ cls: "tooltip-title", text: title });
+		this.el.createDiv({ cls: "tooltip-title", text: item.title });
 
 		const metaRow = this.el.createDiv({ cls: "tooltip-meta" });
-		metaRow.createSpan({ cls: "tooltip-dates", text: dateRange });
-		if (tags) {
-			for (const tag of tags.split(", ")) {
+		metaRow.createSpan({ cls: "tooltip-dates", text: formatDateRange(item.dateStart, item.dateEnd) });
+		if (item.tags?.length) {
+			for (const tag of item.tags) {
 				const chip = metaRow.createSpan({ cls: "tooltip-tag-chip" });
 				const dot = chip.createSpan({ cls: "tooltip-tag-dot" });
 				dot.style.backgroundColor = tagColor || "#888";
-				chip.createSpan({ text: tag.replace(/^linear-calendar\//, "") });
+				chip.createSpan({ text: formatTagLabel(tag) });
 			}
 		}
 
-		if (description) {
-			this.el.createDiv({ cls: "tooltip-description", text: description });
+		if (item.description) {
+			this.el.createDiv({ cls: "tooltip-description", text: item.description });
 		}
 
 		this.visible = true;

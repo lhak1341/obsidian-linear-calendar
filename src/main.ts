@@ -4,6 +4,7 @@ import { DEFAULT_SETTINGS, VIEW_TYPE_LINEAR_CALENDAR } from "./constants";
 import { LinearCalendarView } from "./view/LinearCalendarView";
 import { LinearCalendarSettingTab } from "./settings";
 import { FrontmatterScanner } from "./data/FrontmatterScanner";
+import type { DataSource, ScannerCache } from "./data/DataSource";
 import { ObsidianNoteCreator } from "./NoteCreator";
 import { CreateEventModal } from "./CreateEventModal";
 import { CalendarRenderer, RenderConfig } from "./view/CalendarRenderer";
@@ -21,7 +22,7 @@ export interface MonthStripHandle {
 
 export default class LinearCalendarPlugin extends Plugin {
 	settings: PluginSettings = DEFAULT_SETTINGS;
-	private scanner!: FrontmatterScanner;
+	private scanner!: DataSource & ScannerCache;
 	private noteCreator!: ObsidianNoteCreator;
 
 	async onload(): Promise<void> {

@@ -1,130 +1,187 @@
 {
-  "/Users/lhak/workspace/github.com/lhak1341/obsidian-linear-calendar/esbuild.config.mjs": {
+  "esbuild.config.mjs": {
     "mtime": 1776872408.1576037,
-    "hash": "0929283b10a3ad4dc579659bca64d061"
+    "ast_hash": "0929283b10a3ad4dc579659bca64d061",
+    "semantic_hash": ""
   },
-  "/Users/lhak/workspace/github.com/lhak1341/obsidian-linear-calendar/vitest.config.ts": {
+  "vitest.config.ts": {
     "mtime": 1777600310.41396,
-    "hash": "546e9fdeb39a397ba5be5f52a9171312"
+    "ast_hash": "546e9fdeb39a397ba5be5f52a9171312",
+    "semantic_hash": ""
   },
-  "/Users/lhak/workspace/github.com/lhak1341/obsidian-linear-calendar/eslint.config.mjs": {
+  "eslint.config.mjs": {
     "mtime": 1783697003.0663579,
-    "hash": "c491bf09b158226f2cf4a326db24d4d5"
+    "ast_hash": "c491bf09b158226f2cf4a326db24d4d5",
+    "semantic_hash": ""
   },
-  "/Users/lhak/workspace/github.com/lhak1341/obsidian-linear-calendar/src/NoteCreator.ts": {
-    "mtime": 1783701056.3960989,
-    "hash": "a5b82f9a82435789cbfd62a6fc6f85f0"
+  "src/NoteCreator.ts": {
+    "mtime": 1785030766.238078,
+    "ast_hash": "1303b2deb2cd4ed6cfbcdac2a637f1eb",
+    "semantic_hash": ""
   },
-  "/Users/lhak/workspace/github.com/lhak1341/obsidian-linear-calendar/src/main.ts": {
-    "mtime": 1783737964.218886,
-    "hash": "5e35ed2380335b7a9ea36271e394f40d"
+  "src/main.ts": {
+    "mtime": 1785032401.9413958,
+    "ast_hash": "9c225531dd0b7ac1d70b3786314f9175",
+    "semantic_hash": ""
   },
-  "/Users/lhak/workspace/github.com/lhak1341/obsidian-linear-calendar/src/settings.ts": {
+  "src/settings.ts": {
     "mtime": 1783707529.9200706,
-    "hash": "0cfd92644f59b64581d8371f5d131bd4"
+    "ast_hash": "0cfd92644f59b64581d8371f5d131bd4",
+    "semantic_hash": ""
   },
-  "/Users/lhak/workspace/github.com/lhak1341/obsidian-linear-calendar/src/types.ts": {
+  "src/types.ts": {
     "mtime": 1783695690.632588,
-    "hash": "463e535c69de625f43f01f7c8f6d3510"
+    "ast_hash": "463e535c69de625f43f01f7c8f6d3510",
+    "semantic_hash": ""
   },
-  "/Users/lhak/workspace/github.com/lhak1341/obsidian-linear-calendar/src/constants.ts": {
+  "src/constants.ts": {
     "mtime": 1783695702.1226416,
-    "hash": "e8e358f3c67da60cd5dc974eadaf6cef"
+    "ast_hash": "e8e358f3c67da60cd5dc974eadaf6cef",
+    "semantic_hash": ""
   },
-  "/Users/lhak/workspace/github.com/lhak1341/obsidian-linear-calendar/src/CreateEventModal.ts": {
+  "src/CreateEventModal.ts": {
     "mtime": 1783706472.2945673,
-    "hash": "e9c77cb0a8a759b2e54829cb5f8d18fe"
+    "ast_hash": "e9c77cb0a8a759b2e54829cb5f8d18fe",
+    "semantic_hash": ""
   },
-  "/Users/lhak/workspace/github.com/lhak1341/obsidian-linear-calendar/src/IconSuggest.ts": {
+  "src/IconSuggest.ts": {
     "mtime": 1783707061.4730008,
-    "hash": "64a4b162c74e56331fe8c6393496afff"
+    "ast_hash": "64a4b162c74e56331fe8c6393496afff",
+    "semantic_hash": ""
   },
-  "/Users/lhak/workspace/github.com/lhak1341/obsidian-linear-calendar/src/utils/segmentByMonth.ts": {
+  "src/utils/segmentByMonth.ts": {
     "mtime": 1777613484.3090012,
-    "hash": "26748e36254dd88e6a888466723dd019"
+    "ast_hash": "26748e36254dd88e6a888466723dd019",
+    "semantic_hash": ""
   },
-  "/Users/lhak/workspace/github.com/lhak1341/obsidian-linear-calendar/src/utils/dragUtils.ts": {
+  "src/utils/dragUtils.ts": {
     "mtime": 1781371309.5696936,
-    "hash": "1f81c52d65e43754669daed554e1cac9"
+    "ast_hash": "1f81c52d65e43754669daed554e1cac9",
+    "semantic_hash": ""
   },
-  "/Users/lhak/workspace/github.com/lhak1341/obsidian-linear-calendar/src/utils/frontmatterUtils.ts": {
-    "mtime": 1782744347.142525,
-    "hash": "cc9dd1c883f4677bc7b53e9ad6a3acea"
+  "src/utils/frontmatterUtils.ts": {
+    "mtime": 1785031699.6362786,
+    "ast_hash": "cc9dd1c883f4677bc7b53e9ad6a3acea",
+    "semantic_hash": ""
   },
-  "/Users/lhak/workspace/github.com/lhak1341/obsidian-linear-calendar/src/utils/dateUtils.ts": {
+  "src/utils/dateUtils.ts": {
     "mtime": 1781315277.917914,
-    "hash": "c14ade9496bf4a6fcc857622b71a5e11"
+    "ast_hash": "c14ade9496bf4a6fcc857622b71a5e11",
+    "semantic_hash": ""
   },
-  "/Users/lhak/workspace/github.com/lhak1341/obsidian-linear-calendar/src/utils/dailyNotes.ts": {
+  "src/utils/dailyNotes.ts": {
     "mtime": 1783272067.8368306,
-    "hash": "0fd7aaca7af8b5d64ae12433221da14c"
+    "ast_hash": "0fd7aaca7af8b5d64ae12433221da14c",
+    "semantic_hash": ""
   },
-  "/Users/lhak/workspace/github.com/lhak1341/obsidian-linear-calendar/src/utils/rowAssignment.ts": {
+  "src/utils/rowAssignment.ts": {
     "mtime": 1783737278.5061944,
-    "hash": "e3b2f19c463906f136e2beaf927137df"
+    "ast_hash": "e3b2f19c463906f136e2beaf927137df",
+    "semantic_hash": ""
   },
-  "/Users/lhak/workspace/github.com/lhak1341/obsidian-linear-calendar/src/utils/colorUtils.ts": {
+  "src/utils/colorUtils.ts": {
     "mtime": 1782152581.656108,
-    "hash": "61b40cdbc4fa6ef128f2d959c19b5baa"
+    "ast_hash": "61b40cdbc4fa6ef128f2d959c19b5baa",
+    "semantic_hash": ""
   },
-  "/Users/lhak/workspace/github.com/lhak1341/obsidian-linear-calendar/src/view/GridRenderer.ts": {
-    "mtime": 1783738279.217788,
-    "hash": "90d3c8430a1703afd9ba6f692d1d7cac"
+  "src/view/GridRenderer.ts": {
+    "mtime": 1785033036.2946477,
+    "ast_hash": "5a4e53a0141b3908665bbf256da5ca2f",
+    "semantic_hash": ""
   },
-  "/Users/lhak/workspace/github.com/lhak1341/obsidian-linear-calendar/src/view/LinearCalendarView.ts": {
+  "src/view/LinearCalendarView.ts": {
     "mtime": 1783737960.86488,
-    "hash": "e770a840d0009b8f90995738f6934f33"
+    "ast_hash": "e770a840d0009b8f90995738f6934f33",
+    "semantic_hash": ""
   },
-  "/Users/lhak/workspace/github.com/lhak1341/obsidian-linear-calendar/src/view/DragHandler.ts": {
+  "src/view/DragHandler.ts": {
     "mtime": 1783737315.9365737,
-    "hash": "dfae7b53166d647e6edadb741e69f5a9"
+    "ast_hash": "dfae7b53166d647e6edadb741e69f5a9",
+    "semantic_hash": ""
   },
-  "/Users/lhak/workspace/github.com/lhak1341/obsidian-linear-calendar/src/view/NowIndicator.ts": {
+  "src/view/NowIndicator.ts": {
     "mtime": 1783696059.6549292,
-    "hash": "21d0ec73ca11a7b129084d57d1f2ff0b"
+    "ast_hash": "21d0ec73ca11a7b129084d57d1f2ff0b",
+    "semantic_hash": ""
   },
-  "/Users/lhak/workspace/github.com/lhak1341/obsidian-linear-calendar/src/view/CalendarRenderer.ts": {
-    "mtime": 1783738295.0997255,
-    "hash": "ff6e50437e98cb06dc19009fa5a49d80"
+  "src/view/CalendarRenderer.ts": {
+    "mtime": 1785032596.1223686,
+    "ast_hash": "8e96e5858ecabb63459d33fbd984b409",
+    "semantic_hash": ""
   },
-  "/Users/lhak/workspace/github.com/lhak1341/obsidian-linear-calendar/src/view/Tooltip.ts": {
-    "mtime": 1783696378.7640104,
-    "hash": "59a388b9b36565f6e6141915887197ee"
+  "src/view/Tooltip.ts": {
+    "mtime": 1785031709.9385855,
+    "ast_hash": "19b60b0ad30a6c983a09b8a2d12cf50d",
+    "semantic_hash": ""
   },
-  "/Users/lhak/workspace/github.com/lhak1341/obsidian-linear-calendar/src/view/BarRenderer.ts": {
-    "mtime": 1783737295.5937512,
-    "hash": "4920b3b26dcc594c6ede95d3a5c51b1c"
+  "src/view/BarRenderer.ts": {
+    "mtime": 1785031623.212371,
+    "ast_hash": "003e01d83689e4ac22f6bf85d6ba0eda",
+    "semantic_hash": ""
   },
-  "/Users/lhak/workspace/github.com/lhak1341/obsidian-linear-calendar/src/data/DataSource.ts": {
-    "mtime": 1782658572.474296,
-    "hash": "eedfa0188b009dfbae48e0e832cb9225"
+  "src/data/DataSource.ts": {
+    "mtime": 1785032390.2806098,
+    "ast_hash": "0085bee1769d3a8f16c4efe0d9f56846",
+    "semantic_hash": ""
   },
-  "/Users/lhak/workspace/github.com/lhak1341/obsidian-linear-calendar/src/data/FrontmatterScanner.ts": {
-    "mtime": 1783737479.5625746,
-    "hash": "b26df6fad027c79ef30ead755097b06d"
+  "src/data/FrontmatterScanner.ts": {
+    "mtime": 1785032395.872853,
+    "ast_hash": "03b93d8e4f25df77b23ce39580d4ec40",
+    "semantic_hash": ""
   },
-  "/Users/lhak/workspace/github.com/lhak1341/obsidian-linear-calendar/CLAUDE.md": {
-    "mtime": 1783738596.9650865,
-    "hash": "be294856ad7279723f3f9153e97f7945"
+  "CLAUDE.md": {
+    "mtime": 1785033334.9326217,
+    "ast_hash": "d70fdb9fbf55fc5f97625a9711c83448",
+    "semantic_hash": ""
   },
-  "/Users/lhak/workspace/github.com/lhak1341/obsidian-linear-calendar/docs/adr/0001-no-calendar-widget-factory.md": {
+  "docs/adr/0001-no-calendar-widget-factory.md": {
     "mtime": 1781369631.9012663,
-    "hash": "0ef6711cb50354c6692d9c5f53bfd318"
+    "ast_hash": "0ef6711cb50354c6692d9c5f53bfd318",
+    "semantic_hash": ""
   },
-  "/Users/lhak/workspace/github.com/lhak1341/obsidian-linear-calendar/docs/adr/0002-no-dragattacher-seam.md": {
+  "docs/adr/0002-no-dragattacher-seam.md": {
     "mtime": 1782153022.198944,
-    "hash": "1cd6ad3c19322c5efb35eea1557572eb"
+    "ast_hash": "1cd6ad3c19322c5efb35eea1557572eb",
+    "semantic_hash": ""
   },
-  "/Users/lhak/workspace/github.com/lhak1341/obsidian-linear-calendar/src/utils/CLAUDE.md": {
-    "mtime": 1783272076.5731885,
-    "hash": "6d13cd8ab9d49547e97c99e940ed16d4"
+  "src/utils/CLAUDE.md": {
+    "mtime": 1785033339.3355527,
+    "ast_hash": "84b6fffe7cb23430abbcec7a44746abb",
+    "semantic_hash": ""
   },
-  "/Users/lhak/workspace/github.com/lhak1341/obsidian-linear-calendar/src/view/CLAUDE.md": {
+  "src/view/CLAUDE.md": {
     "mtime": 1783273068.4482398,
-    "hash": "19da9d4c5fcfdaa5f66c9df32a63724a"
+    "ast_hash": "19da9d4c5fcfdaa5f66c9df32a63724a",
+    "semantic_hash": ""
   },
-  "/Users/lhak/workspace/github.com/lhak1341/obsidian-linear-calendar/src/data/CLAUDE.md": {
-    "mtime": 1783706773.5915043,
-    "hash": "5dedeccd5cd76130bc5c3e5909b66a5a"
+  "src/data/CLAUDE.md": {
+    "mtime": 1785032406.8601396,
+    "ast_hash": "e1cabbbf1617635a1401053952d1ecb0",
+    "semantic_hash": ""
+  },
+  "manifest.json": {
+    "mtime": 1781311922.5526092,
+    "ast_hash": "6dd1bc892326904fc06adf0e3eaac809",
+    "semantic_hash": ""
+  },
+  "package.json": {
+    "mtime": 1783089898.9443092,
+    "ast_hash": "c7d125c8df339335c10268623e363ba5",
+    "semantic_hash": ""
+  },
+  "src/utils/tagUtils.ts": {
+    "mtime": 1785031703.4213243,
+    "ast_hash": "8f86513f297ea245d791306c6f176c3d",
+    "semantic_hash": ""
+  },
+  "tsconfig.json": {
+    "mtime": 1783695551.8949373,
+    "ast_hash": "757fa9c4eabc32591fe798a0c412265a",
+    "semantic_hash": ""
+  },
+  "versions.json": {
+    "mtime": 1776956243.2111995,
+    "ast_hash": "1f393b5725cfc9ff9b4a89d0e756f5cc",
+    "semantic_hash": ""
   }
 }

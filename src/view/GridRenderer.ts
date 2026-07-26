@@ -57,6 +57,16 @@ export class GridRenderer {
 	private onDayDblClick?: (year: number, month: number, day: number) => void;
 	private onDayContextMenu?: (year: number, month: number, day: number, event: MouseEvent) => void;
 
+	// Render-pass-constant state, set once per render() call and read by every private method below.
+	private year!: number;
+	private alignMode!: AlignMode;
+	private dailyNoteDates!: Set<string>;
+	private dailyNoteColor!: string | null;
+	private dailyNoteStyle!: DailyNoteStyle;
+	private japaneseWeekdayLabels!: boolean;
+	private totalCols = 0;
+	private colTemplate = "";
+
 	constructor(parentEl: HTMLElement) {
 		this.containerEl = parentEl.createDiv({ cls: "linear-calendar-grid" });
 	}
@@ -64,38 +74,29 @@ export class GridRenderer {
 	render(options: GridRenderOptions): MonthRowRef[] {
 		const { year, months, layout, alignMode, dailyNoteDates, dailyNoteColor, dailyNoteStyle, japaneseWeekdayLabels, callbacks } = options;
 
+		this.year = year;
+		this.alignMode = alignMode;
+		this.dailyNoteDates = dailyNoteDates;
+		this.dailyNoteColor = dailyNoteColor;
+		this.dailyNoteStyle = dailyNoteStyle;
+		this.japaneseWeekdayLabels = japaneseWeekdayLabels;
+
 		this.onDayClick = callbacks.onDayClick;
 		this.onDayDblClick = callbacks.onDayDblClick;
 		this.onDayContextMenu = callbacks.onDayContextMenu;
 
 		if (months.length === 1) {
-			this.monthRows = [this.renderSingleMonth(
-				year, months[0], alignMode, dailyNoteDates,
-				dailyNoteColor, dailyNoteStyle, japaneseWeekdayLabels,
-			)];
+			this.monthRows = [this.renderSingleMonth(months[0])];
 		} else if (layout === "vertical") {
-			this.monthRows = this.renderVerticalGrid(
-				year, dailyNoteDates, dailyNoteColor,
-				dailyNoteStyle, alignMode, japaneseWeekdayLabels,
-			);
+			this.monthRows = this.renderVerticalGrid();
 		} else {
-			this.monthRows = this.renderFullYear(
-				year, alignMode, dailyNoteDates,
-				dailyNoteColor, dailyNoteStyle, japaneseWeekdayLabels,
-			);
+			this.monthRows = this.renderFullYear();
 		}
 
 		return this.monthRows;
 	}
 
-	private renderFullYear(
-		year: number,
-		alignMode: AlignMode,
-		dailyNoteDates: Set<string>,
-		dailyNoteColor: string | null,
-		dailyNoteStyle: DailyNoteStyle,
-		japaneseWeekdayLabels: boolean,
-	): MonthRowRef[] {
+	private renderFullYear(): MonthRowRef[] {
 		this.containerEl.empty();
 		this.containerEl.removeClass("lc-vert-grid");
 		this.containerEl.addClass("linear-calendar-grid");
@@ -103,33 +104,26 @@ export class GridRenderer {
 		this.containerEl.style.removeProperty("grid-template-rows");
 		this.containerEl.style.removeProperty("min-width");
 
-		const totalCols = this.computeAlignedSize(year, alignMode);
-		const colTemplate = `repeat(${totalCols}, 1fr)`;
+		this.totalCols = this.computeAlignedSize();
+		this.colTemplate = `repeat(${this.totalCols}, 1fr)`;
 
 		const rows: MonthRowRef[] = [];
 		for (let m = 0; m < 12; m++) {
-			const days = new Date(year, m + 1, 0).getDate();
-			rows.push(this.renderMonthRow(year, m, days, colTemplate, alignMode, totalCols, dailyNoteDates, dailyNoteColor, dailyNoteStyle, japaneseWeekdayLabels));
+			const days = new Date(this.year, m + 1, 0).getDate();
+			rows.push(this.renderMonthRow(m, days));
 		}
 
 		return rows;
 	}
 
-	private renderVerticalGrid(
-		year: number,
-		dailyNoteDates: Set<string>,
-		dailyNoteColor: string | null,
-		dailyNoteStyle: DailyNoteStyle,
-		alignMode: AlignMode,
-		japaneseWeekdayLabels: boolean,
-	): MonthRowRef[] {
+	private renderVerticalGrid(): MonthRowRef[] {
 		this.containerEl.empty();
 
 		this.containerEl.removeClass("linear-calendar-grid");
 		this.containerEl.addClass("lc-vert-grid");
 		this.containerEl.style.removeProperty("min-width");
 
-		const totalRows = this.computeAlignedSize(year, alignMode);
+		const totalRows = this.computeAlignedSize();
 		const rows: MonthRowRef[] = [];
 
 		// Month headers (row 1)
@@ -141,9 +135,9 @@ export class GridRenderer {
 
 		// Per-month containers — each holds day cells (col 1) + bars (cols 2+)
 		for (let m = 0; m < 12; m++) {
-			const daysInMonth = new Date(year, m + 1, 0).getDate();
-			const firstDow = new Date(year, m, 1).getDay();
-			const weekdayOffset = alignMode === "weekday" ? firstDow : 0;
+			const daysInMonth = new Date(this.year, m + 1, 0).getDate();
+			const firstDow = new Date(this.year, m, 1).getDay();
+			const weekdayOffset = this.alignMode === "weekday" ? firstDow : 0;
 
 			const monthCol = this.containerEl.createDiv({ cls: "lc-vert-month-col" });
 			monthCol.style.gridColumn = `${m + 1}`;
@@ -154,7 +148,7 @@ export class GridRenderer {
 				const cellEl = monthCol.createDiv({ cls: "lc-vert-day-cell" });
 				cellEl.style.gridRow = `${weekdayOffset + d}`;
 				cellEl.dataset.day = String(d);
-				this.populateDayCell(cellEl, year, m, d, firstDow, dailyNoteDates, dailyNoteColor, dailyNoteStyle, japaneseWeekdayLabels);
+				this.populateDayCell(cellEl, m, d, firstDow);
 			}
 
 			rows.push({
@@ -170,15 +164,7 @@ export class GridRenderer {
 		return rows;
 	}
 
-	private renderSingleMonth(
-		year: number,
-		month: number,
-		alignMode: AlignMode,
-		dailyNoteDates: Set<string>,
-		dailyNoteColor: string | null,
-		dailyNoteStyle: DailyNoteStyle,
-		japaneseWeekdayLabels: boolean,
-	): MonthRowRef {
+	private renderSingleMonth(month: number): MonthRowRef {
 		this.containerEl.empty();
 		this.containerEl.removeClass("lc-vert-grid");
 		this.containerEl.addClass("linear-calendar-grid");
@@ -186,28 +172,14 @@ export class GridRenderer {
 		this.containerEl.style.removeProperty("grid-template-rows");
 		this.containerEl.style.removeProperty("min-width");
 
-		const totalCols = this.computeAlignedSize(year, alignMode);
-		const colTemplate = `repeat(${totalCols}, 1fr)`;
-		const daysInMonth = new Date(year, month + 1, 0).getDate();
+		this.totalCols = this.computeAlignedSize();
+		this.colTemplate = `repeat(${this.totalCols}, 1fr)`;
+		const daysInMonth = new Date(this.year, month + 1, 0).getDate();
 
-		return this.renderMonthRow(
-			year, month, daysInMonth, colTemplate, alignMode, totalCols,
-			dailyNoteDates, dailyNoteColor, dailyNoteStyle, japaneseWeekdayLabels,
-		);
+		return this.renderMonthRow(month, daysInMonth);
 	}
 
-	private renderMonthRow(
-		year: number,
-		month: number,
-		daysInMonth: number,
-		colTemplate: string,
-		alignMode: AlignMode,
-		totalCols: number,
-		dailyNoteDates: Set<string>,
-		dailyNoteColor: string | null,
-		dailyNoteStyle: DailyNoteStyle,
-		japaneseWeekdayLabels: boolean,
-	): MonthRowRef {
+	private renderMonthRow(month: number, daysInMonth: number): MonthRowRef {
 		const row = this.containerEl.createDiv({ cls: "lc-month-row" });
 
 		row.createDiv({
@@ -216,24 +188,24 @@ export class GridRenderer {
 		});
 
 		const daysGrid = row.createDiv({ cls: "lc-days-grid" });
-		daysGrid.style.gridTemplateColumns = colTemplate;
+		daysGrid.style.gridTemplateColumns = this.colTemplate;
 
 		// Compute first-of-month DOW once; derive per-day DOW by modular arithmetic.
-		const firstDow = new Date(year, month, 1).getDay();
-		const weekdayOffset = alignMode === "weekday" ? firstDow : 0;
+		const firstDow = new Date(this.year, month, 1).getDay();
+		const weekdayOffset = this.alignMode === "weekday" ? firstDow : 0;
 
-		if (alignMode === "date") {
+		if (this.alignMode === "date") {
 			for (let d = 1; d <= 31; d++) {
 				const cellEl = daysGrid.createDiv({ cls: "lc-day-cell" });
 				cellEl.style.gridColumn = `${d}`;
 				if (d > daysInMonth) { cellEl.addClass("lc-day-empty"); continue; }
-				this.populateDayCell(cellEl, year, month, d, firstDow, dailyNoteDates, dailyNoteColor, dailyNoteStyle, japaneseWeekdayLabels);
+				this.populateDayCell(cellEl, month, d, firstDow);
 			}
 		} else {
 			for (let d = 1; d <= daysInMonth; d++) {
 				const cellEl = daysGrid.createDiv({ cls: "lc-day-cell" });
 				cellEl.style.gridColumn = `${weekdayOffset + d}`;
-				this.populateDayCell(cellEl, year, month, d, firstDow, dailyNoteDates, dailyNoteColor, dailyNoteStyle, japaneseWeekdayLabels);
+				this.populateDayCell(cellEl, month, d, firstDow);
 			}
 		}
 
@@ -241,15 +213,15 @@ export class GridRenderer {
 			cls: "lc-bars-container",
 		});
 
-		return { month, barsContainer, daysInMonth, weekdayOffset, totalCols, layout: "horizontal" };
+		return { month, barsContainer, daysInMonth, weekdayOffset, totalCols: this.totalCols, layout: "horizontal" };
 	}
 
-	private computeAlignedSize(year: number, alignMode: AlignMode): number {
-		if (alignMode !== "weekday") return 31;
+	private computeAlignedSize(): number {
+		if (this.alignMode !== "weekday") return 31;
 		let max = 31;
 		for (let m = 0; m < 12; m++) {
-			const offset = new Date(year, m, 1).getDay();
-			const days = new Date(year, m + 1, 0).getDate();
+			const offset = new Date(this.year, m, 1).getDay();
+			const days = new Date(this.year, m + 1, 0).getDate();
 			max = Math.max(max, offset + days);
 		}
 		return max;
@@ -257,51 +229,43 @@ export class GridRenderer {
 
 	private populateDayCell(
 		cellEl: HTMLElement,
-		year: number,
 		month: number,
 		day: number,
 		firstDow: number,
-		dailyNoteDates: Set<string>,
-		dailyNoteColor: string | null,
-		dailyNoteStyle: DailyNoteStyle,
-		japaneseWeekdayLabels: boolean,
 	): void {
 		const dow = (firstDow + day - 1) % 7;
 		if (dow === 0 || dow === 6) cellEl.addClass("lc-day-weekend");
 
-		const dateKey = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-		const hasDailyNote = dailyNoteDates.has(dateKey);
+		const dateKey = `${this.year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+		const hasDailyNote = this.dailyNoteDates.has(dateKey);
 		if (hasDailyNote) cellEl.addClass("lc-has-daily-note");
 
 		cellEl.createSpan({ cls: "lc-day-num", text: String(day) });
-		cellEl.createSpan({ cls: "lc-day-weekday", text: (japaneseWeekdayLabels ? WEEKDAY_KANJI : WEEKDAY_ABBR)[dow] });
+		cellEl.createSpan({ cls: "lc-day-weekday", text: (this.japaneseWeekdayLabels ? WEEKDAY_KANJI : WEEKDAY_ABBR)[dow] });
 
-		this.attachCellHandlers(cellEl, year, month, day, hasDailyNote, dailyNoteColor, dailyNoteStyle);
+		this.attachCellHandlers(cellEl, month, day, hasDailyNote);
 	}
 
 	private attachCellHandlers(
 		cellEl: HTMLElement,
-		year: number,
 		month: number,
 		day: number,
 		hasDailyNote: boolean,
-		dailyNoteColor: string | null,
-		dailyNoteStyle: DailyNoteStyle,
 	): void {
 		if (hasDailyNote) {
-			if (dailyNoteStyle === "tint") {
+			if (this.dailyNoteStyle === "tint") {
 				cellEl.addClass("lc-daily-tint");
-				cellEl.style.setProperty("--lc-daily-tint", computeTint(dailyNoteColor, false));
-				cellEl.style.setProperty("--lc-daily-tint-hover", computeTint(dailyNoteColor, true));
+				cellEl.style.setProperty("--lc-daily-tint", computeTint(this.dailyNoteColor, false));
+				cellEl.style.setProperty("--lc-daily-tint-hover", computeTint(this.dailyNoteColor, true));
 			} else {
 				cellEl.addClass("lc-daily-border-top");
-				cellEl.style.setProperty("--lc-daily-color", computeSolidColor(dailyNoteColor));
+				cellEl.style.setProperty("--lc-daily-color", computeSolidColor(this.dailyNoteColor));
 			}
 
 			let singleClickTimer: ReturnType<typeof setTimeout> | null = null;
 			cellEl.addEventListener("click", () => {
 				singleClickTimer = window.setTimeout(() => {
-					this.onDayClick?.(year, month, day);
+					this.onDayClick?.(this.year, month, day);
 					singleClickTimer = null;
 				}, 220);
 			});
@@ -310,17 +274,17 @@ export class GridRenderer {
 					window.clearTimeout(singleClickTimer);
 					singleClickTimer = null;
 				}
-				this.onDayDblClick?.(year, month, day);
+				this.onDayDblClick?.(this.year, month, day);
 			});
 		} else {
 			cellEl.addEventListener("dblclick", () => {
-				this.onDayDblClick?.(year, month, day);
+				this.onDayDblClick?.(this.year, month, day);
 			});
 		}
 
 		cellEl.addEventListener("contextmenu", (event: MouseEvent) => {
 			event.preventDefault();
-			this.onDayContextMenu?.(year, month, day, event);
+			this.onDayContextMenu?.(this.year, month, day, event);
 		});
 	}
 

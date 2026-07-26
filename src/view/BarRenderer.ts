@@ -1,7 +1,6 @@
 import { type App, Menu, setIcon } from "obsidian";
 import type { CalendarItem } from "../types";
 import { COLOR_PALETTE, MAX_WATERFALL_ROWS, MAX_WATERFALL_COLS_VERT } from "../constants";
-import { formatDateRange } from "../utils/dateUtils";
 import { getContrastColor } from "../utils/colorUtils";
 import type { MonthRowRef } from "./GridRenderer";
 import type { MonthSegment } from "../utils/segmentByMonth";
@@ -9,8 +8,15 @@ import { groupSegmentsByMonth } from "../utils/segmentByMonth";
 import { assignRowsForMonth, type RowAssignment } from "../utils/rowAssignment";
 import { DragHandler } from "./DragHandler";
 
+/** Data a bar carries for consumers (e.g. Tooltip) that need it without touching the DOM. */
+export interface BarInfo {
+	item: CalendarItem;
+	tagColor: string;
+}
+
 export class BarRenderer {
 	private dragHandler: DragHandler | null;
+	private barInfo = new WeakMap<HTMLElement, BarInfo>();
 
 	constructor(
 		private app: App,
@@ -118,12 +124,11 @@ export class BarRenderer {
 
 		if (segment.item.anniversary) barEl.addClass("calendar-bar-anniversary");
 
-		barEl.dataset.title = segment.item.title;
-		barEl.dataset.dateRange = formatDateRange(segment.item.dateStart, segment.item.dateEnd);
-		barEl.dataset.tags = segment.item.tags?.join(", ") ?? "";
-		barEl.dataset.tagColor = tagColorMap.get(tag) ?? COLOR_PALETTE[0];
-		barEl.dataset.filePath = segment.item.filePath;
-		barEl.dataset.description = segment.item.description ?? "";
+		this.barInfo.set(barEl, { item: segment.item, tagColor: bgColor });
+	}
+
+	getBarInfo(barEl: HTMLElement): BarInfo | undefined {
+		return this.barInfo.get(barEl);
 	}
 
 	private attachContextMenu(barEl: HTMLElement, filePath: string): void {

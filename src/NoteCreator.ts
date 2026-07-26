@@ -92,8 +92,11 @@ export class ObsidianNoteCreator implements NoteCreator {
 					const existing = Array.isArray(fm.tags)
 						? (fm.tags as unknown[]).map(String)
 						: (typeof fm.tags === "string" || typeof fm.tags === "number") ? [String(fm.tags)] : [];
-					if (!existing.includes(calendarTag)) existing.unshift(calendarTag);
-					fm.tags = existing;
+					const withoutGateTag = existing.filter(
+						(t) => t !== "linear-calendar" && !t.startsWith("linear-calendar/"),
+					);
+					withoutGateTag.unshift(calendarTag);
+					fm.tags = withoutGateTag;
 				});
 			} else {
 				const lines = ["---", `tags: [${calendarTag}]`, `${mapping.startDateProp}: ${dateStr}`];

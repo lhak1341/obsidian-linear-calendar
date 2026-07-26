@@ -7,6 +7,7 @@
 ## Testing
 
 - `@vitest/coverage-v8` not installed; `npm test -- --coverage` fails — install it first or skip coverage
+- Before adding a test for a new pure export, check the file doesn't already `import ... from "obsidian"` (e.g. `frontmatterUtils.ts`, `dailyNotes.ts`) — vitest fails with "Failed to resolve entry for package obsidian" for the whole file, even for unrelated pure functions. Put new pure logic in a fresh file instead.
 
 ## Daily note plugin priority
 

@@ -1,107 +1,114 @@
-# Graph Report - obsidian-linear-calendar  (2026-07-11)
+# Graph Report - obsidian-linear-calendar  (2026-07-26)
 
 ## Corpus Check
-- 32 files · ~12,955 words
+- 37 files · ~13,226 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 267 nodes · 490 edges · 24 communities (15 shown, 9 thin omitted)
-- Extraction: 99% EXTRACTED · 1% INFERRED · 0% AMBIGUOUS · INFERRED: 3 edges (avg confidence: 0.87)
+- 334 nodes · 632 edges · 44 communities (33 shown, 11 thin omitted)
+- Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS · INFERRED: 1 edges (avg confidence: 0.85)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `b2963115`
+- Built from commit: `ad349c38`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
 ## Community Hubs (Navigation)
-- [[_COMMUNITY_Core Data & Constants|Core Data & Constants]]
-- [[_COMMUNITY_Drag & Layout Utilities|Drag & Layout Utilities]]
-- [[_COMMUNITY_View Lifecycle|View Lifecycle]]
-- [[_COMMUNITY_Grid Rendering & Interactions|Grid Rendering & Interactions]]
-- [[_COMMUNITY_Semantic Architecture|Semantic Architecture]]
-- [[_COMMUNITY_Bar Rendering & Temporal Segmentation|Bar Rendering & Temporal Segmentation]]
-- [[_COMMUNITY_Settings Interface|Settings Interface]]
-- [[_COMMUNITY_Date Utilities & Scanning|Date Utilities & Scanning]]
-- [[_COMMUNITY_Daily Notes Integration|Daily Notes Integration]]
-- [[_COMMUNITY_Main Plugin Lifecycle|Main Plugin Lifecycle]]
-- [[_COMMUNITY_Tooltip Feedback|Tooltip Feedback]]
-- [[_COMMUNITY_Temporal Markers|Temporal Markers]]
-- [[_COMMUNITY_Calendar Component Coordinator|Calendar Component Coordinator]]
-- [[_COMMUNITY_Build Configuration|Build Configuration]]
-- [[_COMMUNITY_Test Configuration|Test Configuration]]
-- [[_COMMUNITY_Settings Tab (Semantic)|Settings Tab (Semantic)]]
-- [[_COMMUNITY_Plugin Settings (Semantic)|Plugin Settings (Semantic)]]
-- [[_COMMUNITY_Community 17|Community 17]]
-- [[_COMMUNITY_Community 18|Community 18]]
-- [[_COMMUNITY_Community 22|Community 22]]
-- [[_COMMUNITY_Community 23|Community 23]]
+- Core Data & Constants
+- Drag & Layout Utilities
+- View Lifecycle
+- Grid Rendering & Interactions
+- Semantic Architecture
+- Bar Rendering & Temporal Segmentation
+- Settings Interface
+- Daily Notes Integration
+- Main Plugin Lifecycle
+- Tooltip Feedback
+- Temporal Markers
+- Calendar Component Coordinator
+- Test Configuration
+- Settings Tab (Semantic)
+- Plugin Settings (Semantic)
+- 0001-no-calendar-widget-factory.md
+- 0002-no-dragattacher-seam.md
+- manifest.json
+- IconSuggest
+- obsidian-linear-calendar
+- MonthStripHandle
+- FrontmatterScanner cache management (concrete type only)
+- RowAssignment
+- GhostSeg
+- RowOccupancy
 
 ## God Nodes (most connected - your core abstractions)
-1. `LinearCalendarView` - 22 edges
-2. `GridRenderer` - 18 edges
-3. `LinearCalendarSettingTab` - 15 edges
-4. `DragHandler` - 12 edges
-5. `ColumnMapping` - 9 edges
-6. `CalendarRenderer` - 9 edges
-7. `Tooltip` - 9 edges
-8. `BarRenderer` - 9 edges
-9. `FrontmatterScanner` - 9 edges
-10. `LinearCalendarPlugin` - 8 edges
+1. `LinearCalendarView` - 27 edges
+2. `CalendarItem` - 19 edges
+3. `ColumnMapping` - 19 edges
+4. `GridRenderer` - 17 edges
+5. `LinearCalendarSettingTab` - 16 edges
+6. `LinearCalendarPlugin` - 15 edges
+7. `CalendarRenderer` - 15 edges
+8. `DragHandler` - 15 edges
+9. `PluginSettings` - 13 edges
+10. `MonthRowRef` - 13 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `GridRenderer` --semantically_similar_to--> `BarRenderer`  [INFERRED] [semantically similar]
   src/view/GridRenderer.ts → src/view/BarRenderer.ts
-- `CalendarRenderer` --calls--> `GridRenderer`  [EXTRACTED]
-  src/view/CalendarRenderer.ts → src/view/GridRenderer.ts
-- `CalendarRenderer` --calls--> `NowIndicator`  [EXTRACTED]
-  src/view/CalendarRenderer.ts → src/view/NowIndicator.ts
-- `CalendarRenderer` --calls--> `Tooltip`  [EXTRACTED]
-  src/view/CalendarRenderer.ts → src/view/Tooltip.ts
-- `CalendarRenderer` --references--> `DataSource`  [EXTRACTED]
-  src/view/CalendarRenderer.ts → src/data/DataSource.ts
+- `LinearCalendarView` --references--> `NoteCreator`  [EXTRACTED]
+  src/view/LinearCalendarView.ts → src/NoteCreator.ts
+- `LinearCalendarPlugin` --references--> `ObsidianNoteCreator`  [EXTRACTED]
+  src/main.ts → src/NoteCreator.ts
+- `LinearCalendarPlugin` --references--> `DataSource`  [EXTRACTED]
+  src/main.ts → src/data/DataSource.ts
+- `LinearCalendarView` --references--> `DataSource`  [EXTRACTED]
+  src/view/LinearCalendarView.ts → src/data/DataSource.ts
+
+## Import Cycles
+- None detected.
 
 ## Hyperedges (group relationships)
-- **Rendering Pipeline** — calendarrenderer_calendarrenderer, gridrenderer_gridrenderer, barrenderer_barrenderer, nowindicator_nowindicator, tooltip_tooltip [EXTRACTED 1.00]
-- **Data Scanning Flow** — frontmatterscanner_frontmatterscanner, datasource_datasource, main_linearcalendarplugin [EXTRACTED 1.00]
+- **Rendering Pipeline** — src_view_calendarrenderer_calendarrenderer, src_view_gridrenderer_gridrenderer, src_view_barrenderer_barrenderer, src_view_nowindicator_nowindicator, src_view_tooltip_tooltip [EXTRACTED 1.00]
+- **Data Scanning Flow** — src_data_frontmatterscanner_frontmatterscanner, src_data_datasource_datasource, src_main_linearcalendarplugin [EXTRACTED 1.00]
 
-## Communities (24 total, 9 thin omitted)
+## Communities (44 total, 11 thin omitted)
 
 ### Community 0 - "Core Data & Constants"
-Cohesion: 0.08
-Nodes (11): ObsidianNoteCreator, AppInternal, CoreDailyNoteOptions, createDailyNote(), DailyPluginSettings, getDailyNoteMap(), getDailyNoteSettings(), ObsidianInternalPlugins (+3 more)
+Cohesion: 0.12
+Nodes (9): AppInternal, CoreDailyNoteOptions, createDailyNote(), DailyPluginSettings, getDailyNoteMap, getDailyNoteSettings(), ObsidianInternalPlugins, ObsidianPlugins (+1 more)
 
 ### Community 1 - "Drag & Layout Utilities"
-Cohesion: 0.17
-Nodes (22): DataSource, CacheEntry, COLOR_PALETTE, DEFAULT_MAPPING, DEFAULT_SETTINGS, MonthStripHandle, AppWithPlugins, CreateEventOptions (+14 more)
+Cohesion: 0.12
+Nodes (20): pad(), toInputDate(), DataSource, ScannerCache, CacheEntry, FrontmatterScanner, AppWithPlugins, CreateEventOptions (+12 more)
 
 ### Community 2 - "View Lifecycle"
-Cohesion: 0.12
-Nodes (17): addDays(), findFreeRow(), GhostSeg, mDays(), newDatesFromDelta(), RowOccupancy, segmentDates(), rowAssignmentsToOccupancy() (+9 more)
+Cohesion: 0.17
+Nodes (11): addDays(), findFreeRow(), GhostSeg, mDays(), newDatesFromDelta(), RowOccupancy, segmentDates(), RowAssignment (+3 more)
 
 ### Community 3 - "Grid Rendering & Interactions"
-Cohesion: 0.13
-Nodes (9): computeSolidColor(), computeTint(), GridRenderCallbacks, GridRenderer, GridRenderOptions, MONTH_NAMES, MonthRowRef, WEEKDAY_ABBR (+1 more)
+Cohesion: 0.16
+Nodes (10): AlignMode, DailyNoteStyle, computeSolidColor(), computeTint(), GridRenderCallbacks, GridRenderer, GridRenderOptions, MONTH_NAMES (+2 more)
 
 ### Community 4 - "Semantic Architecture"
-Cohesion: 0.2
-Nodes (9): getContrastColor(), assignRowsForMonth(), RowAssignment, daysInMonth(), groupSegmentsByMonth(), MonthSegment, segmentByMonth(), BarRenderer (+1 more)
-
-### Community 5 - "Bar Rendering & Temporal Segmentation"
-Cohesion: 0.18
-Nodes (6): CreateEventModal, pad(), parseInputDate(), toInputDate(), IconSuggest, stripLucidePrefix()
+Cohesion: 0.15
+Nodes (13): COLOR_PALETTE, DEFAULT_MAPPING, DEFAULT_SETTINGS, FONT_OPTIONS, FontChoice, buildTagColorMap, getContrastColor, assignRowsForMonth() (+5 more)
 
 ### Community 6 - "Settings Interface"
-Cohesion: 0.16
-Nodes (8): FrontmatterScanner, dayOfYear(), daysInYear(), formatDateRange(), isLeapYear(), monthBoundaries(), parseDateString(), projectAnniversaryDates()
+Cohesion: 0.06
+Nodes (31): builtin-modules, esbuild, eslint, eslint-plugin-obsidianmd, obsidian, description, devDependencies, builtin-modules (+23 more)
 
-### Community 7 - "Date Utilities & Scanning"
-Cohesion: 0.15
-Nodes (14): BarRenderer, CalendarRenderer, buildTagColorMap, getContrastColor, getDailyNoteMap, DataSource, DragHandler, FrontmatterScanner (+6 more)
+### Community 9 - "Main Plugin Lifecycle"
+Cohesion: 0.17
+Nodes (8): dayOfYear(), daysInYear(), formatDateRange(), isLeapYear(), monthBoundaries(), formatTagLabel(), BarInfo, Tooltip
 
-### Community 13 - "Build Configuration"
-Cohesion: 0.33
-Nodes (5): Build & Test, Conventions, graphify, obsidian-linear-calendar, Public API
+### Community 10 - "Tooltip Feedback"
+Cohesion: 0.11
+Nodes (18): DOM, DOM.Iterable, ES2018, ES2021.String, src/**/*.ts, compilerOptions, allowJs, importHelpers (+10 more)
+
+### Community 12 - "Calendar Component Coordinator"
+Cohesion: 0.31
+Nodes (3): CalendarRenderer, CalendarRendererCallbacks, pad()
 
 ### Community 14 - "Test Configuration"
 Cohesion: 0.33
@@ -109,31 +116,39 @@ Nodes (5): Category toggle re-render scope, Reading CSS-driven visibility in eve
 
 ### Community 15 - "Settings Tab (Semantic)"
 Cohesion: 0.33
-Nodes (5): Category = tags[0], Data layer, FrontmatterScanner cache management (concrete type only), metadataCache.on("changed") callback shape, Obsidian tag format (API gotcha)
+Nodes (5): Cache lifecycle (ScannerCache interface), Category = tags[0], Data layer, metadataCache.on("changed") callback shape, Obsidian tag format (API gotcha)
 
 ### Community 16 - "Plugin Settings (Semantic)"
-Cohesion: 0.4
+Cohesion: 0.40
 Nodes (4): Daily note plugin priority, Moment, Testing, Utils
 
+### Community 19 - "manifest.json"
+Cohesion: 0.25
+Nodes (7): author, description, id, isDesktopOnly, minAppVersion, name, version
+
+### Community 21 - "obsidian-linear-calendar"
+Cohesion: 0.33
+Nodes (5): Build & Test, Conventions, graphify, obsidian-linear-calendar, Public API
+
 ## Knowledge Gaps
-- **49 isolated node(s):** `TemplaterPlugin`, `AppWithPlugins`, `CreateEventOptions`, `MonthStripHandle`, `FONT_OPTIONS` (+44 more)
+- **78 isolated node(s):** `id`, `name`, `version`, `minAppVersion`, `description` (+73 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **9 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **11 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `LinearCalendarView` connect `Core Data & Constants` to `Drag & Layout Utilities`?**
-  _High betweenness centrality (0.104) - this node is a cross-community bridge._
-- **Why does `GridRenderer` connect `Grid Rendering & Interactions` to `Drag & Layout Utilities`?**
-  _High betweenness centrality (0.093) - this node is a cross-community bridge._
-- **Why does `LinearCalendarSettingTab` connect `Daily Notes Integration` to `Drag & Layout Utilities`?**
-  _High betweenness centrality (0.072) - this node is a cross-community bridge._
-- **What connects `TemplaterPlugin`, `AppWithPlugins`, `CreateEventOptions` to the rest of the system?**
-  _49 weakly-connected nodes found - possible documentation gaps or missing edges._
+- **Why does `LinearCalendarView` connect `Core Data & Constants` to `Drag & Layout Utilities`, `Calendar Component Coordinator`, `Bar Rendering & Temporal Segmentation`?**
+  _High betweenness centrality (0.070) - this node is a cross-community bridge._
+- **Why does `CalendarRenderer` connect `Calendar Component Coordinator` to `Core Data & Constants`, `Drag & Layout Utilities`, `Grid Rendering & Interactions`, `Semantic Architecture`, `Main Plugin Lifecycle`, `Temporal Markers`?**
+  _High betweenness centrality (0.058) - this node is a cross-community bridge._
+- **Why does `GridRenderer` connect `Grid Rendering & Interactions` to `Drag & Layout Utilities`, `Calendar Component Coordinator`, `Semantic Architecture`?**
+  _High betweenness centrality (0.044) - this node is a cross-community bridge._
+- **What connects `id`, `name`, `version` to the rest of the system?**
+  _78 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `Core Data & Constants` be split into smaller, more focused modules?**
-  _Cohesion score 0.08 - nodes in this community are weakly interconnected._
-- **Should `View Lifecycle` be split into smaller, more focused modules?**
-  _Cohesion score 0.12 - nodes in this community are weakly interconnected._
-- **Should `Grid Rendering & Interactions` be split into smaller, more focused modules?**
-  _Cohesion score 0.13 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.11612903225806452 - nodes in this community are weakly interconnected._
+- **Should `Drag & Layout Utilities` be split into smaller, more focused modules?**
+  _Cohesion score 0.12292358803986711 - nodes in this community are weakly interconnected._
+- **Should `Settings Interface` be split into smaller, more focused modules?**
+  _Cohesion score 0.0625 - nodes in this community are weakly interconnected._
