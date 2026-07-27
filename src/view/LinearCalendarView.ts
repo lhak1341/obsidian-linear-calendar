@@ -6,7 +6,7 @@ import type { NoteCreator } from "../NoteCreator";
 import { CreateEventModal } from "../CreateEventModal";
 import { CalendarRenderer, RenderConfig } from "./CalendarRenderer";
 import { createDailyNote, getDailyNoteMap } from "../utils/dailyNotes";
-import { writeDragDates } from "../utils/frontmatterUtils";
+import { commitDrag } from "../utils/frontmatterUtils";
 
 interface ViewState {
 	year: number;
@@ -98,7 +98,7 @@ export class LinearCalendarView extends ItemView {
 					}
 					this.renderBarsOnly();
 				},
-				onDropCommit: (filePath, newStart, newEnd) => this.commitDrop(filePath, newStart, newEnd),
+				onDropCommit: (filePath, newStart, newEnd) => commitDrag(this.app, this.getMapping(), filePath, newStart, newEnd),
 			},
 		);
 
@@ -307,14 +307,6 @@ export class LinearCalendarView extends ItemView {
 				.onClick(() => new CreateEventModal(this.app, this.noteCreator, this.settings, new Date(year, month, day)).open())
 		);
 		menu.showAtMouseEvent(event);
-	}
-
-	private async commitDrop(filePath: string, newStart: Date, newEnd: Date): Promise<void> {
-		try {
-			await writeDragDates(this.app, filePath, this.getMapping(), newStart, newEnd);
-		} catch (err) {
-			console.error("[linear-calendar] drag write failed:", err);
-		}
 	}
 
 	refresh(): void {

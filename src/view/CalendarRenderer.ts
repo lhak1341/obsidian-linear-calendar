@@ -61,14 +61,14 @@ export class CalendarRenderer {
 		this.current = config;
 		const { year, months, hiddenCategories, layout, alignMode, rowHeight, dailyNoteMap } = config;
 		const { colorMap, iconMap, dailyNoteColor, dailyNoteStyle, japaneseWeekdayLabels } = this.getSettings();
-		const dailyNoteDates = new Set(dailyNoteMap.keys());
 
 		this.lastRenderedYear = year;
-		const { items, tagColorMap } = this.prepareVisibleItems(year, months, hiddenCategories, colorMap);
+		const { allItems, items, tagColorMap } = this.computeVisibleItems(year, months, hiddenCategories, colorMap);
+		this.renderCategories(allItems, year, months, tagColorMap, hiddenCategories);
 
 		const monthRows = this.gridRenderer.render({
 			year, months, layout, alignMode,
-			dailyNoteDates, dailyNoteColor, dailyNoteStyle, japaneseWeekdayLabels,
+			dailyNoteMap, dailyNoteColor, dailyNoteStyle, japaneseWeekdayLabels,
 			callbacks: {
 				onDayClick: (y, m, d) => {
 					const file = dailyNoteMap.get(`${y}-${pad(m + 1)}-${pad(d)}`);
@@ -110,7 +110,8 @@ export class CalendarRenderer {
 		const { year, months, hiddenCategories } = this.current;
 		const { colorMap, iconMap } = this.getSettings();
 
-		const { items, tagColorMap } = this.prepareVisibleItems(year, months, hiddenCategories, colorMap);
+		const { allItems, items, tagColorMap } = this.computeVisibleItems(year, months, hiddenCategories, colorMap);
+		this.renderCategories(allItems, year, months, tagColorMap, hiddenCategories);
 
 		for (const rowRef of monthRows) {
 			rowRef.barsContainer.empty();
@@ -136,26 +137,22 @@ export class CalendarRenderer {
 		this.tooltip.cleanup();
 	}
 
-	/** Scan, resolve tag colors, render category chips, and filter out hidden categories — shared by render() and renderBars(). */
-	private prepareVisibleItems(
+	/** Scan, resolve tag colors, and filter out hidden categories — shared by render() and renderBars(). No DOM writes. */
+	private computeVisibleItems(
 		year: number,
 		months: number[],
 		hiddenCategories: Set<string>,
 		colorMap: Record<string, string>,
-	): { items: CalendarItem[]; tagColorMap: Map<string, string> } {
+	): { allItems: CalendarItem[]; items: CalendarItem[]; tagColorMap: Map<string, string> } {
 		const allItems = this.source.scan(this.getMapping(), year);
 		const tagColorMap = buildTagColorMap(allItems, colorMap);
-
-		if (this.categoriesEl) {
-			this.renderCategories(allItems, year, months, tagColorMap, hiddenCategories);
-		}
 
 		const items = allItems.filter((item) => {
 			const tag = item.tags?.[0];
 			return tag ? !hiddenCategories.has(tag) : !hiddenCategories.has("__uncategorized__");
 		});
 
-		return { items, tagColorMap };
+		return { allItems, items, tagColorMap };
 	}
 
 	private renderCategories(
@@ -165,7 +162,8 @@ export class CalendarRenderer {
 		tagColorMap: Map<string, string>,
 		hiddenCategories: Set<string>,
 	): void {
-		const el = this.categoriesEl!;
+		if (!this.categoriesEl) return;
+		const el = this.categoriesEl;
 
 		const countItems = months.length === 12
 			? allItems

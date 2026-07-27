@@ -4,6 +4,7 @@ import {
 	mDays,
 	segmentDates,
 	findFreeRow,
+	computeSegmentPlacement,
 	newDatesFromDelta,
 	type RowOccupancy,
 } from "./dragUtils";
@@ -164,6 +165,29 @@ describe("findFreeRow", () => {
 			[0, [[1, 5], [20, 31]]],
 		]);
 		expect(findFreeRow(occ, 8, 15)).toBe(0); // gap [6,19] fits
+	});
+});
+
+describe("computeSegmentPlacement", () => {
+	it("computes gridColumn from weekdayOffset and span", () => {
+		const { gridColumn } = computeSegmentPlacement({ month: 0, startDay: 5, endDay: 10 }, 2, undefined);
+		expect(gridColumn).toBe("7 / span 6");
+	});
+
+	it("row is 0 when occ is undefined (home bar — keeps its own row)", () => {
+		const { row } = computeSegmentPlacement({ month: 0, startDay: 5, endDay: 10 }, 0, undefined);
+		expect(row).toBe(0);
+	});
+
+	it("row comes from findFreeRow when occ is given", () => {
+		const occ: RowOccupancy = new Map([[0, [[1, 31]]]]);
+		const { row } = computeSegmentPlacement({ month: 0, startDay: 5, endDay: 10 }, 0, occ);
+		expect(row).toBe(1);
+	});
+
+	it("single-day segment spans 1 column", () => {
+		const { gridColumn } = computeSegmentPlacement({ month: 0, startDay: 15, endDay: 15 }, 0, undefined);
+		expect(gridColumn).toBe("15 / span 1");
 	});
 });
 

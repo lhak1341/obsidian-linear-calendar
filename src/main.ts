@@ -8,7 +8,7 @@ import type { DataSource, ScannerCache } from "./data/DataSource";
 import { ObsidianNoteCreator } from "./NoteCreator";
 import { CreateEventModal } from "./CreateEventModal";
 import { CalendarRenderer, RenderConfig } from "./view/CalendarRenderer";
-import { writeDragDates } from "./utils/frontmatterUtils";
+import { commitDrag } from "./utils/frontmatterUtils";
 import { buildTagColorMap } from "./utils/colorUtils";
 import { getDailyNoteMap } from "./utils/dailyNotes";
 
@@ -128,13 +128,8 @@ export default class LinearCalendarPlugin extends Plugin {
 					else hiddenCategories.add(tag);
 					render();
 				},
-				onDropCommit: async (filePath, newStart, newEnd) => {
-					try {
-						await writeDragDates(this.app, filePath, this.settings.defaultMapping, newStart, newEnd);
-					} catch (err) {
-						console.error("[linear-calendar] drag write failed:", err);
-					}
-				},
+				onDropCommit: (filePath, newStart, newEnd) =>
+					commitDrag(this.app, this.settings.defaultMapping, filePath, newStart, newEnd),
 			},
 		);
 

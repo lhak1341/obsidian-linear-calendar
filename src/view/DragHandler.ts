@@ -1,6 +1,7 @@
 import type { MonthRowRef } from "./GridRenderer";
+import type { MonthSegment } from "../utils/segmentByMonth";
 import {
-	segmentDates, findFreeRow, newDatesFromDelta,
+	segmentDates, newDatesFromDelta, computeSegmentPlacement,
 	type RowOccupancy,
 } from "../utils/dragUtils";
 import { rowAssignmentsToOccupancy, type RowAssignment } from "../utils/rowAssignment";
@@ -48,23 +49,14 @@ export class DragHandler {
 		this.assignmentsByMonth = assignments;
 	}
 
-	attach(
-		barEl: HTMLElement,
-		filePath: string,
-		month: number,
-		startDay: number,
-		endDay: number,
-		daysInMonth: number,
-		originalStart: Date,
-		originalEnd: Date,
-	): void {
+	attach(barEl: HTMLElement, segment: MonthSegment, daysInMonth: number): void {
 		const leftHandle = barEl.createDiv({ cls: "lc-drag-handle lc-drag-handle-left" });
 		const rightHandle = barEl.createDiv({ cls: "lc-drag-handle lc-drag-handle-right" });
 
 		const initDrag = (e: MouseEvent, mode: DragContext["mode"]) => {
 			e.stopPropagation();
 			e.preventDefault();
-			this.startDrag(e, barEl, filePath, month, startDay, endDay, daysInMonth, originalStart, originalEnd, mode);
+			this.startDrag(e, barEl, segment, daysInMonth, mode);
 		};
 
 		leftHandle.addEventListener("mousedown", (e) => initDrag(e, "resize-start"));
@@ -80,7 +72,7 @@ export class DragHandler {
 					activeDocument.removeEventListener("mousemove", onMove);
 					activeDocument.removeEventListener("mouseup", onUp);
 					e.preventDefault();
-					this.startDrag(e, barEl, filePath, month, startDay, endDay, daysInMonth, originalStart, originalEnd, "move");
+					this.startDrag(e, barEl, segment, daysInMonth, "move");
 					this.onMouseMove(me);
 				}
 			};
@@ -96,18 +88,13 @@ export class DragHandler {
 	private startDrag(
 		e: MouseEvent,
 		barEl: HTMLElement,
-		filePath: string,
-		month: number,
-		startDay: number,
-		endDay: number,
+		segment: MonthSegment,
 		dim: number,
-		originalStart: Date,
-		originalEnd: Date,
 		mode: DragContext["mode"],
 	): void {
 		const daysGrid = barEl.closest(".lc-days-grid");
 		if (!daysGrid) return;
-		const totalCols = this.monthRows.find((r) => r.month === month)?.totalCols ?? 31;
+		const totalCols = this.monthRows.find((r) => r.month === segment.month)?.totalCols ?? 31;
 		const dayWidth = daysGrid.clientWidth / totalCols;
 
 		const labelEl = barEl.querySelector(".calendar-bar-label");
@@ -116,12 +103,12 @@ export class DragHandler {
 			barEl,
 			barColor: barEl.style.backgroundColor,
 			barLabel: labelEl?.textContent ?? "",
-			filePath,
-			originalStart: new Date(originalStart),
-			originalEnd: new Date(originalEnd),
-			segMonth: month,
-			segStartDay: startDay,
-			segEndDay: endDay,
+			filePath: segment.item.filePath,
+			originalStart: new Date(segment.item.dateStart),
+			originalEnd: new Date(segment.item.dateEnd),
+			segMonth: segment.month,
+			segStartDay: segment.startDay,
+			segEndDay: segment.endDay,
 			daysInMonth: dim,
 			year: this.getYear(),
 			mode,
@@ -172,8 +159,7 @@ export class DragHandler {
 		const homeOffset = homeRowRef?.weekdayOffset ?? 0;
 		const homeSeg = allSegs.find((s) => s.month === segMonth);
 		if (homeSeg) {
-			const span = homeSeg.endDay - homeSeg.startDay + 1;
-			barEl.style.gridColumn = `${homeOffset + homeSeg.startDay} / span ${span}`;
+			barEl.style.gridColumn = computeSegmentPlacement(homeSeg, homeOffset, undefined).gridColumn;
 			barEl.removeClass("lc-hidden");
 		} else {
 			barEl.addClass("lc-hidden");
@@ -188,9 +174,7 @@ export class DragHandler {
 			if (!rowRef) continue;
 
 			const occ = this.occupancyCache.get(seg.month);
-			const row = occ ? findFreeRow(occ, seg.startDay, seg.endDay) : 0;
-			const span = seg.endDay - seg.startDay + 1;
-			const offset = rowRef.weekdayOffset;
+			const { gridColumn, row } = computeSegmentPlacement(seg, rowRef.weekdayOffset, occ);
 
 			let ghost: HTMLElement;
 			if (gi < this.ghostPool.length) {
@@ -202,7 +186,7 @@ export class DragHandler {
 				this.ghostPool.push(ghost);
 			}
 
-			ghost.style.gridColumn = `${offset + seg.startDay} / span ${span}`;
+			ghost.style.gridColumn = gridColumn;
 			ghost.style.gridRow = `${row + 2}`;
 			ghost.style.backgroundColor = barColor;
 			(ghost.firstChild as HTMLElement).textContent = barLabel;

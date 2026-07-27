@@ -1,7 +1,8 @@
 import type { App, TFile } from "obsidian";
 import type { CalendarItem, ColumnMapping } from "../types";
 import type { DataSource, ScannerCache } from "./DataSource";
-import { parseDateString, projectAnniversaryDates } from "../utils/dateUtils";
+import { projectAnniversaryDates } from "../utils/dateUtils";
+import { mapFrontmatterToItem } from "../utils/frontmatterMapper";
 
 interface CacheEntry {
 	mtime: number;
@@ -85,76 +86,7 @@ export class FrontmatterScanner implements DataSource, ScannerCache {
 
 	private processFile(file: TFile, mapping: ColumnMapping): CalendarItem | null {
 		const cache = this.app.metadataCache.getFileCache(file);
-		const fm: Record<string, unknown> | undefined = cache?.frontmatter;
-		if (!fm) return null;
-
-		// Gate: only process notes tagged #linear-calendar
-		const fmTags = Array.isArray(fm.tags)
-			? fm.tags.map(String)
-			: typeof fm.tags === "string"
-				? [fm.tags]
-				: [];
 		const inlineTags = (cache?.tags ?? []).map((t) => t.tag);
-		const hasGateTag =
-			fmTags.some((t) => t === "linear-calendar" || t.startsWith("linear-calendar/")) ||
-			inlineTags.some((t) => t === "#linear-calendar" || t.startsWith("#linear-calendar/"));
-		if (!hasGateTag) return null;
-
-		const startRaw = fm[mapping.startDateProp];
-		if (startRaw === undefined) return null;
-
-		const dateStart = parseDateString(startRaw);
-		if (!dateStart) return null;
-
-		let dateEnd: Date;
-		const endRaw = fm[mapping.endDateProp];
-		const parsedEnd = endRaw !== undefined ? parseDateString(endRaw) : null;
-		dateEnd = parsedEnd ?? new Date(dateStart);
-
-		const titleRaw = fm[mapping.titleProp];
-		const title =
-			mapping.titleProp === "__filename__"
-				? file.basename
-				: typeof titleRaw === "string"
-					? titleRaw
-					: file.basename;
-
-		const tags: string[] = [];
-		const rawTags = fm.tags;
-		if (rawTags) {
-			const tagList = Array.isArray(rawTags)
-				? rawTags.map(String)
-				: typeof rawTags === "string"
-					? [rawTags]
-					: [];
-			for (const t of tagList) {
-				if (t.startsWith("linear-calendar/")) {
-					tags.push(t);
-				}
-			}
-		}
-
-		const iconRaw = fm[mapping.iconProp];
-		const icon =
-			mapping.iconProp && typeof iconRaw === "string"
-				? iconRaw
-				: undefined;
-
-		const anniversary =
-			mapping.anniversaryProp ? fm[mapping.anniversaryProp] === true : false;
-
-		const descRaw = mapping.descriptionProp ? fm[mapping.descriptionProp] : undefined;
-		const description = typeof descRaw === "string" && descRaw.trim() ? descRaw.trim() : undefined;
-
-		return {
-			filePath: file.path,
-			title,
-			dateStart,
-			dateEnd,
-			tags,
-			icon,
-			anniversary: anniversary || undefined,
-			description,
-		};
+		return mapFrontmatterToItem(cache?.frontmatter, inlineTags, file.path, file.basename, mapping);
 	}
 }

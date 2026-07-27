@@ -16,6 +16,8 @@ Obsidian plugin — horizontal year-at-a-glance timeline rendered from note fron
 - Verifying an `AbstractInputSuggest` popover manually: `obsidian-cli dev:screenshot` blurs the input and closes the popover before capture — check `getComputedStyle`/`querySelectorAll('.suggestion-item')` instead of relying on the screenshot
 - `obsidian-cli eval` DOM checks: scope queries to `app.workspace.getLeavesOfType(viewType)[0].view.containerEl`, not global `document` — right after a reload (`app.plugins.disablePlugin(id).then(() => app.plugins.enablePlugin(id))`), stale/detached elements can still match a document-wide query and give misleading counts
 - `obsidian-cli eval code="app.setting.open()"` throws "Converting circular structure to JSON" from auto-serializing the return value — harmless, settings still opens; ignore it
+- `obsidian-cli eval` fails on `vault=test-vault` ("Command not found") — that vault has no CLI bridge plugin enabled; use `vault=lhakZettel` (personal vault, plugin deployed there too) for eval-based manual testing
+- `obsidian-cli eval code="await ..."` throws "await is only valid in async functions" — wrap in `(async () => { ... })()`
 - Uses esbuild (not webpack/vite)
 - `npx fallow` dead-file/dead-export results are wrong — fallow reads `package.json` `"main": "main.js"` (compiled output) and can't trace back to `src/main.ts`; ignore dead-code section entirely, complexity/duplication sections are accurate
 

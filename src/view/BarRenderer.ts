@@ -62,16 +62,7 @@ export class BarRenderer {
 				this.attachContextMenu(barEl, segment.item.filePath);
 
 				if (!isVertical && !segment.item.anniversary && this.dragHandler) {
-					this.dragHandler.attach(
-						barEl,
-						segment.item.filePath,
-						segment.month,
-						segment.startDay,
-						segment.endDay,
-						rowRef.daysInMonth,
-						segment.item.dateStart,
-						segment.item.dateEnd,
-					);
+					this.dragHandler.attach(barEl, segment, rowRef.daysInMonth);
 				}
 			}
 		}

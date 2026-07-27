@@ -1,3 +1,4 @@
+import type { TFile } from "obsidian";
 import type { AlignMode, DailyNoteStyle } from "../types";
 import { MAX_WATERFALL_COLS_VERT } from "../constants";
 
@@ -43,7 +44,7 @@ export interface GridRenderOptions {
 	months: number[];
 	layout: "horizontal" | "vertical";
 	alignMode: AlignMode;
-	dailyNoteDates: Set<string>;
+	dailyNoteMap: Map<string, TFile>;
 	dailyNoteColor: string | null;
 	dailyNoteStyle: DailyNoteStyle;
 	japaneseWeekdayLabels: boolean;
@@ -60,7 +61,7 @@ export class GridRenderer {
 	// Render-pass-constant state, set once per render() call and read by every private method below.
 	private year!: number;
 	private alignMode!: AlignMode;
-	private dailyNoteDates!: Set<string>;
+	private dailyNoteMap!: Map<string, TFile>;
 	private dailyNoteColor!: string | null;
 	private dailyNoteStyle!: DailyNoteStyle;
 	private japaneseWeekdayLabels!: boolean;
@@ -72,11 +73,11 @@ export class GridRenderer {
 	}
 
 	render(options: GridRenderOptions): MonthRowRef[] {
-		const { year, months, layout, alignMode, dailyNoteDates, dailyNoteColor, dailyNoteStyle, japaneseWeekdayLabels, callbacks } = options;
+		const { year, months, layout, alignMode, dailyNoteMap, dailyNoteColor, dailyNoteStyle, japaneseWeekdayLabels, callbacks } = options;
 
 		this.year = year;
 		this.alignMode = alignMode;
-		this.dailyNoteDates = dailyNoteDates;
+		this.dailyNoteMap = dailyNoteMap;
 		this.dailyNoteColor = dailyNoteColor;
 		this.dailyNoteStyle = dailyNoteStyle;
 		this.japaneseWeekdayLabels = japaneseWeekdayLabels;
@@ -237,7 +238,7 @@ export class GridRenderer {
 		if (dow === 0 || dow === 6) cellEl.addClass("lc-day-weekend");
 
 		const dateKey = `${this.year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-		const hasDailyNote = this.dailyNoteDates.has(dateKey);
+		const hasDailyNote = this.dailyNoteMap.has(dateKey);
 		if (hasDailyNote) cellEl.addClass("lc-has-daily-note");
 
 		cellEl.createSpan({ cls: "lc-day-num", text: String(day) });

@@ -47,6 +47,18 @@ export function findFreeRow(occ: RowOccupancy, startDay: number, endDay: number)
 	return occ.size;
 }
 
+/** Grid placement for a segment: column span always, row only when occ is given (ghosts need a free row; the home bar keeps its own). */
+export function computeSegmentPlacement(
+	seg: GhostSeg,
+	weekdayOffset: number,
+	occ: RowOccupancy | undefined,
+): { gridColumn: string; row: number } {
+	const span = seg.endDay - seg.startDay + 1;
+	const gridColumn = `${weekdayOffset + seg.startDay} / span ${span}`;
+	const row = occ ? findFreeRow(occ, seg.startDay, seg.endDay) : 0;
+	return { gridColumn, row };
+}
+
 export function newDatesFromDelta(
 	originalStart: Date,
 	originalEnd: Date,

@@ -15,6 +15,11 @@
 
 - Use `getComputedStyle(el).display !== "none"` to check actual rendered state including `@container` query results — do not rely on class presence alone, since container queries toggle visibility without touching the DOM
 
+## Verifying drag behavior (ADR-0002: untestable in vitest)
+
+- Simulate a real drag with `obsidian-cli dev:cdp method=Input.dispatchMouseEvent params='{"type":"mousePressed"|"mouseMoved"|"mouseReleased", "x":.., "y":.., "button":"left", "buttons":1}'` — a `mousePressed` then `mouseMoved` past the 4px threshold then `mouseReleased`, coordinates from the bar's `getBoundingClientRect()`
+- Check `dev:errors` after release, and re-read the note's frontmatter to confirm the committed dates
+
 ## ResizeObserver — LinearCalendarView vs mountMonthStrip
 
 - LinearCalendarView has no ResizeObserver: CSS grid `1fr` columns adapt to container resize natively — no JS re-render needed. Adding one causes a full 372-node rebuild on every panel resize.

@@ -1,7 +1,7 @@
 import { App, TFile } from "obsidian";
 import type { ColumnMapping } from "../types";
 
-export async function writeDragDates(
+async function writeDragDates(
 	app: App,
 	filePath: string,
 	mapping: ColumnMapping,
@@ -18,4 +18,19 @@ export async function writeDragDates(
 			fm[mapping.endDateProp] = fmt(newEnd);
 		}
 	});
+}
+
+/** Write a drag-committed date change to frontmatter; logs and swallows failures (drag UI has no error surface to show them). */
+export async function commitDrag(
+	app: App,
+	mapping: ColumnMapping,
+	filePath: string,
+	newStart: Date,
+	newEnd: Date,
+): Promise<void> {
+	try {
+		await writeDragDates(app, filePath, mapping, newStart, newEnd);
+	} catch (err) {
+		console.error("[linear-calendar] drag write failed:", err);
+	}
 }
