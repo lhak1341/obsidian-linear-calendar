@@ -6,9 +6,10 @@
 	"scripts": {
 		"dev": "bun esbuild.config.mjs",
 		"build": "bun esbuild.config.mjs production",
-		"deploy": "bun esbuild.config.mjs production && cp main.js manifest.json styles.css test-vault/.obsidian/plugins/obsidian-linear-calendar/ && cp main.js manifest.json styles.css \"/Users/lhak/Library/Mobile Documents/iCloud~md~obsidian/Documents/lhakZettel/.obsidian/plugins/obsidian-linear-calendar/\"",
+		"deploy": "bun run typecheck && bun esbuild.config.mjs production && bun run scripts/deploy.mjs",
 		"test": "vitest run",
 		"test:watch": "vitest",
+		"typecheck": "tsc --noEmit",
 		"lint": "eslint 'src/**/*.ts' --ignore-pattern 'src/**/*.test.ts'",
 		"lint:fix": "eslint 'src/**/*.ts' --ignore-pattern 'src/**/*.test.ts' --fix"
 	},
@@ -20,7 +21,7 @@
 		"eslint": "^10.6.0",
 		"eslint-plugin-obsidianmd": "^0.4.1",
 		"obsidian": "latest",
-		"typescript": "^6.0.3",
+		"typescript": "6.0.3",
 		"vitest": "^4.1.9"
 	}
 }
