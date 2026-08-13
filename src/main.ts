@@ -11,6 +11,7 @@ import { CalendarRenderer, RenderConfig } from "./view/CalendarRenderer";
 import { commitDrag } from "./utils/frontmatterUtils";
 import { buildTagColorMap } from "./utils/colorUtils";
 import { getDailyNoteMap } from "./utils/dailyNotes";
+import { registerLucideIcons } from "./lucide-icons";
 
 /** Handle returned by {@link LinearCalendarPlugin.mountMonthStrip} for host-driven month navigation. */
 export interface MonthStripHandle {
@@ -26,6 +27,7 @@ export default class LinearCalendarPlugin extends Plugin {
 	private noteCreator!: ObsidianNoteCreator;
 
 	async onload(): Promise<void> {
+		registerLucideIcons();
 		await this.loadSettings();
 		this.scanner = new FrontmatterScanner(this.app);
 		this.noteCreator = new ObsidianNoteCreator(this.app, this.settings, () => this.settings.defaultMapping);

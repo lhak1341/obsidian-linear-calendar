@@ -8,6 +8,7 @@
 		"allowJs": true,
 		"strict": true,
 		"moduleResolution": "bundler",
+		"resolveJsonModule": true,
 		"importHelpers": true,
 		"isolatedModules": true,
 		"lib": ["DOM", "DOM.Iterable", "ES2018", "ES2021.String"]

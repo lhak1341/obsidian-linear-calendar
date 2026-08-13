@@ -1,31 +1,25 @@
-import { AbstractInputSuggest, App, getIconIds, setIcon } from "obsidian";
+import { AbstractInputSuggest, App, setIcon } from "obsidian";
+import { allLucideIconNames, getLucideIconTags, resolveLucideIconId } from "./lucide-icons";
+import { rankIconSuggestions } from "./utils/iconSearch";
 
-// Obsidian's icon resolver accepts both "lucide-cake" and the bare "cake" for
-// built-in Lucide icons — the bare form is shorter and matches how icon names
-// already get stored elsewhere in this plugin (e.g. iconMap), so strip it for
-// display and for the value written into the input.
-const stripLucidePrefix = (id: string) => id.startsWith("lucide-") ? id.slice("lucide-".length) : id;
-
-/** Autocomplete for Lucide icon ids, backed by Obsidian's own icon registry. */
+/** Autocomplete for Lucide icon ids, backed by the full offline Lucide set (native + gap-filled). */
 export class IconSuggest extends AbstractInputSuggest<string> {
 	constructor(app: App, private inputEl: HTMLInputElement) {
 		super(app, inputEl);
 	}
 
 	protected getSuggestions(query: string): string[] {
-		const q = query.trim().toLowerCase();
-		const all = getIconIds();
-		return q ? all.filter((id) => id.toLowerCase().includes(q)) : all;
+		return rankIconSuggestions(query, allLucideIconNames(), getLucideIconTags);
 	}
 
-	renderSuggestion(iconId: string, el: HTMLElement): void {
+	renderSuggestion(iconName: string, el: HTMLElement): void {
 		el.addClass("lc-icon-suggest-item");
-		setIcon(el.createSpan({ cls: "lc-icon-suggest-icon" }), iconId);
-		el.createSpan({ text: stripLucidePrefix(iconId) });
+		setIcon(el.createSpan({ cls: "lc-icon-suggest-icon" }), resolveLucideIconId(iconName));
+		el.createSpan({ text: iconName });
 	}
 
-	selectSuggestion(iconId: string): void {
-		this.setValue(stripLucidePrefix(iconId));
+	selectSuggestion(iconName: string): void {
+		this.setValue(iconName);
 		this.inputEl.trigger("input");
 		this.close();
 	}

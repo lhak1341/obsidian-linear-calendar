@@ -4,6 +4,7 @@ import { COLOR_PALETTE } from "./constants";
 import { buildTagColorMap } from "./utils/colorUtils";
 import type { AlignMode, ColumnMapping, DailyNoteStyle, FontChoice } from "./types";
 import { IconSuggest } from "./IconSuggest";
+import { resolveLucideIconId } from "./lucide-icons";
 
 const FONT_OPTIONS: Record<FontChoice, string> = {
 	"plugin":             "Plugin default",
@@ -333,12 +334,12 @@ export class LinearCalendarSettingTab extends PluginSettingTab {
 						attr: { type: "text", placeholder: "Icon name", value: iconMap[tag] ?? "" },
 					});
 					const iconPreview = iconWrap.createSpan({ cls: "lc-icon-preview" });
-					if (iconMap[tag]) setIcon(iconPreview, iconMap[tag]);
+					if (iconMap[tag]) setIcon(iconPreview, resolveLucideIconId(iconMap[tag]));
 					new IconSuggest(this.app, iconInput);
 					iconInput.addEventListener("input", () => {
 						iconPreview.empty();
 						const val = iconInput.value.trim();
-						if (val) setIcon(iconPreview, val);
+						if (val) setIcon(iconPreview, resolveLucideIconId(val));
 					});
 					iconInput.addEventListener("change", () => {
 						const val = iconInput.value.trim();
@@ -447,7 +448,7 @@ export class LinearCalendarSettingTab extends PluginSettingTab {
 			iconInput.addEventListener("input", () => {
 				iconPreview.empty();
 				const val = iconInput.value.trim();
-				if (val) setIcon(iconPreview, val);
+				if (val) setIcon(iconPreview, resolveLucideIconId(val));
 				newIconValue = val;
 			});
 		});

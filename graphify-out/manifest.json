@@ -20,13 +20,13 @@
     "semantic_hash": ""
   },
   "src/main.ts": {
-    "mtime": 1785168629.4460535,
-    "ast_hash": "57f20d55a8793142fec6b19e1cd00e13",
+    "mtime": 1786633013.7340367,
+    "ast_hash": "0a857ea6dd6f90c8e2c6f22ad19314dc",
     "semantic_hash": ""
   },
   "src/settings.ts": {
-    "mtime": 1783707529.9200706,
-    "ast_hash": "0cfd92644f59b64581d8371f5d131bd4",
+    "mtime": 1786633061.8484309,
+    "ast_hash": "3f865fcd7f292bc2405decec8e2427c1",
     "semantic_hash": ""
   },
   "src/types.ts": {
@@ -40,13 +40,13 @@
     "semantic_hash": ""
   },
   "src/CreateEventModal.ts": {
-    "mtime": 1783706472.2945673,
-    "ast_hash": "e9c77cb0a8a759b2e54829cb5f8d18fe",
+    "mtime": 1786633050.9537492,
+    "ast_hash": "5256b397298477b5e578be550f9b067c",
     "semantic_hash": ""
   },
   "src/IconSuggest.ts": {
-    "mtime": 1783707061.4730008,
-    "ast_hash": "64a4b162c74e56331fe8c6393496afff",
+    "mtime": 1786637683.949852,
+    "ast_hash": "e682c6a07641ba5933a1d40003da453c",
     "semantic_hash": ""
   },
   "src/utils/segmentByMonth.ts": {
@@ -115,8 +115,8 @@
     "semantic_hash": ""
   },
   "src/view/BarRenderer.ts": {
-    "mtime": 1785166436.8382082,
-    "ast_hash": "4b4c7bd136d368fce6433dc103e473bc",
+    "mtime": 1786633048.5939388,
+    "ast_hash": "4ff118e9df3bb298d89a7f2f42da1d2a",
     "semantic_hash": ""
   },
   "src/data/DataSource.ts": {
@@ -130,8 +130,8 @@
     "semantic_hash": ""
   },
   "CLAUDE.md": {
-    "mtime": 1785169034.8082416,
-    "ast_hash": "93725a68f0611b6fe9a9b99b9976e6dd",
+    "mtime": 1786637715.3693197,
+    "ast_hash": "ec92951bffc329764e5535d8a6be7ae7",
     "semantic_hash": ""
   },
   "docs/adr/0001-no-calendar-widget-factory.md": {
@@ -165,8 +165,8 @@
     "semantic_hash": ""
   },
   "package.json": {
-    "mtime": 1783089898.9443092,
-    "ast_hash": "c7d125c8df339335c10268623e363ba5",
+    "mtime": 1786632974.4714923,
+    "ast_hash": "670bde1b571f3bccef1baf743f77409d",
     "semantic_hash": ""
   },
   "src/utils/tagUtils.ts": {
@@ -175,8 +175,8 @@
     "semantic_hash": ""
   },
   "tsconfig.json": {
-    "mtime": 1783695551.8949373,
-    "ast_hash": "757fa9c4eabc32591fe798a0c412265a",
+    "mtime": 1786632981.4723518,
+    "ast_hash": "0b62a404d795ce8f29507e7c4ee252ff",
     "semantic_hash": ""
   },
   "versions.json": {
@@ -192,6 +192,41 @@
   "README.md": {
     "mtime": 1785165253.8085723,
     "ast_hash": "9402832e7f671e7df03433e8b35dca20",
+    "semantic_hash": ""
+  },
+  "scripts/deploy.mjs": {
+    "mtime": 1786497003.444732,
+    "ast_hash": "6c70f5d0e9a863c758632fb98873c11c",
+    "semantic_hash": ""
+  },
+  "scripts/sync-lucide-icons.mjs": {
+    "mtime": 1786637613.5231137,
+    "ast_hash": "e4e50055d40bb85ef6117370cee67496",
+    "semantic_hash": ""
+  },
+  "src/lucide-icon-svgs.json": {
+    "mtime": 1786637618.2029576,
+    "ast_hash": "138bee9096aa99593d531179d3f57551",
+    "semantic_hash": ""
+  },
+  "src/lucide-icon-tags.json": {
+    "mtime": 1786637618.21177,
+    "ast_hash": "bbbd9405dc05239e0faa2739bad3e58a",
+    "semantic_hash": ""
+  },
+  "src/lucide-icons.ts": {
+    "mtime": 1786637658.5568554,
+    "ast_hash": "71e601eb8a2da8ceb8c02d20ca55f2c7",
+    "semantic_hash": ""
+  },
+  "src/utils/iconSearch.ts": {
+    "mtime": 1786637666.9904203,
+    "ast_hash": "3a34fcf59b7548e21556af1f0df84a0d",
+    "semantic_hash": ""
+  },
+  ".github/workflows/release.yml": {
+    "mtime": 1785685006.466327,
+    "ast_hash": "664203756c2273709258f14aaf01dce9",
     "semantic_hash": ""
   }
 }

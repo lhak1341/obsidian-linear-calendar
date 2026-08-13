@@ -2,6 +2,7 @@ import { App, Modal, Setting, setIcon, moment } from "obsidian";
 import type { NoteCreator } from "./NoteCreator";
 import type { PluginSettings } from "./types";
 import { IconSuggest } from "./IconSuggest";
+import { resolveLucideIconId } from "./lucide-icons";
 
 const pad = (n: number) => String(n).padStart(2, "0");
 const toInputDate = (date: Date) => `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
@@ -74,7 +75,7 @@ export class CreateEventModal extends Modal {
 				iconInput.addEventListener("input", () => {
 					this.icon = iconInput.value.trim();
 					iconPreview.empty();
-					if (this.icon) setIcon(iconPreview, this.icon);
+					if (this.icon) setIcon(iconPreview, resolveLucideIconId(this.icon));
 				});
 			});
 

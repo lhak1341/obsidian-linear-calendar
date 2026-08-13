@@ -1,5 +1,6 @@
 import { type App, Menu, setIcon } from "obsidian";
 import type { CalendarItem } from "../types";
+import { resolveLucideIconId } from "../lucide-icons";
 import { COLOR_PALETTE, MAX_WATERFALL_ROWS, MAX_WATERFALL_COLS_VERT } from "../constants";
 import { getContrastColor } from "../utils/colorUtils";
 import type { MonthRowRef } from "./GridRenderer";
@@ -105,7 +106,7 @@ export class BarRenderer {
 		const resolvedIcon = segment.item.icon ?? tagIconMap.get(tag);
 		if (resolvedIcon) {
 			const iconEl = barEl.createSpan({ cls: "calendar-bar-icon" });
-			setIcon(iconEl, resolvedIcon);
+			setIcon(iconEl, resolveLucideIconId(resolvedIcon));
 		}
 		barEl.createSpan({ cls: "calendar-bar-label", text: segment.item.title });
 

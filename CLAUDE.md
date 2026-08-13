@@ -34,6 +34,17 @@ Has `graphify-out/`.
   `.linear-calendar-container`, or they bleed into dashboard embeds.
 - Icons are stored bare everywhere (`iconMap`, frontmatter `icon:`) — strip the `lucide-`
   prefix when displaying or writing icon ids.
+- `src/lucide-icons.ts` bundles the full current Lucide set offline (`src/lucide-icon-svgs.json`,
+  regenerated via `bun run sync:lucide`) so icons missing from Obsidian's pinned snapshot
+  (e.g. `mosque`, `broccoli`) still resolve. Every dynamic `setIcon(el, name)` call must go
+  through `resolveLucideIconId(name)` first — Obsidian's `getIcon()` silently no-ops on
+  `addIcon()` entries registered under its own `lucide-` prefix, so gap-fill icons live under
+  `linear-calendar-lucide-` instead. `registerLucideIcons()` runs once in `main.ts` `onload()`.
+- The same sync script also writes `src/lucide-icon-tags.json` (lucide-static's per-icon search
+  synonyms, e.g. "flask-conical" -> ["lab", "chemistry", ...] — the data lucide.dev's own icon
+  search runs on). `IconSuggest.getSuggestions()` ranks via `src/utils/iconSearch.ts`'s
+  `rankIconSuggestions()`, name matches first then tag matches, so typing "chem" surfaces
+  flask-conical/atom/biohazard/etc even though none of those names contain "chem".
 
 ## Testing
 
