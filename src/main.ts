@@ -130,8 +130,17 @@ export default class LinearCalendarPlugin extends Plugin {
 					else hiddenCategories.add(tag);
 					render();
 				},
-				onDropCommit: (filePath, newStart, newEnd) =>
-					commitDrag(this.app, this.settings.defaultMapping, filePath, newStart, newEnd),
+				onDropCommit: (filePath, oldStart, newStart, newEnd) =>
+					commitDrag(
+						this.app,
+						this.settings.defaultMapping,
+						this.settings.newEventFolder,
+						this.settings.newEventDateFormat,
+						filePath,
+						oldStart,
+						newStart,
+						newEnd,
+					),
 			},
 		);
 

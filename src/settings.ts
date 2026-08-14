@@ -1,10 +1,9 @@
-import { App, PluginSettingTab, Setting, setIcon, type ColorComponent } from "obsidian";
+import { App, PluginSettingTab, Setting, type ColorComponent } from "obsidian";
 import type LinearCalendarPlugin from "./main";
 import { COLOR_PALETTE } from "./constants";
 import { buildTagColorMap } from "./utils/colorUtils";
 import type { AlignMode, ColumnMapping, DailyNoteStyle, FontChoice } from "./types";
-import { IconSuggest } from "./IconSuggest";
-import { resolveLucideIconId } from "./lucide-icons";
+import { IconField } from "./IconField";
 
 const FONT_OPTIONS: Record<FontChoice, string> = {
 	"plugin":             "Plugin default",
@@ -328,24 +327,13 @@ export class LinearCalendarSettingTab extends PluginSettingTab {
 						void this.plugin.saveSettings();
 						this.refresh();
 					});
-					const iconWrap = setting.controlEl.createSpan({ cls: "lc-icon-input-wrap" });
-					const iconInput = iconWrap.createEl("input", {
-						cls: "lc-icon-input",
-						attr: { type: "text", placeholder: "Icon name", value: iconMap[tag] ?? "" },
-					});
-					const iconPreview = iconWrap.createSpan({ cls: "lc-icon-preview" });
-					if (iconMap[tag]) setIcon(iconPreview, resolveLucideIconId(iconMap[tag]));
-					new IconSuggest(this.app, iconInput);
-					iconInput.addEventListener("input", () => {
-						iconPreview.empty();
-						const val = iconInput.value.trim();
-						if (val) setIcon(iconPreview, resolveLucideIconId(val));
-					});
-					iconInput.addEventListener("change", () => {
-						const val = iconInput.value.trim();
-						if (val) iconMap[tag] = val;
-						else delete iconMap[tag];
-						void this.plugin.saveSettings();
+					new IconField(this.app, setting.controlEl, {
+						initialValue: iconMap[tag],
+						onCommit: (val) => {
+							if (val) iconMap[tag] = val;
+							else delete iconMap[tag];
+							void this.plugin.saveSettings();
+						},
 					});
 				})
 				.addColorPicker((picker) =>
@@ -438,18 +426,9 @@ export class LinearCalendarSettingTab extends PluginSettingTab {
 		});
 
 		addSetting.then((setting) => {
-			const iconWrap = setting.controlEl.createSpan({ cls: "lc-icon-input-wrap" });
-			const iconInput = iconWrap.createEl("input", {
-				cls: "lc-icon-input",
-				attr: { type: "text", placeholder: "Icon (optional)" },
-			});
-			const iconPreview = iconWrap.createSpan({ cls: "lc-icon-preview" });
-			new IconSuggest(this.app, iconInput);
-			iconInput.addEventListener("input", () => {
-				iconPreview.empty();
-				const val = iconInput.value.trim();
-				if (val) setIcon(iconPreview, resolveLucideIconId(val));
-				newIconValue = val;
+			new IconField(this.app, setting.controlEl, {
+				placeholder: "Icon (optional)",
+				onPreview: (val) => { newIconValue = val; },
 			});
 		});
 

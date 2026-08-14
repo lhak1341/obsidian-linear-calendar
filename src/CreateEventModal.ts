@@ -1,8 +1,7 @@
-import { App, Modal, Setting, setIcon, moment } from "obsidian";
+import { App, Modal, Setting, moment } from "obsidian";
 import type { NoteCreator } from "./NoteCreator";
 import type { PluginSettings } from "./types";
-import { IconSuggest } from "./IconSuggest";
-import { resolveLucideIconId } from "./lucide-icons";
+import { IconField } from "./IconField";
 
 const pad = (n: number) => String(n).padStart(2, "0");
 const toInputDate = (date: Date) => `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
@@ -65,17 +64,8 @@ export class CreateEventModal extends Modal {
 		new Setting(metaRow)
 			.setName("Icon")
 			.then((setting) => {
-				const wrap = setting.controlEl.createSpan({ cls: "lc-icon-input-wrap" });
-				const iconInput = wrap.createEl("input", {
-					cls: "lc-icon-input",
-					attr: { type: "text", placeholder: "Icon name" },
-				});
-				const iconPreview = wrap.createSpan({ cls: "lc-icon-preview" });
-				new IconSuggest(this.app, iconInput);
-				iconInput.addEventListener("input", () => {
-					this.icon = iconInput.value.trim();
-					iconPreview.empty();
-					if (this.icon) setIcon(iconPreview, resolveLucideIconId(this.icon));
+				new IconField(this.app, setting.controlEl, {
+					onPreview: (val) => { this.icon = val; },
 				});
 			});
 

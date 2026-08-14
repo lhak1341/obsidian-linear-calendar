@@ -22,7 +22,7 @@ export class BarRenderer {
 	constructor(
 		private app: App,
 		getYear: () => number,
-		onDropCommit?: (filePath: string, newStart: Date, newEnd: Date) => Promise<void>,
+		onDropCommit?: (filePath: string, oldStart: Date, newStart: Date, newEnd: Date) => Promise<void>,
 	) {
 		this.dragHandler = onDropCommit ? new DragHandler(getYear, onDropCommit) : null;
 	}

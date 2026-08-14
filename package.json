@@ -22,7 +22,7 @@
 		"eslint": "^10.6.0",
 		"eslint-plugin-obsidianmd": "^0.4.1",
 		"lucide-static": "^1.31.0",
-		"obsidian": "latest",
+		"obsidian": "1.13.1",
 		"typescript": "6.0.3",
 		"vitest": "^4.1.9"
 	}

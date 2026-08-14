@@ -6,6 +6,9 @@ import {
 } from "../utils/dragUtils";
 import { rowAssignmentsToOccupancy, type RowAssignment } from "../utils/rowAssignment";
 
+/** Minimum pointer movement before an ambiguous mousedown (bar body) commits to a drag. */
+const DRAG_THRESHOLD_PX = 4;
+
 interface DragContext {
 	barEl: HTMLElement;
 	barColor: string;
@@ -38,7 +41,7 @@ export class DragHandler {
 
 	constructor(
 		private getYear: () => number,
-		private onDropCommit: (filePath: string, newStart: Date, newEnd: Date) => Promise<void>,
+		private onDropCommit: (filePath: string, oldStart: Date, newStart: Date, newEnd: Date) => Promise<void>,
 	) {
 		this.boundMouseMove = this.onMouseMove.bind(this);
 		this.boundMouseUp = () => { void this.onMouseUp(); };
@@ -65,24 +68,36 @@ export class DragHandler {
 		barEl.addEventListener("mousedown", (e) => {
 			if (e.button !== 0) return;
 			if ((e.target as HTMLElement).classList.contains("lc-drag-handle")) return;
-			const sx = e.clientX;
-			const sy = e.clientY;
-			const onMove = (me: MouseEvent) => {
-				if (Math.abs(me.clientX - sx) > 4 || Math.abs(me.clientY - sy) > 4) {
-					activeDocument.removeEventListener("mousemove", onMove);
-					activeDocument.removeEventListener("mouseup", onUp);
-					e.preventDefault();
-					this.startDrag(e, barEl, segment, daysInMonth, "move");
-					this.onMouseMove(me);
-				}
-			};
-			const onUp = () => {
+			this.watchForDragThreshold(e, (me) => {
+				e.preventDefault();
+				this.startDrag(e, barEl, segment, daysInMonth, "move");
+				this.onMouseMove(me);
+			});
+		});
+	}
+
+	/**
+	 * Bar-body mousedown is ambiguous with a plain click (which opens the note,
+	 * see BarRenderer's click listener) — wait for real pointer movement before
+	 * committing to a drag. Drag handles have no such ambiguity and call
+	 * startDrag() directly from attach().
+	 */
+	private watchForDragThreshold(e: MouseEvent, onExceeded: (me: MouseEvent) => void): void {
+		const sx = e.clientX;
+		const sy = e.clientY;
+		const onMove = (me: MouseEvent) => {
+			if (Math.abs(me.clientX - sx) > DRAG_THRESHOLD_PX || Math.abs(me.clientY - sy) > DRAG_THRESHOLD_PX) {
 				activeDocument.removeEventListener("mousemove", onMove);
 				activeDocument.removeEventListener("mouseup", onUp);
-			};
-			activeDocument.addEventListener("mousemove", onMove);
-			activeDocument.addEventListener("mouseup", onUp);
-		});
+				onExceeded(me);
+			}
+		};
+		const onUp = () => {
+			activeDocument.removeEventListener("mousemove", onMove);
+			activeDocument.removeEventListener("mouseup", onUp);
+		};
+		activeDocument.addEventListener("mousemove", onMove);
+		activeDocument.addEventListener("mouseup", onUp);
 	}
 
 	private startDrag(
@@ -223,7 +238,7 @@ export class DragHandler {
 
 		const dayDelta = this.prevDayDelta ?? 0;
 		const { newStart, newEnd } = this.newDatesFromDelta(dayDelta);
-		const { barEl, filePath } = this.ctx;
+		const { barEl, filePath, originalStart } = this.ctx;
 
 		this.clearGhosts();
 		this.occupancyCache.clear();
@@ -239,7 +254,7 @@ export class DragHandler {
 		if (dayDelta === 0) return;
 
 		// Delegate write to caller — metadataCache.on('changed') triggers re-render
-		await this.onDropCommit(filePath, newStart, newEnd);
+		await this.onDropCommit(filePath, originalStart, newStart, newEnd);
 	}
 
 	cleanup(): void {

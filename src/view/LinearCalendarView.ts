@@ -98,7 +98,17 @@ export class LinearCalendarView extends ItemView {
 					}
 					this.renderBarsOnly();
 				},
-				onDropCommit: (filePath, newStart, newEnd) => commitDrag(this.app, this.getMapping(), filePath, newStart, newEnd),
+				onDropCommit: (filePath, oldStart, newStart, newEnd) =>
+					commitDrag(
+						this.app,
+						this.getMapping(),
+						this.settings.newEventFolder,
+						this.settings.newEventDateFormat,
+						filePath,
+						oldStart,
+						newStart,
+						newEnd,
+					),
 			},
 		);
 
@@ -185,9 +195,7 @@ export class LinearCalendarView extends ItemView {
 		});
 		prevBtn.textContent = "‹";
 		this.registerDomEvent(prevBtn, "click", () => {
-			this.currentYear--;
-			this.renderCalendar();
-			this.updateYearLabel();
+			this.navigateYear(-1);
 		});
 
 		nav.createSpan({
@@ -201,9 +209,7 @@ export class LinearCalendarView extends ItemView {
 		});
 		nextBtn.textContent = "›";
 		this.registerDomEvent(nextBtn, "click", () => {
-			this.currentYear++;
-			this.renderCalendar();
-			this.updateYearLabel();
+			this.navigateYear(1);
 		});
 
 		const todayBtn = toolbar.createEl("button", {
@@ -211,10 +217,7 @@ export class LinearCalendarView extends ItemView {
 			text: "Today",
 		});
 		this.registerDomEvent(todayBtn, "click", () => {
-			this.currentYear = new Date().getFullYear();
-			this.renderCalendar();
-			this.updateYearLabel();
-			this.scrollToNow();
+			this.goToToday();
 		});
 
 		const densityWrap = toolbar.createDiv({ cls: "lc-density" });
@@ -259,6 +262,19 @@ export class LinearCalendarView extends ItemView {
 	private updateYearLabel(): void {
 		const label = this.contentEl.querySelector('[data-role="year-label"]');
 		if (label) label.textContent = String(this.currentYear);
+	}
+
+	private navigateYear(delta: number): void {
+		this.currentYear += delta;
+		this.renderCalendar();
+		this.updateYearLabel();
+	}
+
+	private goToToday(): void {
+		this.currentYear = new Date().getFullYear();
+		this.renderCalendar();
+		this.updateYearLabel();
+		this.scrollToNow();
 	}
 
 	private renderCalendar(): void {
@@ -330,23 +346,16 @@ export class LinearCalendarView extends ItemView {
 
 		switch (evt.key) {
 			case "ArrowLeft":
-				this.currentYear--;
-				this.renderCalendar();
-				this.updateYearLabel();
+				this.navigateYear(-1);
 				evt.preventDefault();
 				break;
 			case "ArrowRight":
-				this.currentYear++;
-				this.renderCalendar();
-				this.updateYearLabel();
+				this.navigateYear(1);
 				evt.preventDefault();
 				break;
 			case "t":
 			case "T":
-				this.currentYear = new Date().getFullYear();
-				this.renderCalendar();
-				this.updateYearLabel();
-				this.scrollToNow();
+				this.goToToday();
 				evt.preventDefault();
 				break;
 		}

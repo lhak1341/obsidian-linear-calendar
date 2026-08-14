@@ -23,7 +23,7 @@ interface CalendarRendererCallbacks {
 	onDayDblClick?: (y: number, m: number, d: number) => void;
 	onDayContextMenu?: (y: number, m: number, d: number, e: MouseEvent) => void;
 	onCategoryToggle?: (tag: string) => void;
-	onDropCommit?: (filePath: string, newStart: Date, newEnd: Date) => Promise<void>;
+	onDropCommit?: (filePath: string, oldStart: Date, newStart: Date, newEnd: Date) => Promise<void>;
 }
 
 const pad = (n: number) => String(n).padStart(2, "0");
@@ -88,18 +88,6 @@ export class CalendarRenderer {
 		this.nowIndicator.render(monthRows, year);
 
 		this.tooltip.attach(this.gridRenderer.getContainer(), this.barRenderer.getBarInfo.bind(this.barRenderer));
-
-		if (months.length === 1) {
-			const grid = this.gridRenderer.getContainer();
-			const daysInMonth = new Date(year, months[0] + 1, 0).getDate();
-			const daysGridEl = grid.querySelector<HTMLElement>(".lc-days-grid");
-			if (daysGridEl) {
-				daysGridEl.style.gridTemplateColumns = `repeat(${daysInMonth}, 1fr)`;
-			}
-			// Keep totalCols in sync with the actual grid so NowIndicator's
-			// percentage-based left/width uses the right denominator.
-			monthRows[0].totalCols = daysInMonth;
-		}
 	}
 
 	/** Rebuild only bars and category chips using the config from the last render(); preserves the day-cell grid DOM. */

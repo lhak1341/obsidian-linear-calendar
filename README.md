@@ -8,7 +8,7 @@ An [Obsidian](https://obsidian.md) plugin that renders a horizontal, year-at-a-g
   All twelve months laid out as rows, each note rendered as a bar from its start date property to its end date property (single-day notes get a point marker). Switch column alignment between calendar date and weekday.
 
 - **Drag to reschedule.**
-  Drag a bar to a new date, or resize its edges to change duration — writes the new dates back to the note's frontmatter.
+  Drag a bar to a new date, or resize its edges to change duration — writes the new dates back to the note's frontmatter. For notes created via the Create event command, the filename's date prefix is renamed to match.
 
 - **Tag-based color and icon coding.**
   Notes are grouped by `linear-calendar/*` subtags. Auto-assigns colors from a palette, or pin your own color and a Lucide icon per tag from the settings tab.

@@ -173,9 +173,10 @@ export class GridRenderer {
 		this.containerEl.style.removeProperty("grid-template-rows");
 		this.containerEl.style.removeProperty("min-width");
 
-		this.totalCols = this.computeAlignedSize();
-		this.colTemplate = `repeat(${this.totalCols}, 1fr)`;
 		const daysInMonth = new Date(this.year, month + 1, 0).getDate();
+		const firstDow = new Date(this.year, month, 1).getDay();
+		this.totalCols = this.alignMode === "weekday" ? firstDow + daysInMonth : daysInMonth;
+		this.colTemplate = `repeat(${this.totalCols}, 1fr)`;
 
 		return this.renderMonthRow(month, daysInMonth);
 	}
@@ -196,7 +197,7 @@ export class GridRenderer {
 		const weekdayOffset = this.alignMode === "weekday" ? firstDow : 0;
 
 		if (this.alignMode === "date") {
-			for (let d = 1; d <= 31; d++) {
+			for (let d = 1; d <= this.totalCols; d++) {
 				const cellEl = daysGrid.createDiv({ cls: "lc-day-cell" });
 				cellEl.style.gridColumn = `${d}`;
 				if (d > daysInMonth) { cellEl.addClass("lc-day-empty"); continue; }
