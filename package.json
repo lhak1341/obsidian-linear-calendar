@@ -21,9 +21,9 @@
 		"esbuild": "^0.28.1",
 		"eslint": "^10.6.0",
 		"eslint-plugin-obsidianmd": "^0.4.1",
-		"lucide-static": "^1.31.0",
+		"lucide-static": "1.33.0",
 		"obsidian": "1.13.1",
 		"typescript": "6.0.3",
-		"vitest": "^4.1.9"
+		"vitest": "4.1.11"
 	}
 }
