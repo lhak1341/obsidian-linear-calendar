@@ -7,6 +7,8 @@ import {
 	formatDateRange,
 	formatISODate,
 	daysBetween,
+	monthsBetween,
+	addMonthsClamped,
 	parseDateString,
 	monthBoundaries,
 	projectAnniversaryDates,
@@ -171,5 +173,34 @@ describe("daysBetween", () => {
 	it("is unaffected by a spring-forward DST transition in between", () => {
 		// US spring-forward: 2026-03-08. A naive ms-diff of two local midnights would be off by one hour here.
 		expect(daysBetween(new Date(2026, 2, 1), new Date(2026, 2, 15))).toBe(14);
+	});
+});
+
+describe("monthsBetween", () => {
+	it("same month is 0", () => expect(monthsBetween(new Date(2026, 7, 21), new Date(2026, 7, 21))).toBe(0));
+	it("counts forward across a year boundary", () => {
+		expect(monthsBetween(new Date(2026, 7, 21), new Date(2027, 3, 21))).toBe(8);
+	});
+	it("counts backward as negative", () => {
+		expect(monthsBetween(new Date(2027, 3, 21), new Date(2026, 7, 21))).toBe(-8);
+	});
+	it("ignores day-of-month", () => {
+		expect(monthsBetween(new Date(2026, 7, 1), new Date(2026, 11, 28))).toBe(4);
+	});
+});
+
+describe("addMonthsClamped", () => {
+	it("preserves day-of-month across months of different lengths", () => {
+		expect(addMonthsClamped(new Date(2026, 7, 21), 4)).toEqual(new Date(2026, 11, 21));
+		expect(addMonthsClamped(new Date(2026, 11, 21), 4)).toEqual(new Date(2027, 3, 21));
+	});
+	it("clamps to the last day of the target month when the day doesn't exist there", () => {
+		expect(addMonthsClamped(new Date(2026, 0, 31), 1)).toEqual(new Date(2026, 1, 28));
+	});
+	it("clamps to Feb 29 in a leap year", () => {
+		expect(addMonthsClamped(new Date(2027, 0, 31), 13)).toEqual(new Date(2028, 1, 29));
+	});
+	it("rolls over a year boundary", () => {
+		expect(addMonthsClamped(new Date(2026, 10, 21), 4)).toEqual(new Date(2027, 2, 21));
 	});
 });

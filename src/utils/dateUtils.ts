@@ -26,6 +26,23 @@ export function formatISODate(d: Date): string {
 	return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
+/** Calendar months between two local-midnight Dates (b − a), ignoring day-of-month. */
+export function monthsBetween(a: Date, b: Date): number {
+	return (b.getFullYear() - a.getFullYear()) * 12 + (b.getMonth() - a.getMonth());
+}
+
+/**
+ * Adds N calendar months to a date, preserving day-of-month; clamps to the
+ * target month's last day when the original day doesn't exist there (e.g.
+ * Jan 31 + 1 month → Feb 28/29, not March 3).
+ */
+export function addMonthsClamped(date: Date, months: number): Date {
+	const firstOfTargetMonth = new Date(date.getFullYear(), date.getMonth() + months, 1);
+	const daysInTargetMonth = new Date(firstOfTargetMonth.getFullYear(), firstOfTargetMonth.getMonth() + 1, 0).getDate();
+	const clampedDay = Math.min(date.getDate(), daysInTargetMonth);
+	return new Date(firstOfTargetMonth.getFullYear(), firstOfTargetMonth.getMonth(), clampedDay);
+}
+
 /**
  * Whole calendar days between two local-midnight Dates (b − a), DST-safe.
  * Millisecond subtraction drifts across DST transitions; comparing UTC-normalized
