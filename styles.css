@@ -919,6 +919,20 @@ body.lc-drag-cursor-resize {
 	width: 100%;
 }
 
+/* Remind-me row: mode dropdown + amount + unit (or exact date), all on one line. */
+.lc-remind-setting .setting-item-control {
+	flex-wrap: nowrap;
+	gap: var(--size-4-2);
+}
+
+.lc-remind-setting .setting-item-control > * {
+	width: auto !important;
+}
+
+.lc-remind-amount {
+	width: 4.5em !important;
+}
+
 .lc-create-event-filename {
 	font-size: var(--font-ui-smaller);
 	color: var(--text-muted);

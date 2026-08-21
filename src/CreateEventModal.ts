@@ -18,7 +18,10 @@ export class CreateEventModal extends Modal {
 	private description = "";
 	private dateStr: string;
 	private dateEndStr = "";
+	private remindMode: "relative" | "exact" = "relative";
 	private remindStr = "";
+	private remindAmount = "";
+	private remindUnit: "days" | "weeks" | "months" | "years" = "days";
 	private filenamePreviewEl!: HTMLElement;
 
 	constructor(
@@ -102,14 +105,54 @@ export class CreateEventModal extends Modal {
 			);
 
 		if (this.settings.defaultMapping.remindProp) {
+			let amountInputEl!: HTMLInputElement;
+			let unitDropdownEl!: HTMLSelectElement;
+			let exactDateEl!: HTMLInputElement;
+
 			new Setting(contentEl)
 				.setName("Remind me")
-				.setDesc("Also show a translucent ghost bar at this future date. Click it later to spin off a new note there.")
+				.setDesc("Also show a translucent ghost bar at a future date. Click it later to spin off a new note there.")
+				.setClass("lc-remind-setting")
+				.addDropdown((dd) =>
+					dd
+						.addOption("relative", "In…")
+						.addOption("exact", "On date…")
+						.setValue(this.remindMode)
+						.onChange((value) => {
+							this.remindMode = value as "relative" | "exact";
+							const isRelative = this.remindMode === "relative";
+							amountInputEl.toggleClass("lc-hidden", !isRelative);
+							unitDropdownEl.toggleClass("lc-hidden", !isRelative);
+							exactDateEl.toggleClass("lc-hidden", isRelative);
+						}),
+				)
+				.addText((text) => {
+					text.inputEl.type = "number";
+					text.inputEl.min = "1";
+					text.inputEl.addClass("lc-remind-amount");
+					text.setPlaceholder("4").onChange((value) => {
+						this.remindAmount = value;
+					});
+					amountInputEl = text.inputEl;
+				})
+				.addDropdown((dd) => {
+					dd.addOption("days", "Days")
+						.addOption("weeks", "Weeks")
+						.addOption("months", "Months")
+						.addOption("years", "Years")
+						.setValue(this.remindUnit)
+						.onChange((value) => {
+							this.remindUnit = value as "days" | "weeks" | "months" | "years";
+						});
+					unitDropdownEl = dd.selectEl;
+				})
 				.addText((text) => {
 					text.inputEl.type = "date";
+					text.inputEl.addClass("lc-hidden");
 					text.onChange((value) => {
 						this.remindStr = value;
 					});
+					exactDateEl = text.inputEl;
 				});
 		}
 
@@ -161,11 +204,20 @@ export class CreateEventModal extends Modal {
 		this.filenamePreviewEl.setText(`Will be created as: ${folder ? `${folder}/${name}` : name}`);
 	}
 
+	private computeRemindDate(eventDate: Date): Date | undefined {
+		if (this.remindMode === "exact") return parseInputDate(this.remindStr);
+		const amount = Number(this.remindAmount);
+		if (!Number.isFinite(amount) || amount <= 0) return undefined;
+		return (moment as unknown as (d: Date) => { add(n: number, unit: string): { toDate(): Date } })(eventDate)
+			.add(amount, this.remindUnit)
+			.toDate();
+	}
+
 	private submit(): void {
 		const date = parseInputDate(this.dateStr);
 		if (!date) return;
 		const remindProp = this.settings.defaultMapping.remindProp;
-		const remindDate = parseInputDate(this.remindStr);
+		const remindDate = remindProp ? this.computeRemindDate(date) : undefined;
 		void this.noteCreator.create(date, {
 			title: this.title,
 			tag: this.tag || undefined,
