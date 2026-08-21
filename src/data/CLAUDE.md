@@ -15,7 +15,15 @@ Category comes from the first `linear-calendar/*` subtag surviving the filter in
 
 ## Stale cache when rapidly recreating a test note
 
-- Deleting + recreating a fixture note at the same path in quick succession (e.g. scripted manual tests) can leave a stale `item: null` cached under the old mtime — if a freshly created note isn't showing up in `scan()`, call `scanner.invalidateMapping()` before assuming a bug
+- Deleting + recreating a fixture note at the same path in quick succession (e.g. scripted manual tests) can leave a stale `items: []` cached under the old mtime — if a freshly created note isn't showing up in `scan()`, call `scanner.invalidateMapping()` before assuming a bug
+
+## processFrontMatter() write/read race
+
+`app.fileManager.processFrontMatter()`'s promise resolves once the write hits disk, but `metadataCache` re-parses the frontmatter asynchronously after that — a `getFileCache()` read (or a scan/render) right after the await can still see the pre-write frontmatter, and `FrontmatterScanner` caches that stale read as current since the file's mtime already ticked. If code must re-render right after a write, wait for the `metadataCache` `"changed"` event on that exact path first — see `waitForMetadataChange()` in `NoteCreator.ts`. Use raw `metadataCache.on()`/`offref()` for this one-shot wait, not `registerEvent()` (that's for persistent listeners tied to component unload).
+
+## One note, multiple items
+
+`processFile()` can return more than one `CalendarItem` for a single note: the real item, plus a synthetic reminder ghost (`deriveReminderItem()` in `frontmatterMapper.ts`) when the note also has `remindProp` set. `CacheEntry.items` is an array for exactly this reason — don't assume 1:1 file-to-item.
 
 ## Cache lifecycle (ScannerCache interface)
 

@@ -32,6 +32,10 @@ Has `graphify-out/`.
   `Tooltip.showForChip()`, which works anywhere via direct listeners.
 - `@media` / `@container` rules on shared `.lc-*` classes must be scoped to
   `.linear-calendar-container`, or they bleed into dashboard embeds.
+- Chaining multiple controls onto one `Setting` (e.g. a mode dropdown + number + unit on one
+  row) needs a scoped `.setting-item-control > * { width: auto !important }` override — the
+  modal's default per-field `width: 100%` (for the stacked-label style) makes siblings fight
+  for the same full-row width otherwise. See `.lc-remind-setting` in `styles.css`.
 - Icons are stored bare everywhere (`iconMap`, frontmatter `icon:`) — strip the `lucide-`
   prefix when displaying or writing icon ids.
 - `src/lucide-icons.ts` bundles the full current Lucide set offline (`src/lucide-icon-svgs.json`,
