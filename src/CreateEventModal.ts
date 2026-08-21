@@ -18,6 +18,7 @@ export class CreateEventModal extends Modal {
 	private description = "";
 	private dateStr: string;
 	private dateEndStr = "";
+	private remindEnabled = false;
 	private remindMode: "relative" | "exact" = "relative";
 	private remindStr = "";
 	private remindAmount = "";
@@ -112,6 +113,15 @@ export class CreateEventModal extends Modal {
 			new Setting(contentEl)
 				.setName("Remind me")
 				.setDesc("Also show a translucent ghost bar at a future date. Click it later to spin off a new note there.")
+				.addToggle((toggle) =>
+					toggle.setValue(this.remindEnabled).onChange((value) => {
+						this.remindEnabled = value;
+						remindControls.toggleClass("lc-hidden", !value);
+					}),
+				);
+
+			const remindControls = contentEl.createDiv({ cls: "lc-hidden" });
+			new Setting(remindControls)
 				.setClass("lc-remind-setting")
 				.addDropdown((dd) =>
 					dd
@@ -217,7 +227,7 @@ export class CreateEventModal extends Modal {
 		const date = parseInputDate(this.dateStr);
 		if (!date) return;
 		const remindProp = this.settings.defaultMapping.remindProp;
-		const remindDate = remindProp ? this.computeRemindDate(date) : undefined;
+		const remindDate = remindProp && this.remindEnabled ? this.computeRemindDate(date) : undefined;
 		void this.noteCreator.create(date, {
 			title: this.title,
 			tag: this.tag || undefined,
