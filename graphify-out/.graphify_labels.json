@@ -52,5 +52,6 @@
   "50": "CalendarRenderer.renderCategories",
   "51": "DragHandler.onDropCommit callback",
   "52": "LinearCalendarView.refresh",
-  "53": "Tooltip.showForChip"
+  "53": "Tooltip.showForChip",
+  "54": "MonthRowRef"
 }

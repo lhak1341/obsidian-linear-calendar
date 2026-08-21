@@ -1,5 +1,6 @@
 import { App, TFile, moment, normalizePath } from "obsidian";
 import type { ColumnMapping } from "../types";
+import { carryDateForward, formatISODate, parseDateString } from "./dateUtils";
 
 const formatDate = (d: Date, fmt: string) =>
 	(moment as unknown as (date: Date) => { format(f: string): string })(d).format(fmt);
@@ -8,6 +9,7 @@ async function writeDragDates(
 	app: App,
 	filePath: string,
 	mapping: ColumnMapping,
+	oldStart: Date,
 	newStart: Date,
 	newEnd: Date,
 ): Promise<void> {
@@ -19,6 +21,12 @@ async function writeDragDates(
 		fm[mapping.startDateProp] = fmt(newStart);
 		if (fmt(newStart) !== fmt(newEnd) || fm[mapping.endDateProp]) {
 			fm[mapping.endDateProp] = fmt(newEnd);
+		}
+		if (mapping.remindProp) {
+			const oldRemindOn = parseDateString(fm[mapping.remindProp]);
+			if (oldRemindOn) {
+				fm[mapping.remindProp] = formatISODate(carryDateForward(oldStart, oldRemindOn, newStart));
+			}
 		}
 	});
 }
@@ -77,7 +85,7 @@ export async function commitDrag(
 	newEnd: Date,
 ): Promise<void> {
 	try {
-		await writeDragDates(app, filePath, mapping, newStart, newEnd);
+		await writeDragDates(app, filePath, mapping, oldStart, newStart, newEnd);
 		await renameForDragDateChange(app, filePath, newEventFolder, newEventDateFormat, oldStart, newStart);
 	} catch (err) {
 		console.error("[linear-calendar] drag write failed:", err);

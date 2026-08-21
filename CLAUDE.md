@@ -16,6 +16,9 @@ Has `graphify-out/`.
   changes require coordinating both repos.
 - Types used internally by those two (e.g. `RenderConfig`) are **not** part of the
   coordinated surface — only the two signatures and `MonthStripHandle` are.
+- Confirmed: `obsidian-lhak-dashboard` only calls `mountMonthStrip`, never `getCalendarData` —
+  `CalendarItem`'s field shape (e.g. `isReminder`/`anniversary`) is free to reshape without
+  cross-repo coordination.
 - `mountMonthStrip`'s `alignMode` is hardcoded to `"date"` regardless of
   `settings.alignMode`. That is intentional for the single-month embed context — do not
   fold it into a settings-accessor refactor.
@@ -68,3 +71,8 @@ GitHub Issues via `gh` CLI. See `docs/agents/issue-tracker.md`.
 ### Domain docs
 
 Single-context — `CONTEXT.md` + `docs/adr/` at repo root. See `docs/agents/domain.md`.
+
+### Reports
+
+Architecture-review / AI-readiness HTML reports save to this repo's `temp/` (gitignored),
+not the skill's OS-tmp default.

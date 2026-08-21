@@ -19,7 +19,14 @@ Category comes from the first `linear-calendar/*` subtag surviving the filter in
 
 ## processFrontMatter() write/read race
 
-`app.fileManager.processFrontMatter()`'s promise resolves once the write hits disk, but `metadataCache` re-parses the frontmatter asynchronously after that — a `getFileCache()` read (or a scan/render) right after the await can still see the pre-write frontmatter, and `FrontmatterScanner` caches that stale read as current since the file's mtime already ticked. If code must re-render right after a write, wait for the `metadataCache` `"changed"` event on that exact path first — see `waitForMetadataChange()` in `NoteCreator.ts`. Use raw `metadataCache.on()`/`offref()` for this one-shot wait, not `registerEvent()` (that's for persistent listeners tied to component unload).
+`app.fileManager.processFrontMatter()`'s promise resolves once the write hits disk, but `metadataCache` re-parses the frontmatter asynchronously after that — a `getFileCache()` read (or a scan/render) right after the await can still see the pre-write frontmatter, and `FrontmatterScanner` caches that stale read as current since the file's mtime already ticked.
+
+Two patterns currently handle this, matched to what the caller actually needs:
+
+- **Explicit wait** — `waitForMetadataChange()` in `NoteCreator.ts`, used by `promoteReminder`. Raw `metadataCache.on()`/`offref()` one-shot listener + timeout fallback, not `registerEvent()` (that's for persistent listeners tied to component unload). Use this when the caller needs the fresh result before continuing (e.g. promote-then-render).
+- **Ambient listener** — `writeDragDates`/`commitDrag` in `frontmatterUtils.ts` write with no wait at all. This only works because `LinearCalendarView.ts`'s persistent `metadataCache.on("changed")` listener (debounced, re-renders the whole calendar) happens to be registered and catches the eventual change. Use this only when the caller merely needs an eventual re-render and can confirm that ambient listener is actually wired up — it's an implicit dependency on `LinearCalendarView`'s setup, not a self-contained guarantee like the explicit wait.
+
+A future write path that needs a fresh read-back should default to the explicit wait unless it can confirm the ambient-listener precondition holds.
 
 ## One note, multiple items
 

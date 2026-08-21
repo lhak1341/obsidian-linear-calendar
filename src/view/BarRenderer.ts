@@ -1,5 +1,5 @@
 import { type App, Menu, setIcon } from "obsidian";
-import type { CalendarItem } from "../types";
+import type { CalendarItem, DropCommitFn } from "../types";
 import { resolveLucideIconId } from "../lucide-icons";
 import { COLOR_PALETTE, MAX_WATERFALL_ROWS, MAX_WATERFALL_COLS_VERT } from "../constants";
 import { getContrastColor } from "../utils/colorUtils";
@@ -7,6 +7,7 @@ import type { MonthRowRef } from "./GridRenderer";
 import type { MonthSegment } from "../utils/segmentByMonth";
 import { groupSegmentsByMonth } from "../utils/segmentByMonth";
 import { assignRowsForMonth, type RowAssignment } from "../utils/rowAssignment";
+import { canDrag } from "../utils/dragUtils";
 import { DragHandler } from "./DragHandler";
 
 /** Data a bar carries for consumers (e.g. Tooltip) that need it without touching the DOM. */
@@ -22,7 +23,7 @@ export class BarRenderer {
 	constructor(
 		private app: App,
 		getYear: () => number,
-		onDropCommit?: (filePath: string, oldStart: Date, newStart: Date, newEnd: Date) => Promise<void>,
+		onDropCommit?: DropCommitFn,
 		private onReminderClick?: (item: CalendarItem) => void,
 	) {
 		this.dragHandler = onDropCommit ? new DragHandler(getYear, onDropCommit) : null;
@@ -67,7 +68,7 @@ export class BarRenderer {
 
 				this.attachContextMenu(barEl, segment.item.filePath);
 
-				if (!isVertical && !segment.item.anniversary && !segment.item.isReminder && this.dragHandler) {
+				if (!isVertical && canDrag(segment.item) && this.dragHandler) {
 					this.dragHandler.attach(barEl, segment, rowRef.daysInMonth);
 				}
 			}

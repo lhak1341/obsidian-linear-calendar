@@ -5,7 +5,7 @@ interface TemplaterPlugin {
 }
 type AppWithPlugins = App & { plugins?: { getPlugin(id: string): TemplaterPlugin | null } };
 import type { PluginSettings, ColumnMapping } from "./types";
-import { parseDateString, formatISODate, daysBetween, monthsBetween, addMonthsClamped } from "./utils/dateUtils";
+import { parseDateString, formatISODate, carryDateForward } from "./utils/dateUtils";
 
 export interface CreateEventOptions {
 	title?: string;
@@ -180,19 +180,9 @@ export class ObsidianNoteCreator implements NoteCreator {
 				? (fm[mapping.descriptionProp] as string)
 				: undefined;
 
-			// Carry the reminder forward by the same interval, from the new date. When the
-			// reminder landed on the same day-of-month as the source (the "in N months/years"
-			// case), reapply it as calendar months so e.g. the 21st stays the 21st forever —
-			// a fixed day-count would drift once months of different lengths stack up.
-			// Otherwise (day/week-based intervals) whole calendar days, DST-safe.
-			const monthDiff = monthsBetween(oldDateStart, oldRemindOn);
-			const newRemindOn = oldDateStart.getDate() === oldRemindOn.getDate() && monthDiff > 0
-				? addMonthsClamped(oldRemindOn, monthDiff)
-				: new Date(
-					oldRemindOn.getFullYear(),
-					oldRemindOn.getMonth(),
-					oldRemindOn.getDate() + daysBetween(oldDateStart, oldRemindOn),
-				);
+			// Carry the reminder forward by the same interval, re-anchored at the new note's
+			// date (oldRemindOn) — see carryDateForward for the day-of-month-vs-day-count rule.
+			const newRemindOn = carryDateForward(oldDateStart, oldRemindOn, oldRemindOn);
 
 			const created = await this.create(oldRemindOn, {
 				title,

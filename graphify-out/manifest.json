@@ -15,8 +15,8 @@
     "semantic_hash": "8edcd8bd3124814963f348579f3b9737"
   },
   "src/NoteCreator.ts": {
-    "mtime": 1787293987.6619349,
-    "ast_hash": "2bdfb64bf762be80abf4c89ae4f37235",
+    "mtime": 1787313863.1258295,
+    "ast_hash": "8e1a1726991be0f3255e1c6f6f0f644f",
     "semantic_hash": ""
   },
   "src/main.ts": {
@@ -30,8 +30,8 @@
     "semantic_hash": ""
   },
   "src/types.ts": {
-    "mtime": 1787290579.955823,
-    "ast_hash": "22ce5f9f4a43694f59873d6f36426eb2",
+    "mtime": 1787314610.8692164,
+    "ast_hash": "5b38ad30aa31e336419ad887ea1f3758",
     "semantic_hash": ""
   },
   "src/constants.ts": {
@@ -55,18 +55,18 @@
     "semantic_hash": "26748e36254dd88e6a888466723dd019"
   },
   "src/utils/dragUtils.ts": {
-    "mtime": 1785166381.1066995,
-    "ast_hash": "637778904e0003a128ef356623beaff6",
-    "semantic_hash": "637778904e0003a128ef356623beaff6"
+    "mtime": 1787314390.7148538,
+    "ast_hash": "36ee5227e3e8388d0b46e4d7fbcb6de1",
+    "semantic_hash": ""
   },
   "src/utils/frontmatterUtils.ts": {
-    "mtime": 1786668694.0517466,
-    "ast_hash": "44ba4239543f40e06b45de65b5047954",
-    "semantic_hash": "44ba4239543f40e06b45de65b5047954"
+    "mtime": 1787313854.3089032,
+    "ast_hash": "981bec35879f2638f7d60a4cca40d82e",
+    "semantic_hash": ""
   },
   "src/utils/dateUtils.ts": {
-    "mtime": 1787292994.314592,
-    "ast_hash": "09abced756b4d39b565485bc042fe58b",
+    "mtime": 1787313844.8864906,
+    "ast_hash": "71eb4df5144241d27f4b065430d0b745",
     "semantic_hash": ""
   },
   "src/utils/dailyNotes.ts": {
@@ -95,9 +95,9 @@
     "semantic_hash": ""
   },
   "src/view/DragHandler.ts": {
-    "mtime": 1786668707.1410124,
-    "ast_hash": "8620abd2878abafecd7972e9739a9689",
-    "semantic_hash": "8620abd2878abafecd7972e9739a9689"
+    "mtime": 1787314915.0881124,
+    "ast_hash": "f0b01be164d6a207571e1fd143ad9c30",
+    "semantic_hash": ""
   },
   "src/view/NowIndicator.ts": {
     "mtime": 1783696059.6549292,
@@ -105,8 +105,8 @@
     "semantic_hash": "21d0ec73ca11a7b129084d57d1f2ff0b"
   },
   "src/view/CalendarRenderer.ts": {
-    "mtime": 1787290680.2709532,
-    "ast_hash": "3f6384c19fd32badf1e4207ba1f511ab",
+    "mtime": 1787314634.2425957,
+    "ast_hash": "14211e7b79bdbb4af05ac5c1caa0052f",
     "semantic_hash": ""
   },
   "src/view/Tooltip.ts": {
@@ -115,8 +115,8 @@
     "semantic_hash": "19b60b0ad30a6c983a09b8a2d12cf50d"
   },
   "src/view/BarRenderer.ts": {
-    "mtime": 1787290672.7418375,
-    "ast_hash": "6e559e5096ae000a16d2f1b598e540a9",
+    "mtime": 1787314625.1166625,
+    "ast_hash": "540442050a89fb74ef7fa4f62e24347f",
     "semantic_hash": ""
   },
   "src/data/DataSource.ts": {
@@ -130,8 +130,8 @@
     "semantic_hash": ""
   },
   "CLAUDE.md": {
-    "mtime": 1787294584.6771162,
-    "ast_hash": "73204a95ef0a5407948d7c6a5e5b5ad8",
+    "mtime": 1787315289.3803637,
+    "ast_hash": "bd4481f265861011c5fdfbfe2b5a7b25",
     "semantic_hash": ""
   },
   "docs/adr/0001-no-calendar-widget-factory.md": {
@@ -150,13 +150,13 @@
     "semantic_hash": "69ed363e8282095784eabf15a725e7d1"
   },
   "src/view/CLAUDE.md": {
-    "mtime": 1786669235.418737,
-    "ast_hash": "8051999951d69b087a119798b5a62360",
-    "semantic_hash": "8051999951d69b087a119798b5a62360"
+    "mtime": 1787314653.2573087,
+    "ast_hash": "a612abc62850062bc770c18124424178",
+    "semantic_hash": ""
   },
   "src/data/CLAUDE.md": {
-    "mtime": 1787294592.6456823,
-    "ast_hash": "a4fb45927ef22f6beadbfd9d6170d6d1",
+    "mtime": 1787314909.879821,
+    "ast_hash": "f8938327da6ee317696adecd3cba20c1",
     "semantic_hash": ""
   },
   "manifest.json": {

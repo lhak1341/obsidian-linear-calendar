@@ -1,6 +1,6 @@
 import { App } from "obsidian";
 import type { TFile } from "obsidian";
-import type { CalendarItem, ColumnMapping, PluginSettings, AlignMode } from "../types";
+import type { CalendarItem, ColumnMapping, PluginSettings, AlignMode, DropCommitFn } from "../types";
 import type { DataSource } from "../data/DataSource";
 import { buildTagColorMap } from "../utils/colorUtils";
 import { formatTagLabel } from "../utils/tagUtils";
@@ -23,7 +23,7 @@ interface CalendarRendererCallbacks {
 	onDayDblClick?: (y: number, m: number, d: number) => void;
 	onDayContextMenu?: (y: number, m: number, d: number, e: MouseEvent) => void;
 	onCategoryToggle?: (tag: string) => void;
-	onDropCommit?: (filePath: string, oldStart: Date, newStart: Date, newEnd: Date) => Promise<void>;
+	onDropCommit?: DropCommitFn;
 	onReminderClick?: (item: CalendarItem) => void;
 }
 

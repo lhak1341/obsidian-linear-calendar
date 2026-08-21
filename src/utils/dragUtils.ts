@@ -1,3 +1,5 @@
+import type { CalendarItem } from "../types";
+
 export interface GhostSeg {
 	month: number;
 	startDay: number;
@@ -5,6 +7,11 @@ export interface GhostSeg {
 }
 
 export type RowOccupancy = Map<number, [number, number][]>;
+
+/** Anniversary projections and reminder ghosts have no independent frontmatter to drag-write to. */
+export function canDrag(item: CalendarItem): boolean {
+	return !item.anniversary && !item.isReminder;
+}
 
 export function addDays(date: Date, days: number): Date {
 	const d = new Date(date);

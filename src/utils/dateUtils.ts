@@ -54,6 +54,22 @@ export function daysBetween(a: Date, b: Date): number {
 	return Math.round((utcB - utcA) / 86_400_000);
 }
 
+/**
+ * Carries `target` forward by whatever interval separates it from `anchor`,
+ * re-anchored at `newAnchor`. When `target` sits on the same day-of-month as
+ * `anchor` (a whole-month interval), the carry is calendar months, clamped —
+ * so month-length differences don't drift the day-of-month. Otherwise the
+ * carry is a whole day count, DST-safe.
+ */
+export function carryDateForward(anchor: Date, target: Date, newAnchor: Date): Date {
+	const monthDiff = monthsBetween(anchor, target);
+	if (anchor.getDate() === target.getDate() && monthDiff > 0) {
+		return addMonthsClamped(newAnchor, monthDiff);
+	}
+	const dayDelta = daysBetween(anchor, target);
+	return new Date(newAnchor.getFullYear(), newAnchor.getMonth(), newAnchor.getDate() + dayDelta);
+}
+
 export function formatDateRange(start: Date, end: Date): string {
 	const fmt = (d: Date) =>
 		`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;

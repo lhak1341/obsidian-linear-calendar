@@ -6,8 +6,20 @@ import {
 	findFreeRow,
 	computeSegmentPlacement,
 	newDatesFromDelta,
+	canDrag,
 	type RowOccupancy,
 } from "./dragUtils";
+import type { CalendarItem } from "../types";
+
+function makeItem(overrides: Partial<CalendarItem> = {}): CalendarItem {
+	return {
+		filePath: "note.md",
+		title: "Note",
+		dateStart: new Date(2026, 7, 21),
+		dateEnd: new Date(2026, 7, 21),
+		...overrides,
+	};
+}
 
 describe("addDays", () => {
 	it("returns same date for delta 0", () => {
@@ -262,4 +274,10 @@ describe("newDatesFromDelta", () => {
 		expect(s).toEqual(new Date(2024, 2, 10));
 		expect(e).toEqual(new Date(2024, 2, 20));
 	});
+});
+
+describe("canDrag", () => {
+	it("normal item is draggable", () => expect(canDrag(makeItem())).toBe(true));
+	it("anniversary projection is not draggable", () => expect(canDrag(makeItem({ anniversary: true }))).toBe(false));
+	it("reminder ghost is not draggable", () => expect(canDrag(makeItem({ isReminder: true }))).toBe(false));
 });

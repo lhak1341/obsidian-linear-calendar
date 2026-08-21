@@ -25,9 +25,9 @@
 - LinearCalendarView has no ResizeObserver: CSS grid `1fr` columns adapt to container resize natively — no JS re-render needed. Adding one causes a full 372-node rebuild on every panel resize.
 - `mountMonthStrip` in main.ts legitimately uses ResizeObserver because it renders a single fixed-month strip whose width is dynamically constrained by an external host view.
 
-## onDropCommit signature is threaded through 4 files
+## onDropCommit signature
 
-`DragHandler`'s `onDropCommit` callback type is independently redeclared in `BarRenderer`'s constructor param and `CalendarRenderer`'s `RenderCallbacks` interface, then satisfied at two call sites (`main.ts`'s `mountMonthStrip`, `LinearCalendarView.ts`). Changing its signature means updating all 4 — TypeScript won't catch a stale callback type in the middle of the chain if the outer two still structurally match.
+`DropCommitFn` (in `types.ts`) is the one named type — `DragHandler`, `BarRenderer`, and `CalendarRenderer`'s `CalendarRendererCallbacks` all import it instead of redeclaring the signature. Two call sites (`main.ts`'s `mountMonthStrip`, `LinearCalendarView.ts`) still satisfy it via inferred object-literal properties with no annotation — a signature change there is still a silent-compatible-shape risk, just no longer a 3-way copy-paste risk on the declaration side.
 
 ## Testing mountMonthStrip for a specific month without faking the date
 

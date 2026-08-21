@@ -12,6 +12,7 @@ import {
 	parseDateString,
 	monthBoundaries,
 	projectAnniversaryDates,
+	carryDateForward,
 } from "./dateUtils";
 
 describe("isLeapYear", () => {
@@ -202,5 +203,42 @@ describe("addMonthsClamped", () => {
 	});
 	it("rolls over a year boundary", () => {
 		expect(addMonthsClamped(new Date(2026, 10, 21), 4)).toEqual(new Date(2027, 2, 21));
+	});
+});
+
+describe("carryDateForward", () => {
+	it("same day-of-month, whole months apart: carries as calendar months from newAnchor", () => {
+		// anchor Aug 21, target Dec 21 (4 months, same day-of-month) → newAnchor Sep 21 + 4mo = Jan 21
+		const result = carryDateForward(new Date(2026, 7, 21), new Date(2026, 11, 21), new Date(2026, 8, 21));
+		expect(result).toEqual(new Date(2027, 0, 21));
+	});
+
+	it("preserves day-of-month across month-length changes", () => {
+		// anchor Jan 31, target Mar 31 (2mo) → newAnchor Feb 28 (clamped) + 2mo = Apr 28 (clamped again)
+		const result = carryDateForward(new Date(2026, 0, 31), new Date(2026, 2, 31), new Date(2026, 1, 28));
+		expect(result).toEqual(new Date(2026, 3, 28));
+	});
+
+	it("different day-of-month: carries as whole day count", () => {
+		// anchor Aug 21, target Aug 26 (5 days) → newAnchor Sep 1 + 5 days = Sep 6
+		const result = carryDateForward(new Date(2026, 7, 21), new Date(2026, 7, 26), new Date(2026, 8, 1));
+		expect(result).toEqual(new Date(2026, 8, 6));
+	});
+
+	it("same day, zero months apart (same month): falls back to day count (0)", () => {
+		const result = carryDateForward(new Date(2026, 7, 21), new Date(2026, 7, 21), new Date(2026, 8, 21));
+		expect(result).toEqual(new Date(2026, 8, 21));
+	});
+
+	it("day-count carry is DST-safe across a spring-forward transition", () => {
+		// anchor Mar 1, target Mar 15 (14 days) → newAnchor Mar 2 + 14 days, spanning 2026-03-08 DST
+		const result = carryDateForward(new Date(2026, 2, 1), new Date(2026, 2, 15), new Date(2026, 2, 2));
+		expect(result).toEqual(new Date(2026, 2, 16));
+	});
+
+	it("promoteReminder's shape: target and newAnchor are the same date, carries the interval forward again", () => {
+		const remindOn = new Date(2026, 11, 21);
+		const result = carryDateForward(new Date(2026, 7, 21), remindOn, remindOn);
+		expect(result).toEqual(new Date(2027, 3, 21));
 	});
 });

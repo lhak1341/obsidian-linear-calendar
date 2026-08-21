@@ -2,6 +2,9 @@ export type AlignMode = "date" | "weekday";
 
 export type FontChoice = "plugin" | "obsidian-interface" | "obsidian-text" | "obsidian-monospace" | "custom";
 
+/** Writes a drag-committed date change to a note's frontmatter. */
+export type DropCommitFn = (filePath: string, oldStart: Date, newStart: Date, newEnd: Date) => Promise<void>;
+
 export interface CalendarItem {
 	filePath: string;
 	title: string;

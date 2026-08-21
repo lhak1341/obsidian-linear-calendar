@@ -5,6 +5,7 @@ import {
 	type RowOccupancy,
 } from "../utils/dragUtils";
 import { rowAssignmentsToOccupancy, type RowAssignment } from "../utils/rowAssignment";
+import type { DropCommitFn } from "../types";
 
 /** Minimum pointer movement before an ambiguous mousedown (bar body) commits to a drag. */
 const DRAG_THRESHOLD_PX = 4;
@@ -41,7 +42,7 @@ export class DragHandler {
 
 	constructor(
 		private getYear: () => number,
-		private onDropCommit: (filePath: string, oldStart: Date, newStart: Date, newEnd: Date) => Promise<void>,
+		private onDropCommit: DropCommitFn,
 	) {
 		this.boundMouseMove = this.onMouseMove.bind(this);
 		this.boundMouseUp = () => { void this.onMouseUp(); };
@@ -253,7 +254,8 @@ export class DragHandler {
 
 		if (dayDelta === 0) return;
 
-		// Delegate write to caller — metadataCache.on('changed') triggers re-render
+		// Delegate write to caller — LinearCalendarView's metadataCache.on("changed")
+		// listener triggers re-render; see the race note in data/CLAUDE.md.
 		await this.onDropCommit(filePath, originalStart, newStart, newEnd);
 	}
 
