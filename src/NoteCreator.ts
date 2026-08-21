@@ -206,9 +206,32 @@ export class ObsidianNoteCreator implements NoteCreator {
 			await this.app.fileManager.processFrontMatter(sourceFile, (sourceFm: Record<string, unknown>) => {
 				delete sourceFm[mapping.remindProp];
 			});
+
+			// processFrontMatter's promise resolves once the write lands on disk, but
+			// metadataCache re-parses the frontmatter asynchronously after that — a scan
+			// run right after the await above can still see the stale (pre-delete)
+			// frontmatter and re-cache it as current. Wait for the cache to actually catch
+			// up before returning, so callers that re-render on completion see fresh data.
+			await waitForMetadataChange(this.app, sourceFile.path);
 		} catch (err) {
 			console.error("[linear-calendar] promote reminder failed:", err);
 			new Notice("Failed to promote reminder.");
 		}
 	}
+}
+
+/** Resolves on the next metadataCache "changed" event for `path`, or after `timeoutMs` regardless. */
+function waitForMetadataChange(app: App, path: string, timeoutMs = 2000): Promise<void> {
+	return new Promise((resolve) => {
+		const timer = window.setTimeout(() => {
+			app.metadataCache.offref(ref);
+			resolve();
+		}, timeoutMs);
+		const ref = app.metadataCache.on("changed", (file) => {
+			if (file.path !== path) return;
+			window.clearTimeout(timer);
+			app.metadataCache.offref(ref);
+			resolve();
+		});
+	});
 }
