@@ -54,3 +54,13 @@ testable (see `dragUtils.ts`).
 
 `obsidian eval` does not work against `vault=test-vault` — that vault has no CLI bridge
 plugin enabled. Use `vault=lhakZettel`, where this plugin is also deployed.
+
+## Agent skills
+
+### Issue tracker
+
+GitHub Issues via `gh` CLI. See `docs/agents/issue-tracker.md`.
+
+### Domain docs
+
+Single-context — `CONTEXT.md` + `docs/adr/` at repo root. See `docs/agents/domain.md`.
