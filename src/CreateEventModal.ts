@@ -18,6 +18,7 @@ export class CreateEventModal extends Modal {
 	private description = "";
 	private dateStr: string;
 	private dateEndStr = "";
+	private remindStr = "";
 	private filenamePreviewEl!: HTMLElement;
 
 	constructor(
@@ -100,6 +101,18 @@ export class CreateEventModal extends Modal {
 				}),
 			);
 
+		if (this.settings.defaultMapping.remindProp) {
+			new Setting(contentEl)
+				.setName("Remind me")
+				.setDesc("Also show a translucent ghost bar at this future date. Click it later to spin off a new note there.")
+				.addText((text) => {
+					text.inputEl.type = "date";
+					text.onChange((value) => {
+						this.remindStr = value;
+					});
+				});
+		}
+
 		if (this.settings.defaultMapping.descriptionProp) {
 			new Setting(contentEl)
 				.setName("Description")
@@ -151,6 +164,8 @@ export class CreateEventModal extends Modal {
 	private submit(): void {
 		const date = parseInputDate(this.dateStr);
 		if (!date) return;
+		const remindProp = this.settings.defaultMapping.remindProp;
+		const remindDate = parseInputDate(this.remindStr);
 		void this.noteCreator.create(date, {
 			title: this.title,
 			tag: this.tag || undefined,
@@ -158,6 +173,7 @@ export class CreateEventModal extends Modal {
 			anniversary: this.anniversary,
 			dateEnd: parseInputDate(this.dateEndStr),
 			description: this.description || undefined,
+			extraFrontmatter: remindProp && remindDate ? { [remindProp]: toInputDate(remindDate) } : undefined,
 		});
 		this.close();
 	}

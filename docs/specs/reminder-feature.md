@@ -76,12 +76,14 @@ path/date, so it must go through a new "materialize" path:
 No modal is shown during promotion — it's a single click that silently creates and opens
 the new note, matching the "minimal UI" call below.
 
-## UI scope (deliberately minimal)
+## UI scope
 
-- **No new modal.** Setting `remindon` is manual frontmatter editing (or, if convenient,
-  repurposing `CreateEventModal`'s existing date-entry UI later — not required for this
-  spec). `CreateEventModal` (`src/CreateEventModal.ts`) is unchanged by this spec.
-- The only new interactive behavior is the reminder-bar click handler described above.
+- **No new modal.** `CreateEventModal` (`src/CreateEventModal.ts`) gained one optional
+  date field ("Remind me"), gated on `mapping.remindProp` being set (same gating
+  `descriptionProp` already uses) — writes via the same `extraFrontmatter` mechanism
+  `promoteReminder` uses. Setting `remindon` on a note that predates this field, or that
+  wasn't created through the modal, is still manual frontmatter editing.
+- The only other new interactive behavior is the reminder-bar click handler described above.
 
 ## Out of scope
 
