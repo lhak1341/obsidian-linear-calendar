@@ -12,6 +12,8 @@ export interface CalendarItem {
 	icon?: string;
 	anniversary?: boolean;
 	description?: string;
+	/** True for a synthetic ghost item rendered from another note's remindProp — filePath still points at that source note. */
+	isReminder?: boolean;
 }
 
 export interface ColumnMapping {
@@ -21,6 +23,7 @@ export interface ColumnMapping {
 	iconProp: string;
 	anniversaryProp: string;
 	descriptionProp: string;
+	remindProp: string;
 }
 
 export type DailyNoteStyle = "tint" | "border-top";

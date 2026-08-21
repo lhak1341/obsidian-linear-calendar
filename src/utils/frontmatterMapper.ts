@@ -81,3 +81,33 @@ export function mapFrontmatterToItem(
 		description,
 	};
 }
+
+/**
+ * Derives a synthetic ghost item from a real item's note when that note also
+ * carries a remindProp date — e.g. a note dated today can additionally ghost
+ * itself onto a future date as a reminder. Returns null when remindProp is
+ * unset or unparseable. The ghost has no independent existence: it shares the
+ * source note's filePath, title, tags, and icon, just a different single-day
+ * dateStart/dateEnd and isReminder: true.
+ */
+export function deriveReminderItem(
+	item: CalendarItem,
+	frontmatter: Record<string, unknown>,
+	mapping: ColumnMapping,
+): CalendarItem | null {
+	if (!mapping.remindProp) return null;
+
+	const remindRaw = frontmatter[mapping.remindProp];
+	if (remindRaw === undefined) return null;
+
+	const remindOn = parseDateString(remindRaw);
+	if (!remindOn) return null;
+
+	return {
+		...item,
+		dateStart: remindOn,
+		dateEnd: remindOn,
+		anniversary: undefined,
+		isReminder: true,
+	};
+}

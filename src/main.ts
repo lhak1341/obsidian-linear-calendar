@@ -141,6 +141,7 @@ export default class LinearCalendarPlugin extends Plugin {
 						newStart,
 						newEnd,
 					),
+				onReminderClick: (item) => void this.noteCreator.promoteReminder(item.filePath),
 			},
 		);
 

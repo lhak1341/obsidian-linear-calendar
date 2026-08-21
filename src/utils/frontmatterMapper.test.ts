@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { mapFrontmatterToItem } from "./frontmatterMapper";
-import type { ColumnMapping } from "../types";
+import { mapFrontmatterToItem, deriveReminderItem } from "./frontmatterMapper";
+import type { ColumnMapping, CalendarItem } from "../types";
 
 const mapping: ColumnMapping = {
 	titleProp: "title",
@@ -9,6 +9,7 @@ const mapping: ColumnMapping = {
 	iconProp: "icon",
 	anniversaryProp: "anniversary",
 	descriptionProp: "description",
+	remindProp: "remindon",
 };
 
 function map(fm: Record<string, unknown> | undefined, inlineTags: string[] = []) {
@@ -130,5 +131,49 @@ describe("mapFrontmatterToItem — tags/icon/anniversary/description", () => {
 
 		const blank = map({ start: "2024-01-01", tags: ["linear-calendar"], description: "   " });
 		expect(blank?.description).toBeUndefined();
+	});
+});
+
+describe("deriveReminderItem", () => {
+	const baseItem: CalendarItem = {
+		filePath: "note.md",
+		title: "Cleaning AC",
+		dateStart: new Date(2026, 7, 21),
+		dateEnd: new Date(2026, 7, 21),
+		tags: ["linear-calendar/chores"],
+		icon: "wind",
+	};
+
+	it("returns null when remindProp is unset in mapping", () => {
+		expect(deriveReminderItem(baseItem, { remindon: "2026-12-21" }, { ...mapping, remindProp: "" })).toBeNull();
+	});
+
+	it("returns null when the frontmatter key is absent", () => {
+		expect(deriveReminderItem(baseItem, {}, mapping)).toBeNull();
+	});
+
+	it("returns null when the reminder date is unparseable", () => {
+		expect(deriveReminderItem(baseItem, { remindon: "not-a-date" }, mapping)).toBeNull();
+	});
+
+	it("derives a ghost item at the remindOn date, single-day, isReminder true", () => {
+		const ghost = deriveReminderItem(baseItem, { remindon: "2026-12-21" }, mapping);
+		expect(ghost?.dateStart).toEqual(new Date(2026, 11, 21));
+		expect(ghost?.dateEnd).toEqual(new Date(2026, 11, 21));
+		expect(ghost?.isReminder).toBe(true);
+	});
+
+	it("carries over filePath, title, tags, and icon from the source item", () => {
+		const ghost = deriveReminderItem(baseItem, { remindon: "2026-12-21" }, mapping);
+		expect(ghost?.filePath).toBe("note.md");
+		expect(ghost?.title).toBe("Cleaning AC");
+		expect(ghost?.tags).toEqual(["linear-calendar/chores"]);
+		expect(ghost?.icon).toBe("wind");
+	});
+
+	it("does not carry the source item's anniversary flag onto the ghost", () => {
+		const anniversaryItem: CalendarItem = { ...baseItem, anniversary: true };
+		const ghost = deriveReminderItem(anniversaryItem, { remindon: "2026-12-21" }, mapping);
+		expect(ghost?.anniversary).toBeUndefined();
 	});
 });

@@ -24,6 +24,7 @@ interface CalendarRendererCallbacks {
 	onDayContextMenu?: (y: number, m: number, d: number, e: MouseEvent) => void;
 	onCategoryToggle?: (tag: string) => void;
 	onDropCommit?: (filePath: string, oldStart: Date, newStart: Date, newEnd: Date) => Promise<void>;
+	onReminderClick?: (item: CalendarItem) => void;
 }
 
 const pad = (n: number) => String(n).padStart(2, "0");
@@ -51,6 +52,7 @@ export class CalendarRenderer {
 			app,
 			() => this.lastRenderedYear,
 			callbacks.onDropCommit,
+			callbacks.onReminderClick,
 		);
 		this.nowIndicator = new NowIndicator();
 		// Anchor tooltip to container's parent to avoid overflow-x clipping

@@ -5,6 +5,8 @@ import {
 	isLeapYear,
 	dateFromDayOfYear,
 	formatDateRange,
+	formatISODate,
+	daysBetween,
 	parseDateString,
 	monthBoundaries,
 	projectAnniversaryDates,
@@ -153,5 +155,21 @@ describe("monthBoundaries", () => {
 	it("Dec startDay = 335 in common year", () => {
 		// Jan(31)+Feb(28)+Mar(31)+Apr(30)+May(31)+Jun(30)+Jul(31)+Aug(31)+Sep(30)+Oct(31)+Nov(30) = 334 → Dec 1 = day 335
 		expect(monthBoundaries(2023)[11].startDay).toBe(335);
+	});
+});
+
+describe("formatISODate", () => {
+	it("pads month and day", () => expect(formatISODate(new Date(2026, 0, 5))).toBe("2026-01-05"));
+	it("no padding needed", () => expect(formatISODate(new Date(2026, 10, 21))).toBe("2026-11-21"));
+});
+
+describe("daysBetween", () => {
+	it("same day is 0", () => expect(daysBetween(new Date(2026, 7, 21), new Date(2026, 7, 21))).toBe(0));
+	it("counts forward whole days", () => expect(daysBetween(new Date(2026, 7, 21), new Date(2026, 7, 26))).toBe(5));
+	it("counts backward as negative", () => expect(daysBetween(new Date(2026, 7, 26), new Date(2026, 7, 21))).toBe(-5));
+	it("crosses a month boundary", () => expect(daysBetween(new Date(2026, 0, 30), new Date(2026, 1, 2))).toBe(3));
+	it("is unaffected by a spring-forward DST transition in between", () => {
+		// US spring-forward: 2026-03-08. A naive ms-diff of two local midnights would be off by one hour here.
+		expect(daysBetween(new Date(2026, 2, 1), new Date(2026, 2, 15))).toBe(14);
 	});
 });

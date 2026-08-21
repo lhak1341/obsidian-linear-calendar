@@ -23,6 +23,7 @@ export class BarRenderer {
 		private app: App,
 		getYear: () => number,
 		onDropCommit?: (filePath: string, oldStart: Date, newStart: Date, newEnd: Date) => Promise<void>,
+		private onReminderClick?: (item: CalendarItem) => void,
 	) {
 		this.dragHandler = onDropCommit ? new DragHandler(getYear, onDropCommit) : null;
 	}
@@ -57,12 +58,16 @@ export class BarRenderer {
 
 				barEl.addEventListener("click", (evt) => {
 					if (barEl.dataset.justDragged) return;
+					if (segment.item.isReminder) {
+						this.onReminderClick?.(segment.item);
+						return;
+					}
 					void this.app.workspace.openLinkText(segment.item.filePath, "", evt.metaKey || evt.ctrlKey);
 				});
 
 				this.attachContextMenu(barEl, segment.item.filePath);
 
-				if (!isVertical && !segment.item.anniversary && this.dragHandler) {
+				if (!isVertical && !segment.item.anniversary && !segment.item.isReminder && this.dragHandler) {
 					this.dragHandler.attach(barEl, segment, rowRef.daysInMonth);
 				}
 			}
@@ -115,6 +120,7 @@ export class BarRenderer {
 		barEl.style.color = getContrastColor(bgColor);
 
 		if (segment.item.anniversary) barEl.addClass("calendar-bar-anniversary");
+		if (segment.item.isReminder) barEl.addClass("calendar-bar-reminder");
 
 		this.barInfo.set(barEl, { item: segment.item, tagColor: bgColor });
 	}

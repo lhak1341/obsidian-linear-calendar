@@ -9,6 +9,7 @@ export const DEFAULT_MAPPING: ColumnMapping = {
 	iconProp: "icon",
 	anniversaryProp: "anniversary",
 	descriptionProp: "description",
+	remindProp: "remindon",
 };
 
 export const DEFAULT_SETTINGS: PluginSettings = {

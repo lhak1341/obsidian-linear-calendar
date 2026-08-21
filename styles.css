@@ -420,6 +420,15 @@
 	opacity: 1;
 }
 
+/* Reminder ghost bars — translucent placeholder at a note's future remindProp date */
+.calendar-bar-reminder {
+	opacity: 0.4;
+}
+
+.calendar-bar-reminder:hover {
+	opacity: 0.6;
+}
+
 /* ---- Drag handles ---- */
 .calendar-bar {
 	position: relative;

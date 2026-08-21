@@ -2,11 +2,11 @@ import type { App, TFile } from "obsidian";
 import type { CalendarItem, ColumnMapping } from "../types";
 import type { DataSource, ScannerCache } from "./DataSource";
 import { projectAnniversaryDates } from "../utils/dateUtils";
-import { mapFrontmatterToItem } from "../utils/frontmatterMapper";
+import { mapFrontmatterToItem, deriveReminderItem } from "../utils/frontmatterMapper";
 
 interface CacheEntry {
 	mtime: number;
-	item: CalendarItem | null; // null = file has no valid calendar data
+	items: CalendarItem[]; // empty = file has no valid calendar data. A note can yield its real item plus a reminder ghost.
 }
 
 export class FrontmatterScanner implements DataSource, ScannerCache {
@@ -31,7 +31,7 @@ export class FrontmatterScanner implements DataSource, ScannerCache {
 
 	hasCalendarEntry(path: string): boolean {
 		const entry = this.cache.get(path);
-		return entry !== undefined && entry.item !== null;
+		return entry !== undefined && entry.items.length > 0;
 	}
 
 	scan(mapping: ColumnMapping, year: number): CalendarItem[] {
@@ -43,8 +43,8 @@ export class FrontmatterScanner implements DataSource, ScannerCache {
 
 			if (cached && cached.mtime === mtime) continue;
 
-			const item = this.processFile(file, mapping);
-			this.cache.set(file.path, { mtime, item });
+			const items = this.processFile(file, mapping);
+			this.cache.set(file.path, { mtime, items });
 			this.sortedItems = null; // invalidate sort cache on any data change
 		}
 
@@ -59,23 +59,24 @@ export class FrontmatterScanner implements DataSource, ScannerCache {
 		const yearEnd = new Date(year, 11, 31);
 
 		for (const entry of this.cache.values()) {
-			if (!entry.item) continue;
-			let { dateStart, dateEnd } = entry.item;
+			for (const rawItem of entry.items) {
+				let { dateStart, dateEnd } = rawItem;
 
-			// Anniversary: project month/day into the current year for past events
-			const isProjected = entry.item.anniversary === true && dateStart.getFullYear() < year;
-			if (isProjected) {
-				({ dateStart, dateEnd } = projectAnniversaryDates(dateStart, dateEnd, year));
+				// Anniversary: project month/day into the current year for past events
+				const isProjected = rawItem.anniversary === true && dateStart.getFullYear() < year;
+				if (isProjected) {
+					({ dateStart, dateEnd } = projectAnniversaryDates(dateStart, dateEnd, year));
+				}
+
+				if (dateStart > yearEnd || dateEnd < yearStart) continue;
+
+				items.push({
+					...rawItem,
+					anniversary: isProjected || undefined,
+					dateStart: dateStart < yearStart ? yearStart : dateStart,
+					dateEnd: dateEnd > yearEnd ? yearEnd : dateEnd,
+				});
 			}
-
-			if (dateStart > yearEnd || dateEnd < yearStart) continue;
-
-			items.push({
-				...entry.item,
-				anniversary: isProjected || undefined,
-				dateStart: dateStart < yearStart ? yearStart : dateStart,
-				dateEnd: dateEnd > yearEnd ? yearEnd : dateEnd,
-			});
 		}
 
 		items.sort((a, b) => a.dateStart.getTime() - b.dateStart.getTime());
@@ -84,9 +85,16 @@ export class FrontmatterScanner implements DataSource, ScannerCache {
 		return items;
 	}
 
-	private processFile(file: TFile, mapping: ColumnMapping): CalendarItem | null {
+	private processFile(file: TFile, mapping: ColumnMapping): CalendarItem[] {
 		const cache = this.app.metadataCache.getFileCache(file);
+		const frontmatter = cache?.frontmatter;
 		const inlineTags = (cache?.tags ?? []).map((t) => t.tag);
-		return mapFrontmatterToItem(cache?.frontmatter, inlineTags, file.path, file.basename, mapping);
+		const item = mapFrontmatterToItem(frontmatter, inlineTags, file.path, file.basename, mapping);
+		if (!item) return [];
+
+		const items = [item];
+		const reminderItem = frontmatter ? deriveReminderItem(item, frontmatter, mapping) : null;
+		if (reminderItem) items.push(reminderItem);
+		return items;
 	}
 }

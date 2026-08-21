@@ -1,5 +1,5 @@
 import { ItemView, Menu, Notice, TFile, WorkspaceLeaf, debounce, setIcon } from "obsidian";
-import type { PluginSettings, ColumnMapping } from "../types";
+import type { PluginSettings, ColumnMapping, CalendarItem } from "../types";
 import { VIEW_TYPE_LINEAR_CALENDAR } from "../constants";
 import type { DataSource } from "../data/DataSource";
 import type { NoteCreator } from "../NoteCreator";
@@ -109,6 +109,7 @@ export class LinearCalendarView extends ItemView {
 						newStart,
 						newEnd,
 					),
+				onReminderClick: (item: CalendarItem) => void this.noteCreator.promoteReminder(item.filePath),
 			},
 		);
 

@@ -143,6 +143,19 @@ export class LinearCalendarSettingTab extends PluginSettingTab {
 			);
 
 		new Setting(items)
+			.setName("Reminder property")
+			.setDesc("Frontmatter date property. When set, the note also shows a translucent ghost bar at that future date — click it to spin off a new note there.")
+			.addText((text) =>
+				text
+					.setPlaceholder("Remindon")
+					.setValue(mapping.remindProp)
+					.onChange(async (value) => {
+						mapping.remindProp = value || "remindon";
+						await this.plugin.saveSettings();
+					}),
+			);
+
+		new Setting(items)
 			.setName("Description property")
 			.setDesc("Frontmatter property shown as a third line in the hover tooltip. Leave empty to hide.")
 			.addText((text) =>

@@ -21,6 +21,22 @@ export function dateFromDayOfYear(day: number, year: number): Date {
 	return date;
 }
 
+/** YYYY-MM-DD for a local-midnight Date. */
+export function formatISODate(d: Date): string {
+	return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+/**
+ * Whole calendar days between two local-midnight Dates (b − a), DST-safe.
+ * Millisecond subtraction drifts across DST transitions; comparing UTC-normalized
+ * midnights of the same calendar components does not.
+ */
+export function daysBetween(a: Date, b: Date): number {
+	const utcA = Date.UTC(a.getFullYear(), a.getMonth(), a.getDate());
+	const utcB = Date.UTC(b.getFullYear(), b.getMonth(), b.getDate());
+	return Math.round((utcB - utcA) / 86_400_000);
+}
+
 export function formatDateRange(start: Date, end: Date): string {
 	const fmt = (d: Date) =>
 		`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
