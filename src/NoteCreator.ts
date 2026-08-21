@@ -28,6 +28,10 @@ export interface NoteCreator {
 	 *  the reminder's date, carries the reminder forward by the same interval, and clears the
 	 *  source note's reminder field. No-op if the source note has no valid start/remind dates. */
 	promoteReminder(filePath: string): Promise<void>;
+	/** Rewrites an existing note's mapped frontmatter fields in place (no rename, no move).
+	 *  Unlike `create`, an omitted/empty field is written as cleared rather than left untouched —
+	 *  the modal always submits its full current state. Returns true on success. */
+	updateEvent(filePath: string, date: Date, options?: CreateEventOptions): Promise<boolean>;
 }
 
 export class ObsidianNoteCreator implements NoteCreator {
@@ -138,6 +142,63 @@ export class ObsidianNoteCreator implements NoteCreator {
 		}
 	}
 
+	async updateEvent(filePath: string, date: Date, options: CreateEventOptions = {}): Promise<boolean> {
+		try {
+			const sourceFile = this.app.vault.getAbstractFileByPath(filePath);
+			if (!(sourceFile instanceof TFile)) return false;
+
+			const mapping = this.getMapping();
+			const pad = (n: number) => String(n).padStart(2, "0");
+			const dateStr = `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+			const endDateStr = options.dateEnd
+				? `${options.dateEnd.getFullYear()}-${pad(options.dateEnd.getMonth() + 1)}-${pad(options.dateEnd.getDate())}`
+				: undefined;
+			const trimmedTitle = options.title?.trim();
+			const trimmedIcon = options.icon?.trim();
+			const trimmedDescription = options.description?.trim();
+			const calendarTag = options.tag?.trim() || "linear-calendar";
+			const remindValue = options.extraFrontmatter?.[mapping.remindProp];
+
+			await this.app.fileManager.processFrontMatter(sourceFile, (fm: Record<string, unknown>) => {
+				fm[mapping.startDateProp] = dateStr;
+				if (endDateStr) fm[mapping.endDateProp] = endDateStr;
+				else delete fm[mapping.endDateProp];
+
+				if (mapping.titleProp !== "__filename__") {
+					if (trimmedTitle) fm[mapping.titleProp] = trimmedTitle;
+					else delete fm[mapping.titleProp];
+				}
+				if (trimmedIcon && mapping.iconProp) fm[mapping.iconProp] = trimmedIcon;
+				else if (mapping.iconProp) delete fm[mapping.iconProp];
+
+				if (trimmedDescription && mapping.descriptionProp) fm[mapping.descriptionProp] = trimmedDescription;
+				else if (mapping.descriptionProp) delete fm[mapping.descriptionProp];
+
+				if (mapping.anniversaryProp) fm[mapping.anniversaryProp] = !!options.anniversary;
+
+				if (mapping.remindProp) {
+					if (remindValue) fm[mapping.remindProp] = remindValue;
+					else delete fm[mapping.remindProp];
+				}
+
+				const existing = Array.isArray(fm.tags)
+					? (fm.tags as unknown[]).map(String)
+					: (typeof fm.tags === "string" || typeof fm.tags === "number") ? [String(fm.tags)] : [];
+				const withoutGateTag = existing.filter(
+					(t) => t !== "linear-calendar" && !t.startsWith("linear-calendar/"),
+				);
+				withoutGateTag.unshift(calendarTag);
+				fm.tags = withoutGateTag;
+			});
+
+			return true;
+		} catch (err) {
+			console.error("[linear-calendar] update event failed:", err);
+			new Notice("Failed to update event note.");
+			return false;
+		}
+	}
+
 	async promoteReminder(filePath: string): Promise<void> {
 		try {
 			const sourceFile = this.app.vault.getAbstractFileByPath(filePath);
@@ -190,6 +251,7 @@ export class ObsidianNoteCreator implements NoteCreator {
 				icon,
 				description,
 				extraFrontmatter: mapping.remindProp ? { [mapping.remindProp]: formatISODate(newRemindOn) } : undefined,
+				openAfterCreate: false,
 			});
 			if (!created) return;
 

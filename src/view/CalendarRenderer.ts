@@ -25,6 +25,7 @@ interface CalendarRendererCallbacks {
 	onCategoryToggle?: (tag: string) => void;
 	onDropCommit?: DropCommitFn;
 	onReminderClick?: (item: CalendarItem) => void;
+	onEditNote?: (filePath: string) => void;
 }
 
 const pad = (n: number) => String(n).padStart(2, "0");
@@ -53,6 +54,8 @@ export class CalendarRenderer {
 			() => this.lastRenderedYear,
 			callbacks.onDropCommit,
 			callbacks.onReminderClick,
+			getSettings,
+			callbacks.onEditNote,
 		);
 		this.nowIndicator = new NowIndicator();
 		// Anchor tooltip to container's parent to avoid overflow-x clipping

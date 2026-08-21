@@ -1,16 +1,16 @@
-# Graph Report - obsidian-linear-calendar  (2026-08-21)
+# Graph Report - obsidian-linear-calendar  (2026-08-22)
 
 ## Corpus Check
-- 49 files · ~121,983 words
+- 49 files · ~122,644 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 430 nodes · 795 edges · 55 communities (33 shown, 22 thin omitted)
+- 435 nodes · 809 edges · 53 communities (33 shown, 20 thin omitted)
 - Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS · INFERRED: 1 edges (avg confidence: 0.8)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `e8daae40`
+- Built from commit: `615fd18a`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -22,7 +22,6 @@
 - Daily Notes Integration
 - Settings & Constants
 - Month Strip & Tag Utils
-- Create Event Modal
 - Plugin Entry Point
 - TypeScript Config
 - Now Indicator
@@ -55,7 +54,6 @@
 - BarRenderer constructor onDropCommit param
 - CalendarRenderer.RenderCallbacks interface
 - DragHandler.onDropCommit callback
-- MonthRowRef
 
 ## God Nodes (most connected - your core abstractions)
 1. `LinearCalendarView` - 28 edges
@@ -65,8 +63,8 @@
 5. `DragHandler` - 16 edges
 6. `GridRenderer` - 16 edges
 7. `LinearCalendarPlugin` - 15 edges
-8. `CalendarRenderer` - 15 edges
-9. `PluginSettings` - 13 edges
+8. `PluginSettings` - 15 edges
+9. `CalendarRenderer` - 15 edges
 10. `MonthRowRef` - 13 edges
 
 ## Surprising Connections (you probably didn't know these)
@@ -89,15 +87,15 @@
 - **onDropCommit callback signature threaded through 4 files** — src_view_draghandler_ondropcommit, src_view_barrenderer_barrenderer, src_view_calendarrenderer_rendercallbacks, src_main_mountmonthstrip, src_view_linearcalendarview_linearcalendarview [EXTRACTED 1.00]
 - **Pure-logic extraction to src/utils/ for testability outside Obsidian coupling** — src_utils_dragutils, src_utils_rowassignment_assignrowsformonth, src_utils_frontmattermapper_mapfrontmattertoitem, src_utils_iconsearch_rankiconsuggestions [INFERRED 0.85]
 
-## Communities (55 total, 22 thin omitted)
+## Communities (53 total, 20 thin omitted)
 
 ### Community 0 - "Drag Interaction Logic"
-Cohesion: 0.10
-Nodes (22): DropCommitFn, getContrastColor(), addDays(), canDrag(), computeSegmentPlacement(), findFreeRow(), GhostSeg, mDays() (+14 more)
+Cohesion: 0.09
+Nodes (22): getContrastColor(), addDays(), canDrag(), computeSegmentPlacement(), findFreeRow(), GhostSeg, mDays(), newDatesFromDelta() (+14 more)
 
 ### Community 1 - "Data Scanning Layer"
-Cohesion: 0.10
-Nodes (29): COLOR_PALETTE, DEFAULT_MAPPING, DEFAULT_SETTINGS, pad(), toInputDate(), DataSource, ScannerCache, CacheEntry (+21 more)
+Cohesion: 0.11
+Nodes (25): COLOR_PALETTE, DEFAULT_MAPPING, DEFAULT_SETTINGS, DataSource, ScannerCache, CacheEntry, FrontmatterScanner, FONT_OPTIONS (+17 more)
 
 ### Community 2 - "Repo Overview & Icon Field"
 Cohesion: 0.17
@@ -112,8 +110,8 @@ Cohesion: 0.11
 Nodes (9): AppInternal, CoreDailyNoteOptions, createDailyNote(), DailyPluginSettings, getDailyNoteMap(), getDailyNoteSettings(), ObsidianInternalPlugins, ObsidianPlugins (+1 more)
 
 ### Community 5 - "Settings & Constants"
-Cohesion: 0.18
-Nodes (7): computeSolidColor(), computeTint(), GridRenderCallbacks, GridRenderer, MONTH_NAMES, WEEKDAY_ABBR, WEEKDAY_KANJI
+Cohesion: 0.25
+Nodes (3): computeSolidColor(), computeTint(), GridRenderer
 
 ### Community 6 - "Month Strip & Tag Utils"
 Cohesion: 0.15
@@ -124,8 +122,8 @@ Cohesion: 0.10
 Nodes (19): DOM, DOM.Iterable, ES2018, ES2021.String, src/**/*.ts, compilerOptions, allowJs, importHelpers (+11 more)
 
 ### Community 10 - "Now Indicator"
-Cohesion: 0.17
-Nodes (15): waitForMetadataChange(), write_template_to_file(), addMonthsClamped(), carryDateForward(), dayOfYear(), daysBetween(), daysInYear(), formatISODate() (+7 more)
+Cohesion: 0.09
+Nodes (27): CreateEventModal, pad(), parseInputDate(), toInputDate(), AppWithPlugins, CreateEventOptions, NoteCreator, ObsidianNoteCreator (+19 more)
 
 ### Community 11 - "Plugin Manifest"
 Cohesion: 0.25
@@ -141,7 +139,7 @@ Nodes (3): OPTIONAL, REQUIRED, targets
 
 ### Community 18 - "Linear Calendar"
 Cohesion: 0.12
-Nodes (14): Agent skills, Domain docs, Issue tracker, obsidian-linear-calendar, Public API, Rendering, Reports, Testing (+6 more)
+Nodes (15): Agent skills, Domain docs, Issue tracker, Note creation, obsidian-linear-calendar, Public API, Rendering, Reports (+7 more)
 
 ### Community 19 - "Reminder feature — spec"
 Cohesion: 0.22
@@ -168,24 +166,24 @@ Cohesion: 0.33
 Nodes (5): Daily note plugin priority, Frontmatter tag format (API gotcha), Moment, Testing, Utils
 
 ## Knowledge Gaps
-- **129 isolated node(s):** `id`, `name`, `version`, `minAppVersion`, `description` (+124 more)
+- **130 isolated node(s):** `id`, `name`, `version`, `minAppVersion`, `description` (+125 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **22 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **20 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `LinearCalendarView` connect `Daily Notes Integration` to `Data Scanning Layer`, `Month Strip & Tag Utils`?**
+- **Why does `LinearCalendarView` connect `Daily Notes Integration` to `Data Scanning Layer`, `Now Indicator`, `Month Strip & Tag Utils`?**
   _High betweenness centrality (0.049) - this node is a cross-community bridge._
-- **Why does `CalendarItem` connect `Data Scanning Layer` to `Plugin Entry Point`, `Drag Interaction Logic`, `Daily Notes Integration`, `Month Strip & Tag Utils`?**
-  _High betweenness centrality (0.036) - this node is a cross-community bridge._
-- **Why does `CalendarRenderer` connect `Month Strip & Tag Utils` to `Drag Interaction Logic`, `Data Scanning Layer`, `Daily Notes Integration`, `Settings & Constants`, `MonthRowRef`?**
-  _High betweenness centrality (0.035) - this node is a cross-community bridge._
+- **Why does `CalendarItem` connect `Data Scanning Layer` to `Drag Interaction Logic`, `Daily Notes Integration`, `Month Strip & Tag Utils`, `Plugin Entry Point`, `Now Indicator`?**
+  _High betweenness centrality (0.034) - this node is a cross-community bridge._
+- **Why does `CalendarRenderer` connect `Month Strip & Tag Utils` to `Drag Interaction Logic`, `Data Scanning Layer`, `Daily Notes Integration`, `Settings & Constants`, `Now Indicator`?**
+  _High betweenness centrality (0.034) - this node is a cross-community bridge._
 - **What connects `id`, `name`, `version` to the rest of the system?**
-  _129 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _130 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `Drag Interaction Logic` be split into smaller, more focused modules?**
-  _Cohesion score 0.10359408033826638 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.09049773755656108 - nodes in this community are weakly interconnected._
 - **Should `Data Scanning Layer` be split into smaller, more focused modules?**
-  _Cohesion score 0.10482180293501048 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.10823311748381129 - nodes in this community are weakly interconnected._
 - **Should `Build Toolchain Dependencies` be split into smaller, more focused modules?**
   _Cohesion score 0.05555555555555555 - nodes in this community are weakly interconnected._

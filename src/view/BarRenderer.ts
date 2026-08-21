@@ -1,5 +1,5 @@
 import { type App, Menu, setIcon } from "obsidian";
-import type { CalendarItem, DropCommitFn } from "../types";
+import type { CalendarItem, DropCommitFn, PluginSettings } from "../types";
 import { resolveLucideIconId } from "../lucide-icons";
 import { COLOR_PALETTE, MAX_WATERFALL_ROWS, MAX_WATERFALL_COLS_VERT } from "../constants";
 import { getContrastColor } from "../utils/colorUtils";
@@ -25,6 +25,8 @@ export class BarRenderer {
 		getYear: () => number,
 		onDropCommit?: DropCommitFn,
 		private onReminderClick?: (item: CalendarItem) => void,
+		private getSettings?: () => PluginSettings,
+		private onEditNote?: (filePath: string) => void,
 	) {
 		this.dragHandler = onDropCommit ? new DragHandler(getYear, onDropCommit) : null;
 	}
@@ -144,6 +146,13 @@ export class BarRenderer {
 					void this.app.workspace.openLinkText(filePath, "", true);
 				}),
 			);
+			if (this.onEditNote && this.isUnderNewEventFolder(filePath)) {
+				menu.addItem((item) =>
+					item.setTitle("Edit event").setIcon("pencil").onClick(() => {
+						this.onEditNote?.(filePath);
+					}),
+				);
+			}
 			menu.addSeparator();
 			menu.addItem((item) =>
 				item.setTitle("Copy link").setIcon("link").onClick(() => {
@@ -152,6 +161,14 @@ export class BarRenderer {
 			);
 			menu.showAtMouseEvent(evt);
 		});
+	}
+
+	/** Gates the "Edit event" menu item to notes the plugin's own Create-event flow could have
+	 *  written — i.e. sitting directly in `newEventFolder` (or vault root if that's unset). */
+	private isUnderNewEventFolder(filePath: string): boolean {
+		const folder = this.getSettings?.().newEventFolder;
+		const dir = filePath.slice(0, filePath.lastIndexOf("/"));
+		return folder ? dir === folder : dir === "";
 	}
 
 }

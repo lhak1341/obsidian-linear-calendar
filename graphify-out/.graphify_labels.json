@@ -6,7 +6,6 @@
   "4": "Daily Notes Integration",
   "5": "Settings & Constants",
   "6": "Month Strip & Tag Utils",
-  "7": "Create Event Modal",
   "8": "Plugin Entry Point",
   "9": "TypeScript Config",
   "10": "Now Indicator",
@@ -52,6 +51,5 @@
   "50": "CalendarRenderer.renderCategories",
   "51": "DragHandler.onDropCommit callback",
   "52": "LinearCalendarView.refresh",
-  "53": "Tooltip.showForChip",
-  "54": "MonthRowRef"
+  "53": "Tooltip.showForChip"
 }

@@ -52,6 +52,16 @@ Has `graphify-out/`.
   search runs on). `IconSuggest.getSuggestions()` ranks via `src/utils/iconSearch.ts`'s
   `rankIconSuggestions()`, name matches first then tag matches, so typing "chem" surfaces
   flask-conical/atom/biohazard/etc even though none of those names contain "chem".
+- `Menu`/`MenuItem.setIcon` (context menus, command palette) take Obsidian's own built-in
+  icon ids directly — unlike `setIcon(el, name)`, they don't route through
+  `resolveLucideIconId`; that gap-fill path is only for user-configured icon values
+  (`iconMap`/frontmatter).
+
+## Note creation
+
+- `NoteCreator.create()`/`updateEvent()`'s `openAfterCreate` defaults `true` — any new
+  internal caller (promote, duplicate, batch, edit) must pass `openAfterCreate: false`
+  explicitly or the note silently auto-opens. Already bit twice: e915cfc, promoteReminder.
 
 ## Testing
 
