@@ -236,6 +236,7 @@ export class CreateEventModal extends Modal {
 			dateEnd: parseInputDate(this.dateEndStr),
 			description: this.description || undefined,
 			extraFrontmatter: remindProp && remindDate ? { [remindProp]: toInputDate(remindDate) } : undefined,
+			openAfterCreate: false,
 		});
 		this.close();
 	}

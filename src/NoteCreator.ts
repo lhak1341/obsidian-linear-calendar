@@ -17,6 +17,8 @@ export interface CreateEventOptions {
 	description?: string;
 	/** Extra frontmatter written verbatim (key: raw value string) after the standard fields. */
 	extraFrontmatter?: Record<string, string>;
+	/** Open the new note in the workspace after creating it. Default true. */
+	openAfterCreate?: boolean;
 }
 
 export interface NoteCreator {
@@ -125,7 +127,9 @@ export class ObsidianNoteCreator implements NoteCreator {
 				file = await this.app.vault.create(path, lines.join("\n"));
 			}
 
-			await this.app.workspace.openLinkText(file.path, "", false);
+			if (options.openAfterCreate ?? true) {
+				await this.app.workspace.openLinkText(file.path, "", false);
+			}
 			return true;
 		} catch (err) {
 			console.error("[linear-calendar] create event failed:", err);
