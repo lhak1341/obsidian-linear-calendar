@@ -109,7 +109,8 @@ export class LinearCalendarView extends ItemView {
 						newStart,
 						newEnd,
 					),
-				onReminderClick: (item: CalendarItem) => void this.noteCreator.promoteReminder(item.filePath),
+				onReminderClick: (item: CalendarItem) =>
+					void this.noteCreator.promoteReminder(item.filePath).then(() => this.renderBarsOnly()),
 			},
 		);
 
