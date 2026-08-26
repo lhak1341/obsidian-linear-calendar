@@ -1,88 +1,18 @@
 # obsidian-linear-calendar
 
-Horizontal year-at-a-glance timeline rendered from note frontmatter.
+Horizontal year-at-a-glance timeline rendered from note frontmatter. House conventions
+(bun, script contract, ESLint, Obsidian API/CSS gotchas) live in the `obsidian-plugin-dev`
+skill — only repo-specific facts below.
 
-House conventions for Obsidian plugin repos live in the `obsidian-plugin-dev` skill —
-bun, script contract, ESLint/obsidianmd setup, `Setting` API details, CSS specificity and
-`@container` rules, live debugging. Only repo-specific facts are below.
+`main.ts`'s two exported entry points are consumed by `obsidian-lhak-dashboard` at runtime;
+signature changes need coordinating both repos. See `src/CLAUDE.md` for that contract and
+other src-root-level gotchas (icons, settings, note creation).
 
-Has `graphify-out/`.
+`bun run test` (vitest) only covers `src/utils/` — keep new pure logic there so it's
+testable; everything else is Obsidian-coupled and verified manually in `test-vault/`.
+`obsidian eval` itself needs `vault=lhakZettel` though — `test-vault` has no CLI bridge
+plugin.
 
-## Public API
-
-- `mountMonthStrip(container, categoriesEl, onMonthChange?)` (returns `MonthStripHandle`:
-  `next` / `prev` / `today` / `destroy`) and `getCalendarData(year)` on
-  `LinearCalendarPlugin` are consumed by `obsidian-lhak-dashboard` at runtime. Signature
-  changes require coordinating both repos.
-- Types used internally by those two (e.g. `RenderConfig`) are **not** part of the
-  coordinated surface — only the two signatures and `MonthStripHandle` are.
-- Confirmed: `obsidian-lhak-dashboard` only calls `mountMonthStrip`, never `getCalendarData` —
-  `CalendarItem`'s field shape (e.g. `isReminder`/`anniversary`) is free to reshape without
-  cross-repo coordination.
-- `mountMonthStrip`'s `alignMode` is hardcoded to `"date"` regardless of
-  `settings.alignMode`. That is intentional for the single-month embed context — do not
-  fold it into a settings-accessor refactor.
-
-## Rendering
-
-- Bar colors are set via inline `style.backgroundColor` in JS, so CSS cannot override them;
-  contrast and theming adaptations happen in JS at render time.
-- Sticky headers need `z-index` > 5 — bars sit at `z-index: 5`.
-- To fill a cell with a dynamic background, put the class on the container or use
-  `position: absolute; inset: 0`; `width/height: 100%` on a `<span>` inside a flex column
-  is unreliable.
-- `setTooltip` does not fire in cross-plugin embeds (`mountMonthStrip`). Use
-  `Tooltip.showForChip()`, which works anywhere via direct listeners.
-- `@media` / `@container` rules on shared `.lc-*` classes must be scoped to
-  `.linear-calendar-container`, or they bleed into dashboard embeds.
-- Chaining multiple controls onto one `Setting` (e.g. a mode dropdown + number + unit on one
-  row) needs a scoped `.setting-item-control > * { width: auto !important }` override — the
-  modal's default per-field `width: 100%` (for the stacked-label style) makes siblings fight
-  for the same full-row width otherwise. See `.lc-remind-setting` in `styles.css`.
-- Icons are stored bare everywhere (`iconMap`, frontmatter `icon:`) — strip the `lucide-`
-  prefix when displaying or writing icon ids.
-- `src/lucide-icons.ts` bundles the full current Lucide set offline (`src/lucide-icon-svgs.json`,
-  regenerated via `bun run sync:lucide`) so icons missing from Obsidian's pinned snapshot
-  (e.g. `mosque`, `broccoli`) still resolve. Every dynamic `setIcon(el, name)` call must go
-  through `resolveLucideIconId(name)` first — Obsidian's `getIcon()` silently no-ops on
-  `addIcon()` entries registered under its own `lucide-` prefix, so gap-fill icons live under
-  `linear-calendar-lucide-` instead. `registerLucideIcons()` runs once in `main.ts` `onload()`.
-- The same sync script also writes `src/lucide-icon-tags.json` (lucide-static's per-icon search
-  synonyms, e.g. "flask-conical" -> ["lab", "chemistry", ...] — the data lucide.dev's own icon
-  search runs on). `IconSuggest.getSuggestions()` ranks via `src/utils/iconSearch.ts`'s
-  `rankIconSuggestions()`, name matches first then tag matches, so typing "chem" surfaces
-  flask-conical/atom/biohazard/etc even though none of those names contain "chem".
-- `Menu`/`MenuItem.setIcon` (context menus, command palette) take Obsidian's own built-in
-  icon ids directly — unlike `setIcon(el, name)`, they don't route through
-  `resolveLucideIconId`; that gap-fill path is only for user-configured icon values
-  (`iconMap`/frontmatter).
-
-## Note creation
-
-- `NoteCreator.create()`/`updateEvent()`'s `openAfterCreate` defaults `true` — any new
-  internal caller (promote, duplicate, batch, edit) must pass `openAfterCreate: false`
-  explicitly or the note silently auto-opens. Already bit twice: e915cfc, promoteReminder.
-
-## Testing
-
-`bun run test` (vitest) covers `src/utils/` only. Files outside it are Obsidian-coupled and
-verified manually in `test-vault/`; extract pure functions into `src/utils/` to make them
-testable (see `dragUtils.ts`).
-
-`obsidian eval` does not work against `vault=test-vault` — that vault has no CLI bridge
-plugin enabled. Use `vault=lhakZettel`, where this plugin is also deployed.
-
-## Agent skills
-
-### Issue tracker
-
-GitHub Issues via `gh` CLI. See `docs/agents/issue-tracker.md`.
-
-### Domain docs
-
-Single-context — `CONTEXT.md` + `docs/adr/` at repo root. See `docs/agents/domain.md`.
-
-### Reports
-
-Architecture-review / AI-readiness HTML reports save to this repo's `temp/` (gitignored),
+Agent skills: issue tracker → `docs/agents/issue-tracker.md`; domain docs →
+`docs/agents/domain.md`; architecture/AI-readiness reports save to this repo's `temp/`,
 not the skill's OS-tmp default.

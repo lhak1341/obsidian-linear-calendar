@@ -1,5 +1,29 @@
 # View layer
 
+## Bar/chip colors
+
+- Set via inline `style.backgroundColor` in JS, not CSS — CSS cannot override them.
+  Contrast and theming adaptations happen in JS at render time.
+
+## Sticky headers vs bars
+
+- Sticky headers need `z-index` > 5 — bars sit at `z-index: 5`.
+
+## Filling a cell with a dynamic background
+
+- Put the class on the container itself, or use `position: absolute; inset: 0`.
+  `width/height: 100%` on a `<span>` inside a flex column is unreliable.
+
+## Tooltips in cross-plugin embeds
+
+- `setTooltip` does not fire in cross-plugin embeds (`mountMonthStrip`). Use
+  `Tooltip.showForChip()` instead — it works anywhere via direct listeners.
+
+## Scoping shared CSS rules
+
+- `@media`/`@container` rules on shared `.lc-*` classes must be scoped to
+  `.linear-calendar-container`, or they bleed into dashboard embeds.
+
 ## Category toggle re-render scope
 
 - `onCategoryToggle` must call `renderBarsOnly()`, not `renderCalendar()` — `populateDayCell()` never receives `hiddenCategories`, so the day cell DOM is invariant under category filter changes; only bars and chips need rebuilding.
