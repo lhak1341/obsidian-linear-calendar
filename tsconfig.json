@@ -11,7 +11,8 @@
 		"resolveJsonModule": true,
 		"importHelpers": true,
 		"isolatedModules": true,
+		"esModuleInterop": true,
 		"lib": ["DOM", "DOM.Iterable", "ES2018", "ES2021.String"]
 	},
-	"include": ["src/**/*.ts"]
+	"include": ["src/**/*.ts", "test/**/*.ts"]
 }

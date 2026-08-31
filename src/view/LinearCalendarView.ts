@@ -366,7 +366,7 @@ export class LinearCalendarView extends ItemView {
 	}
 
 	private createNoteForDate(year: number, month: number, day: number): void {
-		void this.noteCreator.create(new Date(year, month, day));
+		void this.noteCreator.create(new Date(year, month, day), { openAfterCreate: true });
 	}
 
 	private scrollToNow(): void {

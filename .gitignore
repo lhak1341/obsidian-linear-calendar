@@ -1,6 +1,7 @@
 # Build output
 main.js
 *.js.map
+coverage/
 
 # Dependencies
 node_modules/

@@ -3,11 +3,14 @@
 ## Moment
 
 - Always `import { moment } from 'obsidian'` — never `window.moment` (risks version mismatch)
+  (stays prose — ruled out as a lint rule: zero occurrences and zero commits fixing one, so
+  the class has never fired here. Add a `no-restricted-properties` rule the first time it does.)
 
 ## Testing
 
-- `@vitest/coverage-v8` not installed; `npm test -- --coverage` fails — install it first or skip coverage
-- Before adding a test for a new pure export, check the file doesn't already `import ... from "obsidian"` (e.g. `frontmatterUtils.ts`, `dailyNotes.ts`) — vitest fails with "Failed to resolve entry for package obsidian" for the whole file, even for unrelated pure functions. Put new pure logic in a fresh file instead.
+- `bunx vitest run --coverage` works (`@vitest/coverage-v8` is installed; `test/**` is excluded).
+- Files importing `obsidian` **are** testable: `vitest.config.ts` aliases `obsidian` to `test/obsidian-stub.ts`, a runtime shim for the types-only npm package. Add a symbol to the stub when a file under test starts importing one — a missing export surfaces as an ordinary undefined-binding failure, not the old whole-file "Failed to resolve entry for package obsidian".
+- `src/utils/frontmatterUtils.test.ts` is the worked example: fake `App` with `vault.getAbstractFileByPath` + `fileManager.processFrontMatter`/`renameFile`, real `TFile`/`TFolder` from the stub so `instanceof` holds.
 
 ## Frontmatter tag format (API gotcha)
 

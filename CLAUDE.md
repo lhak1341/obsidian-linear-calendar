@@ -8,10 +8,13 @@ skill — only repo-specific facts below.
 signature changes need coordinating both repos. See `src/CLAUDE.md` for that contract and
 other src-root-level gotchas (icons, settings, note creation).
 
-`bun run test` (vitest) only covers `src/utils/` — keep new pure logic there so it's
-testable; everything else is Obsidian-coupled and verified manually in `test-vault/`.
-`obsidian eval` itself needs `vault=lhakZettel` though — `test-vault` has no CLI bridge
-plugin.
+`bun run check` = typecheck + lint + test, and is what `deploy`, CI (`ci.yml`, on push/PR)
+and the release workflow all run. Lint carries `--max-warnings=0` because most
+`obsidianmd`/`typescript-eslint` rules ship at warn severity and eslint exits 0 on warnings.
+
+`bun run test` (vitest) covers `src/utils/`; view/data layers are Obsidian-coupled and
+verified manually in `test-vault/`. `obsidian eval` itself needs `vault=lhakZettel` though
+— `test-vault` has no CLI bridge plugin.
 
 Agent skills: issue tracker → `docs/agents/issue-tracker.md`; domain docs →
 `docs/agents/domain.md`; architecture/AI-readiness reports save to this repo's `temp/`,

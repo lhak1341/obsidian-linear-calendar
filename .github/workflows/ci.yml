@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+
+      # --frozen-lockfile so an un-committed bun.lock fails here rather than
+      # resolving to different versions than anyone tested against.
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      # Separate steps, not `bun run check`, so the failing gate is named in the
+      # job summary. esbuild strips types without checking them, so `build`
+      # passing says nothing about `typecheck` — it has to run on its own.
+      - name: Typecheck
+        run: bun run typecheck
+
+      # `lint` carries --max-warnings=0: most obsidianmd/typescript-eslint rules
+      # ship at warn severity, and eslint exits 0 on warnings.
+      - name: Lint
+        run: bun run lint
+
+      # vitest exits 1 when its include glob matches no files, so this step
+      # cannot pass by silently running nothing.
+      - name: Test
+        run: bun run test
+
+      - name: Build
+        run: bun run build

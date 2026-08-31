@@ -17,13 +17,22 @@ export interface CreateEventOptions {
 	description?: string;
 	/** Extra frontmatter written verbatim (key: raw value string) after the standard fields. */
 	extraFrontmatter?: Record<string, string>;
-	/** Open the new note in the workspace after creating it. Default true. */
-	openAfterCreate?: boolean;
+}
+
+/**
+ * `create`'s options. `openAfterCreate` is deliberately required and has no default:
+ * only the user-initiated "new event" gesture wants the note opened, and every
+ * internal caller (promote, duplicate, batch, edit) wants it suppressed. A default
+ * either way silently does the wrong thing for the other half, which it did twice.
+ */
+export interface CreateOptions extends CreateEventOptions {
+	/** Open the new note in the workspace after creating it. */
+	openAfterCreate: boolean;
 }
 
 export interface NoteCreator {
 	/** Returns true once the note is written; false (after logging + a Notice) if creation failed. */
-	create(date: Date, options?: CreateEventOptions): Promise<boolean>;
+	create(date: Date, options: CreateOptions): Promise<boolean>;
 	/** Promotes a reminder ghost into a real note: duplicates the source note at `filePath` onto
 	 *  the reminder's date, carries the reminder forward by the same interval, and clears the
 	 *  source note's reminder field. No-op if the source note has no valid start/remind dates. */
@@ -31,7 +40,7 @@ export interface NoteCreator {
 	/** Rewrites an existing note's mapped frontmatter fields in place (no rename, no move).
 	 *  Unlike `create`, an omitted/empty field is written as cleared rather than left untouched —
 	 *  the modal always submits its full current state. Returns true on success. */
-	updateEvent(filePath: string, date: Date, options?: CreateEventOptions): Promise<boolean>;
+	updateEvent(filePath: string, date: Date, options: CreateEventOptions): Promise<boolean>;
 }
 
 export class ObsidianNoteCreator implements NoteCreator {
@@ -41,7 +50,7 @@ export class ObsidianNoteCreator implements NoteCreator {
 		private getMapping: () => ColumnMapping,
 	) {}
 
-	async create(date: Date, options: CreateEventOptions = {}): Promise<boolean> {
+	async create(date: Date, options: CreateOptions): Promise<boolean> {
 		try {
 			const year = date.getFullYear();
 			const month = date.getMonth();
@@ -131,7 +140,7 @@ export class ObsidianNoteCreator implements NoteCreator {
 				file = await this.app.vault.create(path, lines.join("\n"));
 			}
 
-			if (options.openAfterCreate ?? true) {
+			if (options.openAfterCreate) {
 				await this.app.workspace.openLinkText(file.path, "", false);
 			}
 			return true;
@@ -142,7 +151,7 @@ export class ObsidianNoteCreator implements NoteCreator {
 		}
 	}
 
-	async updateEvent(filePath: string, date: Date, options: CreateEventOptions = {}): Promise<boolean> {
+	async updateEvent(filePath: string, date: Date, options: CreateEventOptions): Promise<boolean> {
 		try {
 			const sourceFile = this.app.vault.getAbstractFileByPath(filePath);
 			if (!(sourceFile instanceof TFile)) return false;
