@@ -1,6 +1,65 @@
 import type { CalendarItem, ColumnMapping } from "../types";
 import { parseDateString } from "./dateUtils";
 
+export interface MappedDisplayFields {
+	/** All linear-calendar/ subtags present, in frontmatter order. Excludes the bare gate tag. */
+	tags: string[];
+	icon: string | undefined;
+	anniversary: boolean;
+	description: string | undefined;
+}
+
+/** Coerces a raw frontmatter.tags value (array, single string, or absent) into a string[]. */
+function coerceTagsField(raw: unknown): string[] {
+	if (!raw) return [];
+	return Array.isArray(raw)
+		? raw.map(String)
+		: typeof raw === "string"
+			? [raw]
+			: [];
+}
+
+/**
+ * Whether a note is gated into the calendar: tagged #linear-calendar (or a subtag) either
+ * in frontmatter (`rawFmTags`, no "#" prefix) or inline in the note body (`inlineTags`, "#"
+ * prefix required — that's how Obsidian's metadataCache reports inline tags).
+ */
+export function hasGateTag(rawFmTags: unknown, inlineTags: string[]): boolean {
+	const fmTags = coerceTagsField(rawFmTags);
+	return (
+		fmTags.some((t) => t === "linear-calendar" || t.startsWith("linear-calendar/")) ||
+		inlineTags.some((t) => t === "#linear-calendar" || t.startsWith("#linear-calendar/"))
+	);
+}
+
+/**
+ * Reads the fields shared by mapFrontmatterToItem, CreateEventModal.prefillFromFile, and
+ * NoteCreator.promoteReminder off a note's frontmatter via ColumnMapping. Returns raw
+ * matches only — title resolution (the "__filename__" sentinel + its basename fallback)
+ * and tag/fallback selection (e.g. promoteReminder alone also matches the bare gate tag)
+ * are intentionally caller-specific; don't fold them in here.
+ */
+export function extractDisplayFields(
+	frontmatter: Record<string, unknown>,
+	mapping: ColumnMapping,
+): MappedDisplayFields {
+	const tags = coerceTagsField(frontmatter.tags).filter((t) => t.startsWith("linear-calendar/"));
+
+	const iconRaw = frontmatter[mapping.iconProp];
+	const icon =
+		mapping.iconProp && typeof iconRaw === "string"
+			? iconRaw
+			: undefined;
+
+	const anniversary =
+		mapping.anniversaryProp ? frontmatter[mapping.anniversaryProp] === true : false;
+
+	const descRaw = mapping.descriptionProp ? frontmatter[mapping.descriptionProp] : undefined;
+	const description = typeof descRaw === "string" && descRaw.trim() ? descRaw.trim() : undefined;
+
+	return { tags, icon, anniversary, description };
+}
+
 /**
  * Maps a note's frontmatter into a CalendarItem, or null if the note isn't a
  * calendar entry. Gate: only notes tagged #linear-calendar (or a subtag) are
@@ -14,16 +73,7 @@ export function mapFrontmatterToItem(
 	mapping: ColumnMapping,
 ): CalendarItem | null {
 	if (!frontmatter) return null;
-
-	const fmTags = Array.isArray(frontmatter.tags)
-		? frontmatter.tags.map(String)
-		: typeof frontmatter.tags === "string"
-			? [frontmatter.tags]
-			: [];
-	const hasGateTag =
-		fmTags.some((t) => t === "linear-calendar" || t.startsWith("linear-calendar/")) ||
-		inlineTags.some((t) => t === "#linear-calendar" || t.startsWith("#linear-calendar/"));
-	if (!hasGateTag) return null;
+	if (!hasGateTag(frontmatter.tags, inlineTags)) return null;
 
 	const startRaw = frontmatter[mapping.startDateProp];
 	if (startRaw === undefined) return null;
@@ -43,32 +93,7 @@ export function mapFrontmatterToItem(
 				? titleRaw
 				: basename;
 
-	const tags: string[] = [];
-	const rawTags = frontmatter.tags;
-	if (rawTags) {
-		const tagList = Array.isArray(rawTags)
-			? rawTags.map(String)
-			: typeof rawTags === "string"
-				? [rawTags]
-				: [];
-		for (const t of tagList) {
-			if (t.startsWith("linear-calendar/")) {
-				tags.push(t);
-			}
-		}
-	}
-
-	const iconRaw = frontmatter[mapping.iconProp];
-	const icon =
-		mapping.iconProp && typeof iconRaw === "string"
-			? iconRaw
-			: undefined;
-
-	const anniversary =
-		mapping.anniversaryProp ? frontmatter[mapping.anniversaryProp] === true : false;
-
-	const descRaw = mapping.descriptionProp ? frontmatter[mapping.descriptionProp] : undefined;
-	const description = typeof descRaw === "string" && descRaw.trim() ? descRaw.trim() : undefined;
+	const { tags, icon, anniversary, description } = extractDisplayFields(frontmatter, mapping);
 
 	return {
 		filePath,

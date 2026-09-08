@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { mapFrontmatterToItem, deriveReminderItem } from "./frontmatterMapper";
+import { mapFrontmatterToItem, deriveReminderItem, extractDisplayFields, hasGateTag } from "./frontmatterMapper";
 import type { ColumnMapping, CalendarItem } from "../types";
 
 const mapping: ColumnMapping = {
@@ -131,6 +131,67 @@ describe("mapFrontmatterToItem — tags/icon/anniversary/description", () => {
 
 		const blank = map({ start: "2024-01-01", tags: ["linear-calendar"], description: "   " });
 		expect(blank?.description).toBeUndefined();
+	});
+});
+
+describe("hasGateTag", () => {
+	it("returns false when frontmatter.tags is undefined and there are no inline tags", () => {
+		expect(hasGateTag(undefined, [])).toBe(false);
+	});
+
+	it("gates on the bare frontmatter tag", () => {
+		expect(hasGateTag(["linear-calendar"], [])).toBe(true);
+	});
+
+	it("gates on a frontmatter subtag", () => {
+		expect(hasGateTag(["linear-calendar/work"], [])).toBe(true);
+	});
+
+	it("gates on frontmatter.tags as a single string", () => {
+		expect(hasGateTag("linear-calendar", [])).toBe(true);
+	});
+
+	it("gates on an inline tag, # prefix required", () => {
+		expect(hasGateTag(undefined, ["#linear-calendar"])).toBe(true);
+	});
+
+	it("gates on an inline subtag", () => {
+		expect(hasGateTag(undefined, ["#linear-calendar/work"])).toBe(true);
+	});
+
+	it("does not gate on an inline tag missing the # prefix", () => {
+		expect(hasGateTag(undefined, ["linear-calendar"])).toBe(false);
+	});
+
+	it("does not gate on an unrelated tag", () => {
+		expect(hasGateTag(["other"], ["#other"])).toBe(false);
+	});
+});
+
+describe("extractDisplayFields", () => {
+	it("returns all matching linear-calendar/ subtags, excluding the bare gate tag", () => {
+		const fields = extractDisplayFields(
+			{ tags: ["linear-calendar", "linear-calendar/work", "linear-calendar/home", "other"] },
+			mapping,
+		);
+		expect(fields.tags).toEqual(["linear-calendar/work", "linear-calendar/home"]);
+	});
+
+	it("returns an empty tags array when no subtags are present", () => {
+		const fields = extractDisplayFields({ tags: ["linear-calendar"] }, mapping);
+		expect(fields.tags).toEqual([]);
+	});
+
+	it("leaves icon/description undefined and anniversary false when their props are missing", () => {
+		const fields = extractDisplayFields({}, mapping);
+		expect(fields.icon).toBeUndefined();
+		expect(fields.description).toBeUndefined();
+		expect(fields.anniversary).toBe(false);
+	});
+
+	it("trims description and drops whitespace-only values to undefined", () => {
+		expect(extractDisplayFields({ description: "  hello  " }, mapping).description).toBe("hello");
+		expect(extractDisplayFields({ description: "   " }, mapping).description).toBeUndefined();
 	});
 });
 

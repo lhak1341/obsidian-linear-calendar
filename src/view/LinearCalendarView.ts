@@ -7,6 +7,7 @@ import { CreateEventModal } from "../CreateEventModal";
 import { CalendarRenderer, RenderConfig } from "./CalendarRenderer";
 import { createDailyNote, getDailyNoteMap } from "../utils/dailyNotes";
 import { commitDrag } from "../utils/frontmatterUtils";
+import { hasGateTag } from "../utils/frontmatterMapper";
 
 interface ViewState {
 	year: number;
@@ -141,17 +142,8 @@ export class LinearCalendarView extends ItemView {
 					return;
 				}
 				const fm = this.app.metadataCache.getFileCache(file);
-				const fmTags = Array.isArray(fm?.frontmatter?.tags)
-					? (fm.frontmatter.tags as unknown[]).map(String)
-					: typeof fm?.frontmatter?.tags === "string"
-						? [String(fm.frontmatter.tags)]
-						: [];
 				const inlineTags = (fm?.tags ?? []).map((t) => t.tag);
-				const isCalendar = [...fmTags, ...inlineTags].some(
-					(t) => t === "linear-calendar" || t === "#linear-calendar" ||
-						t.startsWith("linear-calendar/") || t.startsWith("#linear-calendar/"),
-				);
-				if (isCalendar) debouncedRender();
+				if (hasGateTag(fm?.frontmatter?.tags, inlineTags)) debouncedRender();
 			}),
 		);
 		this.registerEvent(

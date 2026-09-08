@@ -17,7 +17,11 @@
 - `frontmatter.tags` — no `#` prefix: `"linear-calendar/work"`
 - `cache.tags[].tag` — has `#` prefix: `"#linear-calendar/work"`
 
-`mapFrontmatterToItem()` (`frontmatterMapper.ts`) checks both when gating on the `#linear-calendar` tag — callers (`FrontmatterScanner.processFile`) just extract raw tags off `metadataCache` and pass them through, no interpretation.
+`hasGateTag()` (`frontmatterMapper.ts`) checks both when gating on the `#linear-calendar` tag — called by `mapFrontmatterToItem` and `LinearCalendarView`'s metadataCache listener. `FrontmatterScanner.processFile` just extracts raw tags off `metadataCache` and passes them through, no interpretation.
+
+## Reuse existing frontmatter/date helpers
+
+This codebase has repeatedly reinvented logic already in `src/utils/` — grep here before hand-rolling new note-field read/write logic: `frontmatterMapper.ts` = read-side (`extractDisplayFields` for title/tag/icon/anniversary/description, `hasGateTag`), `frontmatterUtils.ts` = write-side (`resolveCalendarTags`, `commitDrag`), `dateUtils.ts` = date parsing/formatting (`formatISODate`, `parseDateString`, `carryDateForward`).
 
 ## Daily note plugin priority
 

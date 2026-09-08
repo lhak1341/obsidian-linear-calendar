@@ -3,6 +3,7 @@ import type { NoteCreator } from "./NoteCreator";
 import type { PluginSettings } from "./types";
 import { IconField } from "./IconField";
 import { parseDateString } from "./utils/dateUtils";
+import { extractDisplayFields } from "./utils/frontmatterMapper";
 
 const pad = (n: number) => String(n).padStart(2, "0");
 const toInputDate = (date: Date) => `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
@@ -50,16 +51,11 @@ export class CreateEventModal extends Modal {
 			? file.basename
 			: typeof fm[mapping.titleProp] === "string" ? (fm[mapping.titleProp] as string) : "";
 
-		const tagsRaw = Array.isArray(fm.tags)
-			? (fm.tags as unknown[]).map(String)
-			: typeof fm.tags === "string" ? [fm.tags] : [];
-		this.tag = tagsRaw.find((t) => t.startsWith("linear-calendar/")) ?? "";
-
-		if (mapping.iconProp && typeof fm[mapping.iconProp] === "string") this.icon = fm[mapping.iconProp] as string;
-		if (mapping.anniversaryProp) this.anniversary = !!fm[mapping.anniversaryProp];
-		if (mapping.descriptionProp && typeof fm[mapping.descriptionProp] === "string") {
-			this.description = fm[mapping.descriptionProp] as string;
-		}
+		const { tags, icon, anniversary, description } = extractDisplayFields(fm, mapping);
+		this.tag = tags[0] ?? "";
+		if (icon) this.icon = icon;
+		this.anniversary = anniversary;
+		if (description) this.description = description;
 
 		const start = parseDateString(fm[mapping.startDateProp]);
 		if (start) this.dateStr = toInputDate(start);

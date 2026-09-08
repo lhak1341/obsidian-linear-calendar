@@ -5,6 +5,7 @@ import type { DataSource } from "../data/DataSource";
 import { buildTagColorMap } from "../utils/colorUtils";
 import { formatTagLabel } from "../utils/tagUtils";
 import { GridRenderer } from "./GridRenderer";
+import type { MonthRowRef } from "./GridRenderer";
 import { BarRenderer } from "./BarRenderer";
 import { NowIndicator } from "./NowIndicator";
 import { Tooltip } from "./Tooltip";
@@ -64,12 +65,10 @@ export class CalendarRenderer {
 
 	render(config: RenderConfig): void {
 		this.current = config;
-		const { year, months, hiddenCategories, layout, alignMode, rowHeight, dailyNoteMap } = config;
-		const { colorMap, iconMap, dailyNoteColor, dailyNoteStyle, japaneseWeekdayLabels } = this.getSettings();
+		const { year, months, layout, alignMode, rowHeight, dailyNoteMap } = config;
+		const { dailyNoteColor, dailyNoteStyle, japaneseWeekdayLabels } = this.getSettings();
 
 		this.lastRenderedYear = year;
-		const { allItems, items, tagColorMap } = this.computeVisibleItems(year, months, hiddenCategories, colorMap);
-		this.renderCategories(allItems, year, months, tagColorMap, hiddenCategories);
 
 		const monthRows = this.gridRenderer.render({
 			year, months, layout, alignMode,
@@ -86,8 +85,7 @@ export class CalendarRenderer {
 
 		this.updateRowHeight(layout, rowHeight);
 
-		const tagIconMap = new Map(Object.entries(iconMap));
-		this.barRenderer.render(monthRows, items, tagColorMap, tagIconMap);
+		this.renderVisibleBars(monthRows);
 
 		// NowIndicator manages its own interval lifecycle; only restarts on year change.
 		this.nowIndicator.render(monthRows, year);
@@ -100,18 +98,26 @@ export class CalendarRenderer {
 		const monthRows = this.gridRenderer.getMonthRows();
 		if (!this.current || monthRows.length === 0) return;
 
-		const { year, months, hiddenCategories } = this.current;
+		for (const rowRef of monthRows) {
+			rowRef.barsContainer.empty();
+		}
+
+		this.renderVisibleBars(monthRows);
+	}
+
+	/**
+	 * Compute visible items, refresh category chips, and (re)paint bars into monthRows —
+	 * shared tail of render() and renderBars(). Reads year/months/hiddenCategories off
+	 * `this.current`, which both callers guarantee is set before this runs.
+	 */
+	private renderVisibleBars(monthRows: MonthRowRef[]): void {
+		const { year, months, hiddenCategories } = this.current!;
 		const { colorMap, iconMap } = this.getSettings();
 
 		const { allItems, items, tagColorMap } = this.computeVisibleItems(year, months, hiddenCategories, colorMap);
 		this.renderCategories(allItems, year, months, tagColorMap, hiddenCategories);
 
-		for (const rowRef of monthRows) {
-			rowRef.barsContainer.empty();
-		}
-
 		const tagIconMap = new Map(Object.entries(iconMap));
-		this.barRenderer.cleanup();
 		this.barRenderer.render(monthRows, items, tagColorMap, tagIconMap);
 	}
 

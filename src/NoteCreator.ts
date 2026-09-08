@@ -6,6 +6,8 @@ interface TemplaterPlugin {
 type AppWithPlugins = App & { plugins?: { getPlugin(id: string): TemplaterPlugin | null } };
 import type { PluginSettings, ColumnMapping } from "./types";
 import { parseDateString, formatISODate, carryDateForward } from "./utils/dateUtils";
+import { extractDisplayFields } from "./utils/frontmatterMapper";
+import { resolveCalendarTags } from "./utils/frontmatterUtils";
 
 export interface CreateEventOptions {
 	title?: string;
@@ -52,11 +54,7 @@ export class ObsidianNoteCreator implements NoteCreator {
 
 	async create(date: Date, options: CreateOptions): Promise<boolean> {
 		try {
-			const year = date.getFullYear();
-			const month = date.getMonth();
-			const day = date.getDate();
-			const pad = (n: number) => String(n).padStart(2, "0");
-			const dateStr = `${year}-${pad(month + 1)}-${pad(day)}`;
+			const dateStr = formatISODate(date);
 			const mapping = this.getMapping();
 			const folder = this.settings.newEventFolder;
 			const fmt = this.settings.newEventDateFormat || "YYYY-MM-DD";
@@ -65,12 +63,9 @@ export class ObsidianNoteCreator implements NoteCreator {
 			const trimmedTitle = options.title?.trim();
 			// Filenames can't contain these characters on any OS Obsidian runs on.
 			const safeTitle = trimmedTitle ? trimmedTitle.replace(/[\\/:*?"<>|]/g, "-") : "Untitled";
-			const calendarTag = options.tag?.trim() || "linear-calendar";
 			const trimmedIcon = options.icon?.trim();
 			const trimmedDescription = options.description?.trim();
-			const endDateStr = options.dateEnd
-				? `${options.dateEnd.getFullYear()}-${pad(options.dateEnd.getMonth() + 1)}-${pad(options.dateEnd.getDate())}`
-				: undefined;
+			const endDateStr = options.dateEnd ? formatISODate(options.dateEnd) : undefined;
 
 			if (folder && !this.app.vault.getAbstractFileByPath(folder)) {
 				try {
@@ -115,17 +110,11 @@ export class ObsidianNoteCreator implements NoteCreator {
 					if (options.extraFrontmatter) {
 						for (const [key, value] of Object.entries(options.extraFrontmatter)) fm[key] = value;
 					}
-					const existing = Array.isArray(fm.tags)
-						? (fm.tags as unknown[]).map(String)
-						: (typeof fm.tags === "string" || typeof fm.tags === "number") ? [String(fm.tags)] : [];
-					const withoutGateTag = existing.filter(
-						(t) => t !== "linear-calendar" && !t.startsWith("linear-calendar/"),
-					);
-					withoutGateTag.unshift(calendarTag);
-					fm.tags = withoutGateTag;
+					fm.tags = resolveCalendarTags(fm.tags, options.tag);
 				});
 			} else {
-				const lines = ["---", `tags: [${calendarTag}]`, `${mapping.startDateProp}: ${dateStr}`];
+				const initialTags = resolveCalendarTags(undefined, options.tag);
+				const lines = ["---", `tags: [${initialTags.join(", ")}]`, `${mapping.startDateProp}: ${dateStr}`];
 				if (endDateStr) lines.push(`${mapping.endDateProp}: ${endDateStr}`);
 				if (mapping.titleProp !== "__filename__" && trimmedTitle) lines.push(`${mapping.titleProp}: ${trimmedTitle}`);
 				if (trimmedIcon && mapping.iconProp) lines.push(`${mapping.iconProp}: ${trimmedIcon}`);
@@ -157,15 +146,11 @@ export class ObsidianNoteCreator implements NoteCreator {
 			if (!(sourceFile instanceof TFile)) return false;
 
 			const mapping = this.getMapping();
-			const pad = (n: number) => String(n).padStart(2, "0");
-			const dateStr = `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
-			const endDateStr = options.dateEnd
-				? `${options.dateEnd.getFullYear()}-${pad(options.dateEnd.getMonth() + 1)}-${pad(options.dateEnd.getDate())}`
-				: undefined;
+			const dateStr = formatISODate(date);
+			const endDateStr = options.dateEnd ? formatISODate(options.dateEnd) : undefined;
 			const trimmedTitle = options.title?.trim();
 			const trimmedIcon = options.icon?.trim();
 			const trimmedDescription = options.description?.trim();
-			const calendarTag = options.tag?.trim() || "linear-calendar";
 			const remindValue = options.extraFrontmatter?.[mapping.remindProp];
 
 			await this.app.fileManager.processFrontMatter(sourceFile, (fm: Record<string, unknown>) => {
@@ -190,14 +175,7 @@ export class ObsidianNoteCreator implements NoteCreator {
 					else delete fm[mapping.remindProp];
 				}
 
-				const existing = Array.isArray(fm.tags)
-					? (fm.tags as unknown[]).map(String)
-					: (typeof fm.tags === "string" || typeof fm.tags === "number") ? [String(fm.tags)] : [];
-				const withoutGateTag = existing.filter(
-					(t) => t !== "linear-calendar" && !t.startsWith("linear-calendar/"),
-				);
-				withoutGateTag.unshift(calendarTag);
-				fm.tags = withoutGateTag;
+				fm.tags = resolveCalendarTags(fm.tags, options.tag);
 			});
 
 			return true;
@@ -243,12 +221,7 @@ export class ObsidianNoteCreator implements NoteCreator {
 				: typeof fm.tags === "string" ? [fm.tags] : [];
 			const tag = tagsRaw.find((t) => t === "linear-calendar" || t.startsWith("linear-calendar/"));
 
-			const icon = mapping.iconProp && typeof fm[mapping.iconProp] === "string"
-				? (fm[mapping.iconProp] as string)
-				: undefined;
-			const description = mapping.descriptionProp && typeof fm[mapping.descriptionProp] === "string"
-				? (fm[mapping.descriptionProp] as string)
-				: undefined;
+			const { icon, description } = extractDisplayFields(fm, mapping);
 
 			// Carry the reminder forward by the same interval, re-anchored at the new note's
 			// date (oldRemindOn) — see carryDateForward for the day-of-month-vs-day-count rule.
