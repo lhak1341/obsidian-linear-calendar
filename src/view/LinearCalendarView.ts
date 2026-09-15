@@ -8,6 +8,7 @@ import { CalendarRenderer, RenderConfig } from "./CalendarRenderer";
 import { createDailyNote, getDailyNoteMap } from "../utils/dailyNotes";
 import { commitDrag } from "../utils/frontmatterUtils";
 import { hasGateTag } from "../utils/frontmatterMapper";
+import { resolveFontVar } from "../utils/fonts";
 
 interface ViewState {
 	year: number;
@@ -74,7 +75,7 @@ export class LinearCalendarView extends ItemView {
 		const { contentEl } = this;
 		contentEl.empty();
 		contentEl.addClass("linear-calendar-container");
-		this.applyFont();
+		this.applyFonts();
 
 		const toolbar = contentEl.createDiv({ cls: "linear-calendar-toolbar" });
 		this.buildToolbar(toolbar);
@@ -322,19 +323,21 @@ export class LinearCalendarView extends ItemView {
 	}
 
 	refresh(): void {
-		this.applyFont();
+		this.applyFonts();
 		this.renderCalendar();
 	}
 
-	private applyFont(): void {
-		const { font, fontCustom } = this.settings;
-		let value: string | null = null;
-		if (font === "obsidian-interface") value = "var(--font-interface)";
-		else if (font === "obsidian-text") value = "var(--font-text)";
-		else if (font === "obsidian-monospace") value = "var(--font-monospace)";
-		else if (font === "custom" && fontCustom) value = fontCustom;
-		if (value) this.contentEl.style.setProperty("--lc-font", value);
-		else this.contentEl.style.removeProperty("--lc-font");
+	private applyFonts(): void {
+		const { fontHeading, fontHeadingCustom, fontBody, fontBodyCustom, fontMono, fontMonoCustom } = this.settings;
+		const el = this.contentEl;
+		const set = (prop: string, choice: typeof fontHeading, custom: string) => {
+			const v = resolveFontVar(choice, custom);
+			if (v) el.style.setProperty(prop, v);
+			else   el.style.removeProperty(prop);
+		};
+		set("--lc-fh", fontHeading, fontHeadingCustom);
+		set("--lc-fb", fontBody, fontBodyCustom);
+		set("--lc-fm", fontMono, fontMonoCustom);
 	}
 
 	private handleKeydown(evt: KeyboardEvent): void {

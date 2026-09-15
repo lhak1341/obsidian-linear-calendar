@@ -23,8 +23,12 @@ export const DEFAULT_SETTINGS: PluginSettings = {
 	newEventFolder: "",
 	newEventDateFormat: "YYYY-MM-DD",
 	newEventTemplate: "",
-	font: "plugin",
-	fontCustom: "",
+	fontHeading: "plugin",
+	fontHeadingCustom: "",
+	fontBody: "plugin",
+	fontBodyCustom: "",
+	fontMono: "plugin",
+	fontMonoCustom: "",
 	japaneseWeekdayLabels: false,
 };
 

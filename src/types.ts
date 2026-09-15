@@ -42,7 +42,11 @@ export interface PluginSettings {
 	newEventFolder: string;
 	newEventDateFormat: string;
 	newEventTemplate: string;
-	font: FontChoice;
-	fontCustom: string;
+	fontHeading: FontChoice;
+	fontHeadingCustom: string;
+	fontBody: FontChoice;
+	fontBodyCustom: string;
+	fontMono: FontChoice;
+	fontMonoCustom: string;
 	japaneseWeekdayLabels: boolean;
 }

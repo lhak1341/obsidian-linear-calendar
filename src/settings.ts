@@ -266,30 +266,30 @@ export class LinearCalendarSettingTab extends PluginSettingTab {
 		new Setting(containerEl).setName("Appearance").setHeading();
 		const items = containerEl.createDiv("setting-group").createDiv("setting-items");
 
-		let customFontEl: Setting;
-		new Setting(items)
-			.setName("Font")
-			.setDesc("Font family for the calendar UI.")
-			.addDropdown((drop) => {
-				Object.entries(FONT_OPTIONS).forEach(([v, label]) => { drop.addOption(v, label); });
-				drop.setValue(this.plugin.settings.font).onChange((value) => {
-					this.plugin.settings.font = value as FontChoice;
-					customFontEl.settingEl.style.display = value === "custom" ? "" : "none";
-					void this.plugin.saveSettings();
-				});
-			});
-		customFontEl = new Setting(items)
-			.setName("")
-			.addText((text) =>
-				text
-					.setPlaceholder('e.g. Inter, "DM Sans"')
-					.setValue(this.plugin.settings.fontCustom)
-					.onChange((value) => {
-						this.plugin.settings.fontCustom = value.trim();
-						void this.plugin.saveSettings();
-					}),
-			);
-		customFontEl.settingEl.style.display = this.plugin.settings.font === "custom" ? "" : "none";
+		this.renderFontPicker(items, {
+			name: "Heading font",
+			desc: "Font for the year/month toolbar and event names.",
+			getValue: () => this.plugin.settings.fontHeading,
+			setValue: value => { this.plugin.settings.fontHeading = value; },
+			getCustom: () => this.plugin.settings.fontHeadingCustom,
+			setCustom: value => { this.plugin.settings.fontHeadingCustom = value; },
+		});
+		this.renderFontPicker(items, {
+			name: "Body font",
+			desc: "Font for tooltip descriptions and other body text.",
+			getValue: () => this.plugin.settings.fontBody,
+			setValue: value => { this.plugin.settings.fontBody = value; },
+			getCustom: () => this.plugin.settings.fontBodyCustom,
+			setCustom: value => { this.plugin.settings.fontBodyCustom = value; },
+		});
+		this.renderFontPicker(items, {
+			name: "Monospace font",
+			desc: "Font for numeric/data-style text.",
+			getValue: () => this.plugin.settings.fontMono,
+			setValue: value => { this.plugin.settings.fontMono = value; },
+			getCustom: () => this.plugin.settings.fontMonoCustom,
+			setCustom: value => { this.plugin.settings.fontMonoCustom = value; },
+		});
 
 		new Setting(items)
 			.setName("Japanese weekday labels")
@@ -302,6 +302,40 @@ export class LinearCalendarSettingTab extends PluginSettingTab {
 						await this.plugin.saveSettings();
 					}),
 			);
+	}
+
+	private renderFontPicker(items: HTMLElement, opts: {
+		name: string;
+		desc: string;
+		getValue: () => FontChoice;
+		setValue: (value: FontChoice) => void;
+		getCustom: () => string;
+		setCustom: (value: string) => void;
+	}): void {
+		let customFontEl: Setting;
+		new Setting(items)
+			.setName(opts.name)
+			.setDesc(opts.desc)
+			.addDropdown((drop) => {
+				Object.entries(FONT_OPTIONS).forEach(([v, label]) => { drop.addOption(v, label); });
+				drop.setValue(opts.getValue()).onChange((value) => {
+					opts.setValue(value as FontChoice);
+					customFontEl.settingEl.style.display = value === "custom" ? "" : "none";
+					void this.plugin.saveSettings();
+				});
+			});
+		customFontEl = new Setting(items)
+			.setName("")
+			.addText((text) =>
+				text
+					.setPlaceholder('e.g. Inter, "DM Sans"')
+					.setValue(opts.getCustom())
+					.onChange((value) => {
+						opts.setCustom(value.trim());
+						void this.plugin.saveSettings();
+					}),
+			);
+		customFontEl.settingEl.style.display = opts.getValue() === "custom" ? "" : "none";
 	}
 
 	private renderColorMapSection(containerEl: HTMLElement, mapping: ColumnMapping): void {
