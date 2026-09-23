@@ -1,3 +1,4 @@
+import { debounce } from "obsidian";
 import type { TFile } from "obsidian";
 import type { AlignMode, DailyNoteStyle } from "../types";
 import { MAX_WATERFALL_COLS_VERT } from "../constants";
@@ -264,18 +265,17 @@ export class GridRenderer {
 				cellEl.style.setProperty("--lc-daily-color", computeSolidColor(this.dailyNoteColor));
 			}
 
-			let singleClickTimer: ReturnType<typeof setTimeout> | null = null;
-			cellEl.addEventListener("click", () => {
-				singleClickTimer = window.setTimeout(() => {
-					this.onDayClick?.(this.year, month, day);
-					singleClickTimer = null;
-				}, 220);
-			});
+			// Fires on a single click only once 220ms pass with no dblclick — debounce() with
+			// `resetTimer: true` both delays and (via `.cancel()`) disambiguates against a
+			// following dblclick.
+			const singleClickDebounced = debounce(
+				() => this.onDayClick?.(this.year, month, day),
+				220,
+				true,
+			);
+			cellEl.addEventListener("click", () => singleClickDebounced());
 			cellEl.addEventListener("dblclick", () => {
-				if (singleClickTimer) {
-					window.clearTimeout(singleClickTimer);
-					singleClickTimer = null;
-				}
+				singleClickDebounced.cancel();
 				this.onDayDblClick?.(this.year, month, day);
 			});
 		} else {
