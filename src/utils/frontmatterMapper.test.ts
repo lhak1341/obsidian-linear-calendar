@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { mapFrontmatterToItem, deriveReminderItem, extractDisplayFields, hasGateTag } from "./frontmatterMapper";
-import type { ColumnMapping, CalendarItem } from "../types";
+import type { ColumnMapping, RawCalendarItem } from "../types";
 
 const mapping: ColumnMapping = {
 	titleProp: "title",
@@ -196,7 +196,8 @@ describe("extractDisplayFields", () => {
 });
 
 describe("deriveReminderItem", () => {
-	const baseItem: CalendarItem = {
+	const baseItem: RawCalendarItem = {
+		kind: "event",
 		filePath: "note.md",
 		title: "Cleaning AC",
 		dateStart: new Date(2026, 7, 21),
@@ -217,11 +218,11 @@ describe("deriveReminderItem", () => {
 		expect(deriveReminderItem(baseItem, { remindon: "not-a-date" }, mapping)).toBeNull();
 	});
 
-	it("derives a ghost item at the remindOn date, single-day, isReminder true", () => {
+	it("derives a ghost item at the remindOn date, single-day, kind reminder", () => {
 		const ghost = deriveReminderItem(baseItem, { remindon: "2026-12-21" }, mapping);
 		expect(ghost?.dateStart).toEqual(new Date(2026, 11, 21));
 		expect(ghost?.dateEnd).toEqual(new Date(2026, 11, 21));
-		expect(ghost?.isReminder).toBe(true);
+		expect(ghost?.kind).toBe("reminder");
 	});
 
 	it("carries over filePath, title, tags, and icon from the source item", () => {
@@ -233,7 +234,7 @@ describe("deriveReminderItem", () => {
 	});
 
 	it("does not carry the source item's anniversary flag onto the ghost", () => {
-		const anniversaryItem: CalendarItem = { ...baseItem, anniversary: true };
+		const anniversaryItem: RawCalendarItem = { ...baseItem, anniversary: true };
 		const ghost = deriveReminderItem(anniversaryItem, { remindon: "2026-12-21" }, mapping);
 		expect(ghost?.anniversary).toBeUndefined();
 	});

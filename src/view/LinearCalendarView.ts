@@ -1,12 +1,12 @@
 import { ItemView, Menu, Notice, TFile, WorkspaceLeaf, debounce, setIcon } from "obsidian";
-import type { PluginSettings, ColumnMapping, CalendarItem } from "../types";
+import type { PluginSettings, ColumnMapping } from "../types";
 import { VIEW_TYPE_LINEAR_CALENDAR } from "../constants";
 import type { DataSource } from "../data/DataSource";
 import type { NoteCreator } from "../NoteCreator";
 import { CreateEventModal } from "../CreateEventModal";
 import { CalendarRenderer, RenderConfig } from "./CalendarRenderer";
+import { createInteractions } from "./calendarInteractions";
 import { createDailyNote, getDailyNoteMap } from "../utils/dailyNotes";
-import { commitDrag } from "../utils/frontmatterUtils";
 import { hasGateTag } from "../utils/frontmatterMapper";
 import { resolveFontVar } from "../utils/fonts";
 
@@ -82,6 +82,13 @@ export class LinearCalendarView extends ItemView {
 
 		const scrollWrapper = contentEl.createDiv({ cls: "linear-calendar-scroll" });
 
+		const interactions = createInteractions({
+			app: this.app,
+			noteCreator: this.noteCreator,
+			getSettings: () => this.settings,
+			rerender: () => this.renderBarsOnly(),
+		});
+
 		this.calendarRenderer = new CalendarRenderer(
 			this.app,
 			scrollWrapper,
@@ -100,21 +107,7 @@ export class LinearCalendarView extends ItemView {
 					}
 					this.renderBarsOnly();
 				},
-				onDropCommit: (filePath, oldStart, newStart, newEnd) =>
-					commitDrag(
-						this.app,
-						this.getMapping(),
-						this.settings.newEventFolder,
-						this.settings.newEventDateFormat,
-						filePath,
-						oldStart,
-						newStart,
-						newEnd,
-					),
-				onReminderClick: (item: CalendarItem) =>
-					void this.noteCreator.promoteReminder(item.filePath).then(() => this.renderBarsOnly()),
-				onEditNote: (filePath) =>
-					new CreateEventModal(this.app, this.noteCreator, this.settings, undefined, filePath).open(),
+				...interactions,
 			},
 		);
 

@@ -7,7 +7,9 @@ import type { MonthRowRef } from "./GridRenderer";
 import type { MonthSegment } from "../utils/segmentByMonth";
 import { groupSegmentsByMonth } from "../utils/segmentByMonth";
 import { assignRowsForMonth, type RowAssignment } from "../utils/rowAssignment";
+import { categoryOf } from "../utils/category";
 import { canDrag } from "../utils/dragUtils";
+import { eventNoteConfig, isInEventFolder } from "../utils/eventNotePath";
 import { DragHandler } from "./DragHandler";
 
 /** Data a bar carries for consumers (e.g. Tooltip) that need it without touching the DOM. */
@@ -61,7 +63,7 @@ export class BarRenderer {
 
 				barEl.addEventListener("click", (evt) => {
 					if (barEl.dataset.justDragged) return;
-					if (segment.item.isReminder) {
+					if (segment.item.kind === "reminder") {
 						this.onReminderClick?.(segment.item);
 						return;
 					}
@@ -110,7 +112,7 @@ export class BarRenderer {
 		tagColorMap: Map<string, string>,
 		tagIconMap: Map<string, string>,
 	): void {
-		const tag = segment.item.tags?.[0] ?? "__uncategorized__";
+		const tag = categoryOf(segment.item);
 		const resolvedIcon = segment.item.icon ?? tagIconMap.get(tag);
 		if (resolvedIcon) {
 			const iconEl = barEl.createSpan({ cls: "calendar-bar-icon" });
@@ -122,8 +124,8 @@ export class BarRenderer {
 		barEl.style.backgroundColor = bgColor;
 		barEl.style.color = getContrastColor(bgColor);
 
-		if (segment.item.anniversary) barEl.addClass("calendar-bar-anniversary");
-		if (segment.item.isReminder) barEl.addClass("calendar-bar-reminder");
+		if (segment.item.kind === "recurrence") barEl.addClass("calendar-bar-anniversary");
+		if (segment.item.kind === "reminder") barEl.addClass("calendar-bar-reminder");
 
 		this.barInfo.set(barEl, { item: segment.item, tagColor: bgColor });
 	}
@@ -166,9 +168,11 @@ export class BarRenderer {
 	/** Gates the "Edit event" menu item to notes the plugin's own Create-event flow could have
 	 *  written — i.e. sitting directly in `newEventFolder` (or vault root if that's unset). */
 	private isUnderNewEventFolder(filePath: string): boolean {
-		const folder = this.getSettings?.().newEventFolder;
-		const dir = filePath.slice(0, filePath.lastIndexOf("/"));
-		return folder ? dir === folder : dir === "";
+		const settings = this.getSettings?.();
+		if (!settings) return false;
+		const slash = filePath.lastIndexOf("/");
+		const dir = slash < 0 ? "" : filePath.slice(0, slash);
+		return isInEventFolder(dir, eventNoteConfig(settings));
 	}
 
 }

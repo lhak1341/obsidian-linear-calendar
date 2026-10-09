@@ -8,7 +8,7 @@ import type { DataSource, ScannerCache } from "./data/DataSource";
 import { ObsidianNoteCreator } from "./NoteCreator";
 import { CreateEventModal } from "./CreateEventModal";
 import { CalendarRenderer, RenderConfig } from "./view/CalendarRenderer";
-import { commitDrag } from "./utils/frontmatterUtils";
+import { createInteractions } from "./view/calendarInteractions";
 import { buildTagColorMap } from "./utils/colorUtils";
 import { getDailyNoteMap } from "./utils/dailyNotes";
 import { registerLucideIcons } from "./lucide-icons";
@@ -117,6 +117,13 @@ export default class LinearCalendarPlugin extends Plugin {
 
 		let render!: () => void;
 
+		const interactions = createInteractions({
+			app: this.app,
+			noteCreator: this.noteCreator,
+			getSettings: () => this.settings,
+			rerender: () => render(),
+		});
+
 		const renderer = new CalendarRenderer(
 			this.app,
 			container,
@@ -130,20 +137,7 @@ export default class LinearCalendarPlugin extends Plugin {
 					else hiddenCategories.add(tag);
 					render();
 				},
-				onDropCommit: (filePath, oldStart, newStart, newEnd) =>
-					commitDrag(
-						this.app,
-						this.settings.defaultMapping,
-						this.settings.newEventFolder,
-						this.settings.newEventDateFormat,
-						filePath,
-						oldStart,
-						newStart,
-						newEnd,
-					),
-				onReminderClick: (item) => void this.noteCreator.promoteReminder(item.filePath).then(() => render()),
-				onEditNote: (filePath) =>
-					new CreateEventModal(this.app, this.noteCreator, this.settings, undefined, filePath).open(),
+				...interactions,
 			},
 		);
 

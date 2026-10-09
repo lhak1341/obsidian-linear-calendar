@@ -5,6 +5,7 @@ import type { MonthSegment } from "./segmentByMonth";
 function seg(startDay: number, endDay: number): MonthSegment {
 	return {
 		item: {
+			kind: "event",
 			filePath: "f.md",
 			title: "T",
 			dateStart: new Date(2024, 0, startDay),

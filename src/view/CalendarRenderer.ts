@@ -3,7 +3,7 @@ import type { TFile } from "obsidian";
 import type { CalendarItem, ColumnMapping, PluginSettings, AlignMode, DropCommitFn } from "../types";
 import type { DataSource } from "../data/DataSource";
 import { buildTagColorMap } from "../utils/colorUtils";
-import { formatTagLabel } from "../utils/tagUtils";
+import { categoryLabel, countByCategory, visibleItems } from "../utils/category";
 import { GridRenderer } from "./GridRenderer";
 import type { MonthRowRef } from "./GridRenderer";
 import { BarRenderer } from "./BarRenderer";
@@ -146,10 +146,7 @@ export class CalendarRenderer {
 		const allItems = this.source.scan(this.getMapping(), year);
 		const tagColorMap = buildTagColorMap(allItems, colorMap);
 
-		const items = allItems.filter((item) => {
-			const tag = item.tags?.[0];
-			return tag ? !hiddenCategories.has(tag) : !hiddenCategories.has("__uncategorized__");
-		});
+		const items = visibleItems(allItems, hiddenCategories);
 
 		return { allItems, items, tagColorMap };
 	}
@@ -175,11 +172,7 @@ export class CalendarRenderer {
 				return false;
 			});
 
-		const categories = new Map<string, number>();
-		for (const item of countItems) {
-			const tag = item.tags?.[0] ?? "__uncategorized__";
-			categories.set(tag, (categories.get(tag) ?? 0) + 1);
-		}
+		const categories = countByCategory(countItems);
 
 		if (categories.size <= 1) {
 			if (this.lastCategoriesSig !== null) {
@@ -201,9 +194,7 @@ export class CalendarRenderer {
 
 		for (const [tag, count] of categories) {
 			const isHidden = hiddenCategories.has(tag);
-			const displayName = tag === "__uncategorized__"
-				? "Other"
-				: formatTagLabel(tag);
+			const displayName = categoryLabel(tag);
 			const color = tagColorMap.get(tag) ?? "#888";
 
 			const chip = el.createDiv({

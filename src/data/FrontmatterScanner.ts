@@ -1,12 +1,12 @@
 import type { App, TFile } from "obsidian";
-import type { CalendarItem, ColumnMapping } from "../types";
+import type { CalendarItem, ColumnMapping, RawCalendarItem } from "../types";
 import type { DataSource, ScannerCache } from "./DataSource";
-import { projectAnniversaryDates } from "../utils/dateUtils";
+import { expandForYear } from "../utils/calendarItems";
 import { mapFrontmatterToItem, deriveReminderItem } from "../utils/frontmatterMapper";
 
 interface CacheEntry {
 	mtime: number;
-	items: CalendarItem[]; // empty = file has no valid calendar data. A note can yield its real item plus a reminder ghost.
+	items: RawCalendarItem[]; // empty = file has no valid calendar data. A note can yield its real item plus a reminder ghost.
 }
 
 export class FrontmatterScanner implements DataSource, ScannerCache {
@@ -53,31 +53,9 @@ export class FrontmatterScanner implements DataSource, ScannerCache {
 			return this.sortedItems;
 		}
 
-		// Collect and filter by year
-		const items: CalendarItem[] = [];
-		const yearStart = new Date(year, 0, 1);
-		const yearEnd = new Date(year, 11, 31);
-
-		for (const entry of this.cache.values()) {
-			for (const rawItem of entry.items) {
-				let { dateStart, dateEnd } = rawItem;
-
-				// Anniversary: project month/day into the current year for past events
-				const isProjected = rawItem.anniversary === true && dateStart.getFullYear() < year;
-				if (isProjected) {
-					({ dateStart, dateEnd } = projectAnniversaryDates(dateStart, dateEnd, year));
-				}
-
-				if (dateStart > yearEnd || dateEnd < yearStart) continue;
-
-				items.push({
-					...rawItem,
-					anniversary: isProjected || undefined,
-					dateStart: dateStart < yearStart ? yearStart : dateStart,
-					dateEnd: dateEnd > yearEnd ? yearEnd : dateEnd,
-				});
-			}
-		}
+		const rawItems: RawCalendarItem[] = [];
+		for (const entry of this.cache.values()) rawItems.push(...entry.items);
+		const items = expandForYear(rawItems, year);
 
 		items.sort((a, b) => a.dateStart.getTime() - b.dateStart.getTime());
 		this.sortedItems = items;
@@ -85,7 +63,7 @@ export class FrontmatterScanner implements DataSource, ScannerCache {
 		return items;
 	}
 
-	private processFile(file: TFile, mapping: ColumnMapping): CalendarItem[] {
+	private processFile(file: TFile, mapping: ColumnMapping): RawCalendarItem[] {
 		const cache = this.app.metadataCache.getFileCache(file);
 		const frontmatter = cache?.frontmatter;
 		const inlineTags = (cache?.tags ?? []).map((t) => t.tag);

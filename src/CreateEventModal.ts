@@ -2,8 +2,10 @@ import { App, Modal, Setting, TFile, moment } from "obsidian";
 import type { NoteCreator } from "./NoteCreator";
 import type { PluginSettings } from "./types";
 import { IconField } from "./IconField";
+import { formatTagLabel } from "./utils/tagUtils";
 import { parseDateString } from "./utils/dateUtils";
 import { extractDisplayFields } from "./utils/frontmatterMapper";
+import { eventNoteConfig, fileBaseName } from "./utils/eventNotePath";
 
 const pad = (n: number) => String(n).padStart(2, "0");
 const toInputDate = (date: Date) => `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
@@ -98,7 +100,7 @@ export class CreateEventModal extends Modal {
 			.addDropdown((dd) => {
 				dd.addOption("", "Uncategorized");
 				for (const tag of tagOptions) {
-					dd.addOption(tag, tag.replace(/^linear-calendar\//, ""));
+					dd.addOption(tag, formatTagLabel(tag));
 				}
 				dd.setValue(this.tag).onChange((value) => {
 					this.tag = value;
@@ -252,12 +254,9 @@ export class CreateEventModal extends Modal {
 			this.filenamePreviewEl.setText("");
 			return;
 		}
-		const fmt = this.settings.newEventDateFormat || "YYYY-MM-DD";
-		const datePart = (moment as unknown as (d: Date) => { format(f: string): string })(date).format(fmt);
-		const trimmedTitle = this.title.trim();
-		const safeTitle = trimmedTitle ? trimmedTitle.replace(/[\\/:*?"<>|]/g, "-") : "Untitled";
-		const folder = this.settings.newEventFolder;
-		const name = `${datePart} ${safeTitle}.md`;
+		const cfg = eventNoteConfig(this.settings);
+		const folder = cfg.folder;
+		const name = `${fileBaseName(date, this.title, cfg)}.md`;
 		this.filenamePreviewEl.setText(`Will be created as: ${folder ? `${folder}/${name}` : name}`);
 	}
 

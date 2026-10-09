@@ -496,6 +496,7 @@ body.lc-drag-cursor-resize {
 	pointer-events: none;
 	max-width: 220px;
 	font-size: 11px;
+	overflow-wrap: anywhere;
 }
 
 .tooltip-title {
@@ -515,6 +516,12 @@ body.lc-drag-cursor-resize {
 .tooltip-dates {
 	color: var(--text-muted);
 	font-size: 10px;
+}
+
+.tooltip-age {
+	color: var(--text-muted);
+	font-size: 10px;
+	font-weight: 600;
 }
 
 .tooltip-tag-chip {
@@ -538,6 +545,12 @@ body.lc-drag-cursor-resize {
 	font-size: 10px;
 	margin-top: 4px;
 	white-space: pre-wrap;
+	overflow-wrap: anywhere;
+	display: -webkit-box;
+	-webkit-box-orient: vertical;
+	-webkit-line-clamp: 6;
+	line-clamp: 6;
+	overflow: hidden;
 }
 
 /* ---- Scrollbar ---- */

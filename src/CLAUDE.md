@@ -9,7 +9,7 @@
 - Types used only internally by those two (e.g. `RenderConfig`) are **not** part of the
   coordinated surface.
 - The dashboard only calls `mountMonthStrip`, never `getCalendarData` — `CalendarItem`'s
-  field shape (e.g. `isReminder`/`anniversary`) is free to reshape without cross-repo
+  field shape (e.g. `kind`/`originYear`) is free to reshape without cross-repo
   coordination.
 - `mountMonthStrip`'s `alignMode` is hardcoded to `"date"` regardless of
   `settings.alignMode`. Intentional for the single-month embed context — don't fold it

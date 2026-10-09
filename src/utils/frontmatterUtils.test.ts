@@ -68,8 +68,7 @@ describe("commitDrag", () => {
 		await commitDrag(
 			app,
 			mapping,
-			"Events",
-			"YYYY-MM-DD",
+			{ folder: "Events", format: "YYYY-MM-DD" },
 			"Events/2026-03-01 Talk.md",
 			new Date(2026, 2, 1),
 			new Date(2026, 2, 11),
@@ -89,8 +88,7 @@ describe("commitDrag", () => {
 		await commitDrag(
 			app,
 			mapping,
-			"Events",
-			"YYYY-MM-DD",
+			{ folder: "Events", format: "YYYY-MM-DD" },
 			"Events/2026-03-01 Talk.md",
 			new Date(2026, 2, 1),
 			new Date(2026, 2, 2),
@@ -109,8 +107,7 @@ describe("commitDrag", () => {
 		await commitDrag(
 			app,
 			mapping,
-			"Events",
-			"YYYY-MM-DD",
+			{ folder: "Events", format: "YYYY-MM-DD" },
 			"Events/2026-03-01 Talk.md",
 			new Date(2026, 2, 1),
 			new Date(2026, 2, 4),
@@ -130,8 +127,7 @@ describe("commitDrag", () => {
 		await commitDrag(
 			app,
 			mapping,
-			"Events",
-			"YYYY-MM-DD",
+			{ folder: "Events", format: "YYYY-MM-DD" },
 			"Events/2026-03-01 Talk.md",
 			new Date(2026, 2, 1),
 			new Date(2026, 2, 4),
@@ -149,8 +145,7 @@ describe("commitDrag", () => {
 		await commitDrag(
 			app,
 			mapping,
-			"Events",
-			"YYYY-MM-DD",
+			{ folder: "Events", format: "YYYY-MM-DD" },
 			"Archive/2026-03-01 Talk.md",
 			new Date(2026, 2, 1),
 			new Date(2026, 2, 4),

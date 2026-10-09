@@ -1,9 +1,8 @@
-import { App, TFile, moment, normalizePath } from "obsidian";
+import { App, TFile, normalizePath } from "obsidian";
 import type { ColumnMapping } from "../types";
+import { datePrefix, hasDatePrefix, isInEventFolder, type EventNoteConfig } from "./eventNotePath";
 import { carryDateForward, formatISODate, parseDateString } from "./dateUtils";
 
-const formatDate = (d: Date, fmt: string) =>
-	(moment as unknown as (date: Date) => { format(f: string): string })(d).format(fmt);
 
 /**
  * Resolves the tags array to write for a note: strips any existing bare `linear-calendar`
@@ -58,22 +57,19 @@ async function writeDragDates(
 async function renameForDragDateChange(
 	app: App,
 	filePath: string,
-	newEventFolder: string,
-	newEventDateFormat: string,
+	cfg: EventNoteConfig,
 	oldStart: Date,
 	newStart: Date,
 ): Promise<void> {
 	const file = app.vault.getAbstractFileByPath(filePath);
 	if (!(file instanceof TFile) || !file.parent) return;
 
-	const expectedParent = newEventFolder ? normalizePath(newEventFolder) : "/";
-	if (file.parent.path !== expectedParent) return;
+	if (!isInEventFolder(file.parent.path, cfg)) return;
 
-	const fmt = newEventDateFormat || "YYYY-MM-DD";
-	const oldPrefix = formatDate(oldStart, fmt);
-	const newPrefix = formatDate(newStart, fmt);
+	const oldPrefix = datePrefix(oldStart, cfg);
+	const newPrefix = datePrefix(newStart, cfg);
 	if (oldPrefix === newPrefix) return;
-	if (!file.basename.startsWith(`${oldPrefix} `)) return;
+	if (!hasDatePrefix(file.basename, oldStart, cfg)) return;
 
 	const rest = file.basename.slice(oldPrefix.length);
 	const parentPrefix = file.parent.path === "/" ? "" : `${file.parent.path}/`;
@@ -93,8 +89,7 @@ async function renameForDragDateChange(
 export async function commitDrag(
 	app: App,
 	mapping: ColumnMapping,
-	newEventFolder: string,
-	newEventDateFormat: string,
+	cfg: EventNoteConfig,
 	filePath: string,
 	oldStart: Date,
 	newStart: Date,
@@ -102,7 +97,7 @@ export async function commitDrag(
 ): Promise<void> {
 	try {
 		await writeDragDates(app, filePath, mapping, oldStart, newStart, newEnd);
-		await renameForDragDateChange(app, filePath, newEventFolder, newEventDateFormat, oldStart, newStart);
+		await renameForDragDateChange(app, filePath, cfg, oldStart, newStart);
 	} catch (err) {
 		console.error("[linear-calendar] drag write failed:", err);
 	}

@@ -2,6 +2,8 @@ import { App, PluginSettingTab, Setting, type ColorComponent } from "obsidian";
 import type LinearCalendarPlugin from "./main";
 import { COLOR_PALETTE } from "./constants";
 import { buildTagColorMap } from "./utils/colorUtils";
+import { categoryLabel } from "./utils/category";
+import { formatTagLabel } from "./utils/tagUtils";
 import type { AlignMode, ColumnMapping, DailyNoteStyle, FontChoice } from "./types";
 import { IconField } from "./IconField";
 
@@ -361,7 +363,7 @@ export class LinearCalendarSettingTab extends PluginSettingTab {
 		const iconMap = this.plugin.settings.iconMap;
 		const items = containerEl.createDiv("setting-group").createDiv("setting-items");
 		for (const [tag, color] of entries) {
-			const shortName = tag.replace(/^linear-calendar\//, "");
+			const shortName = formatTagLabel(tag);
 			new Setting(items)
 				.setName("")
 				.then((setting) => {
@@ -420,7 +422,7 @@ export class LinearCalendarSettingTab extends PluginSettingTab {
 		const detectedItems = containerEl.createDiv("setting-group").createDiv("setting-items");
 
 		for (const [tag, color] of unpinned) {
-			const shortName = tag === "__uncategorized__" ? "Other" : tag.replace(/^linear-calendar\//, "");
+			const shortName = categoryLabel(tag);
 			new Setting(detectedItems)
 				.setName("")
 				.then((setting) => {

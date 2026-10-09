@@ -1,10 +1,11 @@
 import type { CalendarItem } from "../types";
 import { COLOR_PALETTE } from "../constants";
+import { categoryOf } from "./category";
 
 /**
  * Build a stable tag→color map from ALL items.
  * User-defined colorMap takes priority, then palette assignment
- * in order of first appearance. Uncategorized items get "__uncategorized__".
+ * in order of first appearance. Uncategorized items get UNCATEGORIZED.
  */
 export function buildTagColorMap(
 	items: CalendarItem[],
@@ -14,7 +15,7 @@ export function buildTagColorMap(
 	let paletteIdx = 0;
 
 	for (const item of items) {
-		const tag = item.tags?.[0] ?? "__uncategorized__";
+		const tag = categoryOf(item);
 		if (map.has(tag)) continue;
 
 		const userColor = colorMap[tag];

@@ -49,10 +49,16 @@
 - LinearCalendarView has no ResizeObserver: CSS grid `1fr` columns adapt to container resize natively — no JS re-render needed. Adding one causes a full 372-node rebuild on every panel resize.
 - `mountMonthStrip` in main.ts legitimately uses ResizeObserver because it renders a single fixed-month strip whose width is dynamically constrained by an external host view.
 
-## onDropCommit signature
+## Note-mutating callbacks
 
-`DropCommitFn` (in `types.ts`) is the one named type — `DragHandler`, `BarRenderer`, and `CalendarRenderer`'s `CalendarRendererCallbacks` all import it instead of redeclaring the signature. Two call sites (`main.ts`'s `mountMonthStrip`, `LinearCalendarView.ts`) still satisfy it via inferred object-literal properties with no annotation — a signature change there is still a silent-compatible-shape risk, just no longer a 3-way copy-paste risk on the declaration side.
+`onDropCommit`/`onReminderClick`/`onEditNote` come from `createInteractions()` (`calendarInteractions.ts`), spread into `CalendarRenderer`'s callbacks by both `LinearCalendarView` and `mountMonthStrip`. Add a new one there, not inline in a host; construction and resize policy stay per-host (ADR-0001).
 
 ## Testing mountMonthStrip for a specific month without faking the date
 
 `mountMonthStrip` always starts on the current month, but its returned handle exposes `next()`/`prev()`/`today()`. Mount a throwaway instance via `eval` (append a scratch div, call `plugin.mountMonthStrip(containerEl, catsEl)`, keep the handle on `window`), then call `.next()`/`.prev()` to walk to any month for inspection — call `.destroy()` and remove the div when done. Avoids needing a real date in a short month to test short-month-specific rendering.
+
+## Live-testing the view via `obsidian eval`
+
+- Vault has native menus on, so a context menu has no DOM to read: call the handler directly (`view.calendarRenderer.barRenderer.<fn>`, `view.calendarRenderer.callbacks.<fn>`) instead of dispatching `contextmenu`.
+- The view restores its persisted `year` — set it first (`view.setState({...view.getState(), year}, {history:false})`) or DOM counts reflect whatever year was last open.
+- Write tests against `lhakZettel` with throwaway notes (`zz` prefix, far-future dates) and trash them in `finally`.

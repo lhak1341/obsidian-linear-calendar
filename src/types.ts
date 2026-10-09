@@ -5,7 +5,7 @@ export type FontChoice = "plugin" | "obsidian-interface" | "obsidian-text" | "ob
 /** Writes a drag-committed date change to a note's frontmatter. */
 export type DropCommitFn = (filePath: string, oldStart: Date, newStart: Date, newEnd: Date) => Promise<void>;
 
-export interface CalendarItem {
+export interface CalendarItemBase {
 	filePath: string;
 	title: string;
 	dateStart: Date;
@@ -13,11 +13,20 @@ export interface CalendarItem {
 	color?: string;
 	tags?: string[];
 	icon?: string;
-	anniversary?: boolean;
 	description?: string;
-	/** True for a synthetic ghost item rendered from another note's remindProp — filePath still points at that source note. */
-	isReminder?: boolean;
 }
+
+/**
+ * What a bar on the calendar is:
+ * - `event`: a note's own dates (including an anniversary note in its origin year).
+ * - `recurrence`: a copy of an anniversary note projected into a later year; `originYear` is the note's own dateStart year.
+ * - `reminder`: a synthetic ghost rendered from another note's remindProp — filePath still points at that source note.
+ */
+export type CalendarItem = CalendarItemBase &
+	({ kind: "event" | "reminder" } | { kind: "recurrence"; originYear: number });
+
+/** What a note yields before `expandForYear` decides per-year kind. `anniversary` = repeats yearly. */
+export type RawCalendarItem = CalendarItemBase & { kind: "event" | "reminder"; anniversary?: boolean };
 
 export interface ColumnMapping {
 	titleProp: string; // "__filename__" = use note name, otherwise frontmatter key

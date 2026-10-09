@@ -1,6 +1,9 @@
 import { formatDateRange } from "../utils/dateUtils";
+import { ageOn } from "../utils/calendarItems";
 import { formatTagLabel } from "../utils/tagUtils";
 import type { BarInfo } from "./BarRenderer";
+
+const BIRTHDAY_TAG = "linear-calendar/birthday";
 
 export class Tooltip {
 	private el: HTMLElement;
@@ -55,6 +58,11 @@ export class Tooltip {
 				dot.style.backgroundColor = tagColor || "#888";
 				chip.createSpan({ text: formatTagLabel(tag) });
 			}
+		}
+
+		const age = ageOn(item);
+		if (age !== undefined && item.tags?.includes(BIRTHDAY_TAG)) {
+			metaRow.createSpan({ cls: "tooltip-age", text: `Turns ${age}` });
 		}
 
 		if (item.description) {

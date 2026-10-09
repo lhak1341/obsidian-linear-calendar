@@ -14,6 +14,7 @@ describe("getContrastColor", () => {
 
 function makeItem(tag?: string): CalendarItem {
 	return {
+		kind: "event",
 		filePath: "f.md",
 		title: "T",
 		dateStart: new Date("2024-01-01"),

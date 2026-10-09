@@ -1,4 +1,4 @@
-import { App, Notice, TFile, moment, normalizePath } from "obsidian";
+import { App, Notice, TFile, normalizePath } from "obsidian";
 
 interface TemplaterPlugin {
 	templater: { write_template_to_file(template: TFile, target: TFile): Promise<void> };
@@ -8,6 +8,7 @@ import type { PluginSettings, ColumnMapping } from "./types";
 import { parseDateString, formatISODate, carryDateForward } from "./utils/dateUtils";
 import { extractDisplayFields } from "./utils/frontmatterMapper";
 import { resolveCalendarTags } from "./utils/frontmatterUtils";
+import { eventNoteConfig, fileBaseName, stripDatePrefix } from "./utils/eventNotePath";
 
 export interface CreateEventOptions {
 	title?: string;
@@ -56,13 +57,10 @@ export class ObsidianNoteCreator implements NoteCreator {
 		try {
 			const dateStr = formatISODate(date);
 			const mapping = this.getMapping();
-			const folder = this.settings.newEventFolder;
-			const fmt = this.settings.newEventDateFormat || "YYYY-MM-DD";
-			const datePart = (moment as unknown as (d: Date) => { format(f: string): string })(date).format(fmt);
+			const cfg = eventNoteConfig(this.settings);
+			const folder = cfg.folder;
 
 			const trimmedTitle = options.title?.trim();
-			// Filenames can't contain these characters on any OS Obsidian runs on.
-			const safeTitle = trimmedTitle ? trimmedTitle.replace(/[\\/:*?"<>|]/g, "-") : "Untitled";
 			const trimmedIcon = options.icon?.trim();
 			const trimmedDescription = options.description?.trim();
 			const endDateStr = options.dateEnd ? formatISODate(options.dateEnd) : undefined;
@@ -75,7 +73,8 @@ export class ObsidianNoteCreator implements NoteCreator {
 				}
 			}
 
-			const base = folder ? `${folder}/${datePart} ${safeTitle}` : `${datePart} ${safeTitle}`;
+			const baseName = fileBaseName(date, options.title, cfg);
+			const base = folder ? `${folder}/${baseName}` : baseName;
 			let path = normalizePath(`${base}.md`);
 			let counter = 1;
 			while (this.app.vault.getAbstractFileByPath(path)) {
@@ -205,12 +204,7 @@ export class ObsidianNoteCreator implements NoteCreator {
 			// Notes created by this plugin are named "{oldDateFormat} {title}" — strip that
 			// date prefix before reusing the basename as a title, so promoting doesn't stack
 			// two date prefixes into the new filename.
-			const dateFmt = this.settings.newEventDateFormat || "YYYY-MM-DD";
-			const formatMoment = (d: Date) => (moment as unknown as (dt: Date) => { format(f: string): string })(d).format(dateFmt);
-			const oldPrefix = formatMoment(oldDateStart);
-			const strippedBasename = sourceFile.basename.startsWith(`${oldPrefix} `)
-				? sourceFile.basename.slice(oldPrefix.length + 1)
-				: sourceFile.basename;
+			const strippedBasename = stripDatePrefix(sourceFile.basename, oldDateStart, eventNoteConfig(this.settings));
 
 			const title = mapping.titleProp === "__filename__"
 				? strippedBasename

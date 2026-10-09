@@ -9,10 +9,11 @@ import {
 	canDrag,
 	type RowOccupancy,
 } from "./dragUtils";
-import type { CalendarItem } from "../types";
+import type { CalendarItem, CalendarItemBase } from "../types";
 
-function makeItem(overrides: Partial<CalendarItem> = {}): CalendarItem {
+function makeItem(overrides: Partial<CalendarItemBase> = {}): CalendarItem {
 	return {
+		kind: "event",
 		filePath: "note.md",
 		title: "Note",
 		dateStart: new Date(2026, 7, 21),
@@ -278,6 +279,7 @@ describe("newDatesFromDelta", () => {
 
 describe("canDrag", () => {
 	it("normal item is draggable", () => expect(canDrag(makeItem())).toBe(true));
-	it("anniversary projection is not draggable", () => expect(canDrag(makeItem({ anniversary: true }))).toBe(false));
-	it("reminder ghost is not draggable", () => expect(canDrag(makeItem({ isReminder: true }))).toBe(false));
+	it("recurrence projection is not draggable", () =>
+		expect(canDrag({ ...makeItem(), kind: "recurrence", originYear: 2020 })).toBe(false));
+	it("reminder ghost is not draggable", () => expect(canDrag({ ...makeItem(), kind: "reminder" })).toBe(false));
 });

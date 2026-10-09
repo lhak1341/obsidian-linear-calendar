@@ -1,4 +1,4 @@
-import type { CalendarItem, ColumnMapping } from "../types";
+import type { RawCalendarItem, ColumnMapping } from "../types";
 import { parseDateString } from "./dateUtils";
 
 export interface MappedDisplayFields {
@@ -71,7 +71,7 @@ export function mapFrontmatterToItem(
 	filePath: string,
 	basename: string,
 	mapping: ColumnMapping,
-): CalendarItem | null {
+): RawCalendarItem | null {
 	if (!frontmatter) return null;
 	if (!hasGateTag(frontmatter.tags, inlineTags)) return null;
 
@@ -96,6 +96,7 @@ export function mapFrontmatterToItem(
 	const { tags, icon, anniversary, description } = extractDisplayFields(frontmatter, mapping);
 
 	return {
+		kind: "event",
 		filePath,
 		title,
 		dateStart,
@@ -113,13 +114,13 @@ export function mapFrontmatterToItem(
  * itself onto a future date as a reminder. Returns null when remindProp is
  * unset or unparseable. The ghost has no independent existence: it shares the
  * source note's filePath, title, tags, and icon, just a different single-day
- * dateStart/dateEnd and isReminder: true.
+ * dateStart/dateEnd and kind "reminder".
  */
 export function deriveReminderItem(
-	item: CalendarItem,
+	item: RawCalendarItem,
 	frontmatter: Record<string, unknown>,
 	mapping: ColumnMapping,
-): CalendarItem | null {
+): RawCalendarItem | null {
 	if (!mapping.remindProp) return null;
 
 	const remindRaw = frontmatter[mapping.remindProp];
@@ -133,6 +134,6 @@ export function deriveReminderItem(
 		dateStart: remindOn,
 		dateEnd: remindOn,
 		anniversary: undefined,
-		isReminder: true,
+		kind: "reminder",
 	};
 }

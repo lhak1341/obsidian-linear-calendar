@@ -8,9 +8,9 @@ export interface GhostSeg {
 
 export type RowOccupancy = Map<number, [number, number][]>;
 
-/** Anniversary projections and reminder ghosts have no independent frontmatter to drag-write to. */
+/** Recurrence projections and reminder ghosts have no independent frontmatter to drag-write to. */
 export function canDrag(item: CalendarItem): boolean {
-	return !item.anniversary && !item.isReminder;
+	return item.kind === "event";
 }
 
 export function addDays(date: Date, days: number): Date {

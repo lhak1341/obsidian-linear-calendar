@@ -11,7 +11,7 @@ Dual-prefix tag gating (`frontmatter.tags` vs `cache.tags[].tag`) — see `utils
 
 ## Category = tags[0]
 
-Category comes from the first `linear-calendar/*` subtag surviving the filter in `mapFrontmatterToItem()` (`utils/frontmatterMapper.ts`) — when writing tags programmatically, put the desired category subtag first in the array.
+Defined in `utils/category.ts` (`categoryOf`) — the first `linear-calendar/*` subtag surviving the filter in `mapFrontmatterToItem()`. When writing tags programmatically, put the desired category subtag first in the array.
 
 ## Stale cache when rapidly recreating a test note
 

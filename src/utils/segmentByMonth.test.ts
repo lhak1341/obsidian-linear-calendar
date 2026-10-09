@@ -4,6 +4,7 @@ import type { CalendarItem } from "../types";
 
 function item(startStr: string, endStr: string): CalendarItem {
 	return {
+		kind: "event",
 		filePath: "test.md",
 		title: "Test",
 		dateStart: new Date(startStr),
