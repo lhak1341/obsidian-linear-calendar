@@ -1,4 +1,4 @@
-import { App, Modal, Setting, TFile, moment } from "obsidian";
+import { App, Modal, Notice, Setting, TFile, moment } from "obsidian";
 import type { NoteCreator } from "./NoteCreator";
 import type { PluginSettings } from "./types";
 import { IconField } from "./IconField";
@@ -231,7 +231,8 @@ export class CreateEventModal extends Modal {
 			.addButton((btn) => btn.setButtonText(this.isEditing ? "Save" : "Create").setCta().onClick(() => this.submit()));
 
 		this.contentEl.addEventListener("keydown", (event: KeyboardEvent) => {
-			if (event.key === "Enter") {
+			// Only plain text-ish inputs submit: Enter must stay a newline in the textarea and a click on buttons/selects.
+			if (event.key === "Enter" && !event.isComposing && !event.defaultPrevented && event.target instanceof HTMLInputElement) {
 				event.preventDefault();
 				this.submit();
 			}
@@ -272,6 +273,11 @@ export class CreateEventModal extends Modal {
 	private submit(): void {
 		const date = parseInputDate(this.dateStr);
 		if (!date) return;
+		const dateEnd = parseInputDate(this.dateEndStr);
+		if (dateEnd && dateEnd < date) {
+			new Notice("End date is before the start date.");
+			return;
+		}
 		const remindProp = this.settings.defaultMapping.remindProp;
 		const remindDate = remindProp && this.remindEnabled ? this.computeRemindDate(date) : undefined;
 		const options = {
@@ -279,7 +285,7 @@ export class CreateEventModal extends Modal {
 			tag: this.tag || undefined,
 			icon: this.icon || undefined,
 			anniversary: this.anniversary,
-			dateEnd: parseInputDate(this.dateEndStr),
+			dateEnd,
 			description: this.description || undefined,
 			extraFrontmatter: remindProp && remindDate ? { [remindProp]: toInputDate(remindDate) } : undefined,
 			openAfterCreate: false,

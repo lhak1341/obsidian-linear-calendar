@@ -10,6 +10,8 @@ import { projectAnniversaryDates } from "./dateUtils";
 export function expandForYear(rawItems: RawCalendarItem[], year: number): CalendarItem[] {
 	const yearStart = new Date(year, 0, 1);
 	const yearEnd = new Date(year, 11, 31);
+	// Exclusive bound: a start at Dec 31 with a time-of-day is still inside the year.
+	const nextYearStart = new Date(year + 1, 0, 1);
 	const items: CalendarItem[] = [];
 
 	for (const raw of rawItems) {
@@ -21,10 +23,12 @@ export function expandForYear(rawItems: RawCalendarItem[], year: number): Calend
 			({ dateStart, dateEnd } = projectAnniversaryDates(dateStart, dateEnd, year));
 		}
 
-		if (dateStart > yearEnd || dateEnd < yearStart) continue;
+		if (dateStart >= nextYearStart || dateEnd < yearStart) continue;
 
 		const clamped = {
 			...base,
+			fullStart: dateStart,
+			fullEnd: dateEnd,
 			dateStart: dateStart < yearStart ? yearStart : dateStart,
 			dateEnd: dateEnd > yearEnd ? yearEnd : dateEnd,
 		};

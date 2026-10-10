@@ -50,7 +50,7 @@ export class Tooltip {
 		this.el.createDiv({ cls: "tooltip-title", text: item.title });
 
 		const metaRow = this.el.createDiv({ cls: "tooltip-meta" });
-		metaRow.createSpan({ cls: "tooltip-dates", text: formatDateRange(item.dateStart, item.dateEnd) });
+		metaRow.createSpan({ cls: "tooltip-dates", text: formatDateRange(item.fullStart ?? item.dateStart, item.fullEnd ?? item.dateEnd) });
 		if (item.tags?.length) {
 			for (const tag of item.tags) {
 				const chip = metaRow.createSpan({ cls: "tooltip-tag-chip" });

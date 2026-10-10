@@ -15,8 +15,8 @@
     "semantic_hash": "8edcd8bd3124814963f348579f3b9737"
   },
   "src/NoteCreator.ts": {
-    "mtime": 1791553469.5229595,
-    "ast_hash": "6d1776cb715a984da3a5cbb904382375",
+    "mtime": 1791623115.462694,
+    "ast_hash": "7cf51e96d4b7d3b373bdc911509db912",
     "semantic_hash": ""
   },
   "src/main.ts": {
@@ -30,8 +30,8 @@
     "semantic_hash": ""
   },
   "src/types.ts": {
-    "mtime": 1791552844.609986,
-    "ast_hash": "8dc41a09a0e4b629b85c75aad476f68f",
+    "mtime": 1791623115.4579732,
+    "ast_hash": "dbc58c93e83f67b08725fd0b4fc73364",
     "semantic_hash": ""
   },
   "src/constants.ts": {
@@ -40,8 +40,8 @@
     "semantic_hash": ""
   },
   "src/CreateEventModal.ts": {
-    "mtime": 1791554308.6748004,
-    "ast_hash": "32fcaee340184d11574c71ca864a7c00",
+    "mtime": 1791623115.4634666,
+    "ast_hash": "c7810845466e1b17ebb5f7ce04ad596a",
     "semantic_hash": ""
   },
   "src/IconSuggest.ts": {
@@ -90,13 +90,13 @@
     "semantic_hash": ""
   },
   "src/view/LinearCalendarView.ts": {
-    "mtime": 1791554029.2283552,
-    "ast_hash": "66571085f193f8bd9943f40207fa7ef0",
+    "mtime": 1791623115.4642591,
+    "ast_hash": "db0bd744353c8b71f6e2d47233d2aa59",
     "semantic_hash": ""
   },
   "src/view/DragHandler.ts": {
-    "mtime": 1787314915.0881124,
-    "ast_hash": "f0b01be164d6a207571e1fd143ad9c30",
+    "mtime": 1791623115.4617133,
+    "ast_hash": "e57901429cf64459ca17be9e448fdf6d",
     "semantic_hash": ""
   },
   "src/view/NowIndicator.ts": {
@@ -105,13 +105,13 @@
     "semantic_hash": "21d0ec73ca11a7b129084d57d1f2ff0b"
   },
   "src/view/CalendarRenderer.ts": {
-    "mtime": 1791554308.6727934,
-    "ast_hash": "103bc823de6d6be3048942ff091de32f",
+    "mtime": 1791623115.4600527,
+    "ast_hash": "2fc86765870fd5fb12aa028114602807",
     "semantic_hash": ""
   },
   "src/view/Tooltip.ts": {
-    "mtime": 1791552844.613146,
-    "ast_hash": "132eee27653ca07aeb3361ce75b9746f",
+    "mtime": 1791623115.461962,
+    "ast_hash": "58f94f17925f201d6d53fcb9900fd21e",
     "semantic_hash": ""
   },
   "src/view/BarRenderer.ts": {
@@ -185,8 +185,8 @@
     "semantic_hash": ""
   },
   "src/utils/frontmatterMapper.ts": {
-    "mtime": 1791552844.611737,
-    "ast_hash": "3a7e14e736eaed3b8fc849cf5de672bd",
+    "mtime": 1791623115.4595637,
+    "ast_hash": "e3ce9223aee9d857433c7f934cd59746",
     "semantic_hash": ""
   },
   "README.md": {
@@ -265,8 +265,8 @@
     "semantic_hash": ""
   },
   "src/utils/calendarItems.ts": {
-    "mtime": 1791552844.6769862,
-    "ast_hash": "b7db0e3d7d483737f5e9550b91633721",
+    "mtime": 1791623115.4586616,
+    "ast_hash": "399f7fea0dfa0d933b7b111888e761d9",
     "semantic_hash": ""
   },
   "src/utils/category.ts": {

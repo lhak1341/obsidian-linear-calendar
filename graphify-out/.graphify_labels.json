@@ -53,5 +53,6 @@
   "51": "DragHandler.onDropCommit callback",
   "52": "LinearCalendarView.refresh",
   "53": "Tooltip.showForChip",
-  "54": "src root (main.ts, settings.ts, NoteCreator.ts, icon files)"
+  "54": "src root (main.ts, settings.ts, NoteCreator.ts, icon files)",
+  "55": "CalendarRenderer"
 }

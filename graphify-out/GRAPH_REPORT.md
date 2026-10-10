@@ -1,16 +1,16 @@
-# Graph Report - obsidian-linear-calendar  (2026-10-09)
+# Graph Report - obsidian-linear-calendar  (2026-10-10)
 
 ## Corpus Check
-- 57 files · ~124,782 words
+- 57 files · ~125,040 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 489 nodes · 969 edges · 55 communities (36 shown, 19 thin omitted)
+- 489 nodes · 971 edges · 56 communities (37 shown, 19 thin omitted)
 - Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS · INFERRED: 1 edges (avg confidence: 0.8)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `5968c664`
+- Built from commit: `d582652a`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -56,6 +56,7 @@
 - CalendarRenderer.RenderCallbacks interface
 - DragHandler.onDropCommit callback
 - src root (main.ts, settings.ts, NoteCreator.ts, icon files)
+- CalendarRenderer
 
 ## God Nodes (most connected - your core abstractions)
 1. `LinearCalendarView` - 28 edges
@@ -89,15 +90,15 @@
 - **onDropCommit callback signature threaded through 4 files** — src_view_draghandler_ondropcommit, src_view_barrenderer_barrenderer, src_view_calendarrenderer_rendercallbacks, src_main_mountmonthstrip, src_view_linearcalendarview_linearcalendarview [EXTRACTED 1.00]
 - **Pure-logic extraction to src/utils/ for testability outside Obsidian coupling** — src_utils_dragutils, src_utils_rowassignment_assignrowsformonth, src_utils_frontmattermapper_mapfrontmattertoitem, src_utils_iconsearch_rankiconsuggestions [INFERRED 0.85]
 
-## Communities (55 total, 19 thin omitted)
+## Communities (56 total, 19 thin omitted)
 
 ### Community 0 - "Drag Interaction Logic"
 Cohesion: 0.09
 Nodes (21): addDays(), canDrag(), computeSegmentPlacement(), findFreeRow(), GhostSeg, mDays(), newDatesFromDelta(), RowOccupancy (+13 more)
 
 ### Community 1 - "Data Scanning Layer"
-Cohesion: 0.07
-Nodes (40): COLOR_PALETTE, DEFAULT_MAPPING, DEFAULT_SETTINGS, DataSource, ScannerCache, CacheEntry, FrontmatterScanner, MonthStripHandle (+32 more)
+Cohesion: 0.08
+Nodes (37): COLOR_PALETTE, DEFAULT_MAPPING, DEFAULT_SETTINGS, DataSource, ScannerCache, CacheEntry, FrontmatterScanner, MonthStripHandle (+29 more)
 
 ### Community 2 - "Repo Overview & Icon Field"
 Cohesion: 0.17
@@ -179,6 +180,10 @@ Nodes (6): Daily note plugin priority, Frontmatter tag format (API gotcha), Mome
 Cohesion: 0.33
 Nodes (5): Icons, Note creation, Public API — coordinated with obsidian-lhak-dashboard, Settings modal, src root (main.ts, settings.ts, NoteCreator.ts, icon files)
 
+### Community 55 - "CalendarRenderer"
+Cohesion: 0.29
+Nodes (3): createInteractions(), CalendarRenderer, pad()
+
 ## Knowledge Gaps
 - **144 isolated node(s):** `id`, `name`, `version`, `minAppVersion`, `description` (+139 more)
   These have ≤1 connection - possible missing edges or undocumented components.
@@ -187,17 +192,17 @@ Nodes (5): Icons, Note creation, Public API — coordinated with obsidian-lhak-d
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `LinearCalendarView` connect `Daily Notes Integration` to `Data Scanning Layer`, `Now Indicator`?**
+- **Why does `LinearCalendarView` connect `Daily Notes Integration` to `Data Scanning Layer`, `Now Indicator`, `CalendarRenderer`?**
   _High betweenness centrality (0.044) - this node is a cross-community bridge._
-- **Why does `CalendarRenderer` connect `Data Scanning Layer` to `Drag Interaction Logic`, `Daily Notes Integration`, `Settings & Constants`, `Month Strip & Tag Utils`?**
+- **Why does `CalendarRenderer` connect `CalendarRenderer` to `Drag Interaction Logic`, `Data Scanning Layer`, `Daily Notes Integration`, `Settings & Constants`, `Month Strip & Tag Utils`?**
   _High betweenness centrality (0.029) - this node is a cross-community bridge._
-- **Why does `GridRenderer` connect `Settings & Constants` to `Data Scanning Layer`?**
+- **Why does `GridRenderer` connect `Settings & Constants` to `Data Scanning Layer`, `CalendarRenderer`?**
   _High betweenness centrality (0.026) - this node is a cross-community bridge._
 - **What connects `id`, `name`, `version` to the rest of the system?**
   _144 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `Drag Interaction Logic` be split into smaller, more focused modules?**
   _Cohesion score 0.08653061224489796 - nodes in this community are weakly interconnected._
 - **Should `Data Scanning Layer` be split into smaller, more focused modules?**
-  _Cohesion score 0.06582278481012659 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.07544757033248081 - nodes in this community are weakly interconnected._
 - **Should `Build Toolchain Dependencies` be split into smaller, more focused modules?**
   _Cohesion score 0.04878048780487805 - nodes in this community are weakly interconnected._

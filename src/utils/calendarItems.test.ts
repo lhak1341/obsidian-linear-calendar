@@ -23,6 +23,17 @@ describe("expandForYear", () => {
 		expect(item?.dateEnd).toEqual(new Date(2026, 11, 31));
 	});
 
+	it("keeps an item starting on Dec 31 with a time of day", () => {
+		const items = expandForYear([raw(new Date(2026, 11, 31, 10), new Date(2026, 11, 31, 10))], 2026);
+		expect(items).toHaveLength(1);
+	});
+
+	it("keeps the unclamped span as fullStart/fullEnd", () => {
+		const [item] = expandForYear([raw(new Date(2025, 11, 30), new Date(2027, 0, 2))], 2026);
+		expect(item?.fullStart).toEqual(new Date(2025, 11, 30));
+		expect(item?.fullEnd).toEqual(new Date(2027, 0, 2));
+	});
+
 	it("keeps an anniversary note in its origin year as kind event", () => {
 		const [item] = expandForYear([raw(new Date(2020, 7, 12), new Date(2020, 7, 12), { anniversary: true })], 2020);
 		expect(item?.kind).toBe("event");

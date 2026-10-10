@@ -115,8 +115,8 @@ export class ObsidianNoteCreator implements NoteCreator {
 				const initialTags = resolveCalendarTags(undefined, options.tag);
 				const lines = ["---", `tags: [${initialTags.join(", ")}]`, `${mapping.startDateProp}: ${dateStr}`];
 				if (endDateStr) lines.push(`${mapping.endDateProp}: ${endDateStr}`);
-				if (mapping.titleProp !== "__filename__" && trimmedTitle) lines.push(`${mapping.titleProp}: ${trimmedTitle}`);
-				if (trimmedIcon && mapping.iconProp) lines.push(`${mapping.iconProp}: ${trimmedIcon}`);
+				if (mapping.titleProp !== "__filename__" && trimmedTitle) lines.push(`${mapping.titleProp}: ${JSON.stringify(trimmedTitle)}`);
+				if (trimmedIcon && mapping.iconProp) lines.push(`${mapping.iconProp}: ${JSON.stringify(trimmedIcon)}`);
 				if (trimmedDescription && mapping.descriptionProp) {
 					lines.push(`${mapping.descriptionProp}: ${JSON.stringify(trimmedDescription)}`);
 				}
@@ -174,7 +174,12 @@ export class ObsidianNoteCreator implements NoteCreator {
 					else delete fm[mapping.remindProp];
 				}
 
-				fm.tags = resolveCalendarTags(fm.tags, options.tag);
+				// The modal edits one category; keep any further calendar subtags the note carries.
+				const extraSubtags = (Array.isArray(fm.tags) ? (fm.tags as unknown[]).map(String) : [])
+					.filter((t) => t.startsWith("linear-calendar/"))
+					.slice(1);
+				const resolved = resolveCalendarTags(fm.tags, options.tag);
+				fm.tags = [...resolved, ...extraSubtags.filter((t) => !resolved.includes(t))];
 			});
 
 			return true;

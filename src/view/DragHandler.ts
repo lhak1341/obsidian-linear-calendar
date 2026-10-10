@@ -120,8 +120,9 @@ export class DragHandler {
 			barColor: barEl.style.backgroundColor,
 			barLabel: labelEl?.textContent ?? "",
 			filePath: segment.item.filePath,
-			originalStart: new Date(segment.item.dateStart),
-			originalEnd: new Date(segment.item.dateEnd),
+			// Unclamped span: dateStart/dateEnd are cut to the viewed year and would be written back.
+			originalStart: new Date(segment.item.fullStart ?? segment.item.dateStart),
+			originalEnd: new Date(segment.item.fullEnd ?? segment.item.dateEnd),
 			segMonth: segment.month,
 			segStartDay: segment.startDay,
 			segEndDay: segment.endDay,

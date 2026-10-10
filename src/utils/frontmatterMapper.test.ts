@@ -99,6 +99,18 @@ describe("mapFrontmatterToItem — title", () => {
 	});
 });
 
+describe("mapFrontmatterToItem — robustness", () => {
+	it("treats an end before the start as a single-day item", () => {
+		const item = map({ start: "2024-05-10", end: "2024-03-01", tags: ["linear-calendar"] });
+		expect(item?.dateEnd).toEqual(item?.dateStart);
+	});
+
+	it("takes the category from an inline subtag when frontmatter has none", () => {
+		const item = map({ start: "2024-05-10" }, ["#linear-calendar/work"]);
+		expect(item?.tags).toEqual(["linear-calendar/work"]);
+	});
+});
+
 describe("mapFrontmatterToItem — tags/icon/anniversary/description", () => {
 	it("keeps only linear-calendar/ subtags in the returned tags list", () => {
 		const item = map({ start: "2024-01-01", tags: ["linear-calendar", "linear-calendar/work", "other"] });

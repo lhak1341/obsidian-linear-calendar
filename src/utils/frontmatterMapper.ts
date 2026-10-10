@@ -83,7 +83,8 @@ export function mapFrontmatterToItem(
 
 	const endRaw = frontmatter[mapping.endDateProp];
 	const parsedEnd = endRaw !== undefined ? parseDateString(endRaw) : null;
-	const dateEnd = parsedEnd ?? new Date(dateStart);
+	// An end before the start is bad data; treat it as a single-day item rather than drawing a bar in the wrong months.
+	const dateEnd = parsedEnd && parsedEnd >= dateStart ? parsedEnd : new Date(dateStart);
 
 	const titleRaw = frontmatter[mapping.titleProp];
 	const title =
@@ -93,7 +94,12 @@ export function mapFrontmatterToItem(
 				? titleRaw
 				: basename;
 
-	const { tags, icon, anniversary, description } = extractDisplayFields(frontmatter, mapping);
+	const { tags: fmTags, icon, anniversary, description } = extractDisplayFields(frontmatter, mapping);
+	// Notes gated by an inline #linear-calendar/x tag still need a category.
+	const inlineSubtags = inlineTags
+		.filter((t) => t.startsWith("#linear-calendar/"))
+		.map((t) => t.slice(1));
+	const tags = [...new Set([...fmTags, ...inlineSubtags])];
 
 	return {
 		kind: "event",

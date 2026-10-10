@@ -35,6 +35,7 @@ export class LinearCalendarView extends ItemView {
 	private rowHeight = 0;
 	private layout: "horizontal" | "vertical";
 	private layoutToggleBtn!: HTMLElement;
+	private rowSlider: HTMLInputElement | null = null;
 	private calendarRenderer!: CalendarRenderer;
 	private settings: PluginSettings;
 	private getMapping: () => ColumnMapping;
@@ -172,7 +173,12 @@ export class LinearCalendarView extends ItemView {
 		}
 		if (s?.rowHeight != null) this.rowHeight = s.rowHeight;
 		if (s?.layout) this.layout = s.layout;
-		this.renderCalendar();
+		if (this.calendarRenderer) {
+			this.updateYearLabel();
+			if (this.rowSlider) this.rowSlider.value = String(this.rowHeight);
+			this.updateLayoutToggleIcon();
+			this.renderCalendar();
+		}
 		await super.setState(state, result as { history: boolean });
 	}
 
@@ -221,7 +227,8 @@ export class LinearCalendarView extends ItemView {
 				"aria-label": "Row height",
 			},
 		});
-		(slider).value = String(this.rowHeight);
+		slider.value = String(this.rowHeight);
+		this.rowSlider = slider;
 		this.registerDomEvent(slider, "input", () => {
 			this.rowHeight = Number((slider).value);
 			this.calendarRenderer.updateRowHeight(this.layout, this.rowHeight);

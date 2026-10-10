@@ -10,6 +10,9 @@ export interface CalendarItemBase {
 	title: string;
 	dateStart: Date;
 	dateEnd: Date;
+	/** The note's own span before `expandForYear` clamps `dateStart`/`dateEnd` to the viewed year. Drag and tooltip read these. */
+	fullStart?: Date;
+	fullEnd?: Date;
 	color?: string;
 	tags?: string[];
 	icon?: string;

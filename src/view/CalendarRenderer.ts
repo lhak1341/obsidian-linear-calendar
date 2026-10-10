@@ -99,7 +99,8 @@ export class CalendarRenderer {
 		if (!this.current || monthRows.length === 0) return;
 
 		for (const rowRef of monthRows) {
-			rowRef.barsContainer.empty();
+			// Vertical layout reuses the month column (day cells included) as barsContainer — remove bars only.
+			rowRef.barsContainer.querySelectorAll(":scope > .calendar-bar").forEach((el) => el.remove());
 		}
 
 		this.renderVisibleBars(monthRows);
