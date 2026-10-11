@@ -3,6 +3,7 @@ import {
 	dayOfYear,
 	daysInYear,
 	isLeapYear,
+	daysInMonth,
 	dateFromDayOfYear,
 	formatDateRange,
 	formatISODate,
@@ -20,6 +21,22 @@ describe("isLeapYear", () => {
 	it("century year is not leap", () => expect(isLeapYear(1900)).toBe(false));
 	it("400-year multiple is leap", () => expect(isLeapYear(2000)).toBe(true));
 	it("common year", () => expect(isLeapYear(2023)).toBe(false));
+});
+
+describe("daysInMonth", () => {
+	it("returns 31 for January and December", () => {
+		expect(daysInMonth(2024, 0)).toBe(31);
+		expect(daysInMonth(2024, 11)).toBe(31);
+	});
+
+	it("returns 28 for February in a non-leap year and 29 in a leap year", () => {
+		expect(daysInMonth(2023, 1)).toBe(28);
+		expect(daysInMonth(2024, 1)).toBe(29);
+	});
+
+	it("returns 30 for April", () => {
+		expect(daysInMonth(2024, 3)).toBe(30);
+	});
 });
 
 describe("daysInYear", () => {

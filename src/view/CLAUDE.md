@@ -1,5 +1,9 @@
 # View layer
 
+## Bar placement lives in `utils/barLayout.ts`
+
+`BarRenderer` and `DragHandler` do no geometry. `layoutBars(items, year, maxRows)` splits items into month segments and packs rows; `BarRenderer` reads `placementsFor(month)` and hands the same `BarLayout` to `DragHandler.setLayout`, whose `previewMove` places drag ghosts in the first free row under the same cap (a ghost with no free row is not drawn, like a bar). `gridArea(span, row, weekdayOffset, layout)` is the only place the CSS-grid column/row strings are built. Items arrive already clamped to the viewed year by `expandForYear`; `splitByMonth` compares calendar days, not timestamps, so a time-of-day at the year's edge cannot empty a span.
+
 ## Bar/chip colors
 
 - Set via inline `style.backgroundColor` in JS, not CSS — CSS cannot override them.
@@ -43,6 +47,8 @@
 
 - Simulate a real drag with `obsidian-cli dev:cdp method=Input.dispatchMouseEvent params='{"type":"mousePressed"|"mouseMoved"|"mouseReleased", "x":.., "y":.., "button":"left", "buttons":1}'` — a `mousePressed` then `mouseMoved` past the 4px threshold then `mouseReleased`, coordinates from the bar's `getBoundingClientRect()`
 - Check `dev:errors` after release, and re-read the note's frontmatter to confirm the committed dates
+- Activate the calendar leaf (`app.workspace.setActiveLeaf(leaf,{focus:true})`) and assert `.lc-days-grid` `clientWidth > 0` immediately before pressing — a hidden leaf (another session shares the app) makes `dayWidth` 0, the delta `Infinity`, and the release writes `Invalid date` to the note
+- CDP mouse x clamps to `window.innerWidth`, so keep the drag within the window (a 1-day cross-month move works); send `mouseReleased` first if a prior run left the button down, or the next `mousePressed` is swallowed
 
 ## ResizeObserver — LinearCalendarView vs mountMonthStrip
 
@@ -51,7 +57,7 @@
 
 ## Note-mutating callbacks
 
-`onDropCommit`/`onReminderClick`/`onEditNote` come from `createInteractions()` (`calendarInteractions.ts`), spread into `CalendarRenderer`'s callbacks by both `LinearCalendarView` and `mountMonthStrip`. Add a new one there, not inline in a host; construction and resize policy stay per-host (ADR-0001).
+`onDropCommit`/`onReminderClick`/`onEditNote`/`canEditNote` come from `createInteractions()` (`calendarInteractions.ts`), spread into `CalendarRenderer`'s callbacks by both `LinearCalendarView` and `mountMonthStrip`. They are required (`CalendarRendererCallbacks extends CalendarInteractions`) and `BarRenderer` takes the whole `CalendarInteractions`, so a host that forgets one fails to compile; only `onDayDblClick`/`onDayContextMenu`/`onCategoryToggle` are optional host extras. Add a new one there, not inline in a host; construction and resize policy stay per-host (ADR-0001).
 
 ## Testing mountMonthStrip for a specific month without faking the date
 

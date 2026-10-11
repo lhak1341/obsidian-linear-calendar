@@ -1,15 +1,13 @@
 import { type App, Menu, setIcon } from "obsidian";
-import type { CalendarItem, DropCommitFn, PluginSettings } from "../types";
+import type { CalendarItem } from "../types";
+import type { CalendarInteractions } from "./calendarInteractions";
 import { resolveLucideIconId } from "../lucide-icons";
 import { COLOR_PALETTE, MAX_WATERFALL_ROWS, MAX_WATERFALL_COLS_VERT } from "../constants";
 import { getContrastColor } from "../utils/colorUtils";
 import type { MonthRowRef } from "./GridRenderer";
-import type { MonthSegment } from "../utils/segmentByMonth";
-import { groupSegmentsByMonth } from "../utils/segmentByMonth";
-import { assignRowsForMonth, type RowAssignment } from "../utils/rowAssignment";
+import { gridArea, layoutBars, type MonthSegment } from "../utils/barLayout";
 import { categoryOf } from "../utils/category";
 import { canDrag } from "../utils/dragUtils";
-import { eventNoteConfig, isInEventFolder } from "../utils/eventNotePath";
 import { DragHandler } from "./DragHandler";
 
 /** Data a bar carries for consumers (e.g. Tooltip) that need it without touching the DOM. */
@@ -19,52 +17,41 @@ export interface BarInfo {
 }
 
 export class BarRenderer {
-	private dragHandler: DragHandler | null;
+	private dragHandler: DragHandler;
 	private barInfo = new WeakMap<HTMLElement, BarInfo>();
 
 	constructor(
 		private app: App,
-		getYear: () => number,
-		onDropCommit?: DropCommitFn,
-		private onReminderClick?: (item: CalendarItem) => void,
-		private getSettings?: () => PluginSettings,
-		private onEditNote?: (filePath: string) => void,
+		private interactions: CalendarInteractions,
 	) {
-		this.dragHandler = onDropCommit ? new DragHandler(getYear, onDropCommit) : null;
+		this.dragHandler = new DragHandler(interactions.onDropCommit);
 	}
 
 	cleanup(): void {
-		this.dragHandler?.cleanup();
+		this.dragHandler.cleanup();
 	}
 
 	render(
 		monthRows: MonthRowRef[],
 		items: CalendarItem[],
+		year: number,
 		tagColorMap: Map<string, string>,
 		tagIconMap: Map<string, string>,
 	): void {
 		const isVertical = monthRows[0]?.layout === "vertical";
 
-		this.dragHandler?.cleanup();
-		const grouped = groupSegmentsByMonth(items);
-		const assignmentsByMonth = new Map<number, RowAssignment[]>();
+		this.dragHandler.cleanup();
+		const layout = layoutBars(items, year, isVertical ? MAX_WATERFALL_COLS_VERT : MAX_WATERFALL_ROWS);
 
 		for (const rowRef of monthRows) {
-			const segments = grouped.get(rowRef.month) ?? [];
-			if (segments.length === 0) continue;
-
-			const maxRows = isVertical ? MAX_WATERFALL_COLS_VERT : MAX_WATERFALL_ROWS;
-			const assignments = assignRowsForMonth(segments, maxRows);
-			assignmentsByMonth.set(rowRef.month, assignments);
-
-			for (const { segment, row } of assignments) {
+			for (const { segment, row } of layout.placementsFor(rowRef.month)) {
 				const barEl = this.createBarEl(rowRef, segment, row, isVertical);
 				this.decorateBar(barEl, segment, tagColorMap, tagIconMap);
 
 				barEl.addEventListener("click", (evt) => {
 					if (barEl.dataset.justDragged) return;
 					if (segment.item.kind === "reminder") {
-						this.onReminderClick?.(segment.item);
+						this.interactions.onReminderClick(segment.item);
 						return;
 					}
 					void this.app.workspace.openLinkText(segment.item.filePath, "", evt.metaKey || evt.ctrlKey);
@@ -72,13 +59,13 @@ export class BarRenderer {
 
 				this.attachContextMenu(barEl, segment.item.filePath);
 
-				if (!isVertical && canDrag(segment.item) && this.dragHandler) {
+				if (!isVertical && canDrag(segment.item)) {
 					this.dragHandler.attach(barEl, segment, rowRef.daysInMonth);
 				}
 			}
 		}
 
-		if (!isVertical) this.dragHandler?.setMonthRows(monthRows, assignmentsByMonth);
+		if (!isVertical) this.dragHandler.setLayout(monthRows, layout);
 	}
 
 	private createBarEl(
@@ -87,8 +74,7 @@ export class BarRenderer {
 		row: number,
 		isVertical: boolean,
 	): HTMLElement {
-		const span = segment.endDay - segment.startDay + 1;
-		const isSingleDay = isVertical && span === 1;
+		const isSingleDay = isVertical && segment.endDay === segment.startDay;
 		const barEl = rowRef.barsContainer.createDiv({
 			cls: isVertical
 				? `calendar-bar calendar-bar-vert${isSingleDay ? " calendar-bar-vert-single" : ""}`
@@ -96,13 +82,9 @@ export class BarRenderer {
 			attr: { tabindex: "0" },
 		});
 
-		if (isVertical) {
-			barEl.style.gridRow = `${rowRef.weekdayOffset + segment.startDay} / span ${span}`;
-			barEl.style.gridColumn = `${row + 2}`;  // col 1 = date header
-		} else {
-			barEl.style.gridColumn = `${rowRef.weekdayOffset + segment.startDay} / span ${span}`;
-			barEl.style.gridRow = `${row + 2}`;
-		}
+		const area = gridArea(segment, row, rowRef.weekdayOffset, rowRef.layout);
+		barEl.style.gridColumn = area.gridColumn;
+		barEl.style.gridRow = area.gridRow;
 		return barEl;
 	}
 
@@ -148,10 +130,10 @@ export class BarRenderer {
 					void this.app.workspace.openLinkText(filePath, "", true);
 				}),
 			);
-			if (this.onEditNote && this.isUnderNewEventFolder(filePath)) {
+			if (this.interactions.canEditNote(filePath)) {
 				menu.addItem((item) =>
 					item.setTitle("Edit event").setIcon("pencil").onClick(() => {
-						this.onEditNote?.(filePath);
+						this.interactions.onEditNote(filePath);
 					}),
 				);
 			}
@@ -164,15 +146,4 @@ export class BarRenderer {
 			menu.showAtMouseEvent(evt);
 		});
 	}
-
-	/** Gates the "Edit event" menu item to notes the plugin's own Create-event flow could have
-	 *  written — i.e. sitting directly in `newEventFolder` (or vault root if that's unset). */
-	private isUnderNewEventFolder(filePath: string): boolean {
-		const settings = this.getSettings?.();
-		if (!settings) return false;
-		const slash = filePath.lastIndexOf("/");
-		const dir = slash < 0 ? "" : filePath.slice(0, slash);
-		return isInEventFolder(dir, eventNoteConfig(settings));
-	}
-
 }

@@ -37,3 +37,38 @@ export class Notice {
 	constructor(public message: string) {}
 	hide(): void {}
 }
+
+export interface Debouncer<T extends unknown[], V> {
+	(...args: T): void;
+	cancel(): void;
+	run(): V | void;
+}
+
+/** Matches Obsidian's `debounce(cb, timeout, resetTimer)`: trailing call, timer restarts on each call when `resetTimer`. */
+export function debounce<T extends unknown[], V>(cb: (...args: T) => V, timeout = 0, resetTimer = false): Debouncer<T, V> {
+	let timer: ReturnType<typeof setTimeout> | null = null;
+	let lastArgs: T | null = null;
+	const fire = () => {
+		timer = null;
+		const args = lastArgs!;
+		lastArgs = null;
+		cb(...args);
+	};
+	const debounced = ((...args: T) => {
+		lastArgs = args;
+		if (timer !== null && !resetTimer) return;
+		if (timer !== null) clearTimeout(timer);
+		timer = setTimeout(fire, timeout);
+	}) as Debouncer<T, V>;
+	debounced.cancel = () => {
+		if (timer !== null) clearTimeout(timer);
+		timer = null;
+		lastArgs = null;
+	};
+	debounced.run = () => {
+		if (timer === null) return;
+		clearTimeout(timer);
+		fire();
+	};
+	return debounced;
+}

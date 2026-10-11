@@ -1,10 +1,6 @@
 import type { MonthRowRef } from "./GridRenderer";
-import type { MonthSegment } from "../utils/segmentByMonth";
-import {
-	segmentDates, newDatesFromDelta, computeSegmentPlacement,
-	type RowOccupancy,
-} from "../utils/dragUtils";
-import { rowAssignmentsToOccupancy, type RowAssignment } from "../utils/rowAssignment";
+import { gridArea, type BarLayout, type MonthSegment } from "../utils/barLayout";
+import { newDatesFromDelta } from "../utils/dragUtils";
 import type { DropCommitFn } from "../types";
 
 /** Minimum pointer movement before an ambiguous mousedown (bar body) commits to a drag. */
@@ -21,7 +17,6 @@ interface DragContext {
 	segStartDay: number;
 	segEndDay: number;
 	daysInMonth: number;
-	year: number;
 	mode: "resize-start" | "resize-end" | "move";
 	startX: number;
 	dayWidth: number;
@@ -30,9 +25,7 @@ interface DragContext {
 export class DragHandler {
 	private ctx: DragContext | null = null;
 	private monthRows: MonthRowRef[] = [];
-	private assignmentsByMonth = new Map<number, RowAssignment[]>();
-	/** Pre-built occupancy maps per month, computed once at drag start */
-	private occupancyCache = new Map<number, RowOccupancy>();
+	private layout: BarLayout | null = null;
 	/** Reusable ghost pool — update in place, hide extras */
 	private ghostPool: HTMLElement[] = [];
 	private activeGhostCount = 0;
@@ -40,17 +33,14 @@ export class DragHandler {
 	private boundMouseUp: (e: MouseEvent) => void;
 	private prevDayDelta: number | null = null;
 
-	constructor(
-		private getYear: () => number,
-		private onDropCommit: DropCommitFn,
-	) {
+	constructor(private onDropCommit: DropCommitFn) {
 		this.boundMouseMove = this.onMouseMove.bind(this);
 		this.boundMouseUp = () => { void this.onMouseUp(); };
 	}
 
-	setMonthRows(rows: MonthRowRef[], assignments: Map<number, RowAssignment[]>): void {
+	setLayout(rows: MonthRowRef[], layout: BarLayout): void {
 		this.monthRows = rows;
-		this.assignmentsByMonth = assignments;
+		this.layout = layout;
 	}
 
 	attach(barEl: HTMLElement, segment: MonthSegment, daysInMonth: number): void {
@@ -127,18 +117,11 @@ export class DragHandler {
 			segStartDay: segment.startDay,
 			segEndDay: segment.endDay,
 			daysInMonth: dim,
-			year: this.getYear(),
 			mode,
 			startX: e.clientX,
 			dayWidth,
 		};
 		this.prevDayDelta = null;
-
-		// Pre-build occupancy maps for all months (once per drag)
-		this.occupancyCache.clear();
-		for (const [month, assignments] of this.assignmentsByMonth) {
-			this.occupancyCache.set(month, rowAssignmentsToOccupancy(assignments));
-		}
 
 		barEl.addClass("lc-dragging");
 		activeDocument.body.addClass(mode === "move" ? "lc-drag-cursor-grabbing" : "lc-drag-cursor-resize");
@@ -165,33 +148,29 @@ export class DragHandler {
 	}
 
 	private updateVisuals(dayDelta: number): void {
-		if (!this.ctx) return;
-		const { barEl, barColor, barLabel, segMonth, year } = this.ctx;
+		if (!this.ctx || !this.layout) return;
+		const { barEl, barColor, barLabel, segMonth } = this.ctx;
 
 		const { newStart, newEnd } = this.newDatesFromDelta(dayDelta);
-		const allSegs = segmentDates(newStart, newEnd, year);
+		const { home, ghosts } = this.layout.previewMove(segMonth, newStart, newEnd);
 
 		// Update real bar in home month
-		const homeRowRef = this.monthRows.find((r) => r.month === segMonth);
-		const homeOffset = homeRowRef?.weekdayOffset ?? 0;
-		const homeSeg = allSegs.find((s) => s.month === segMonth);
-		if (homeSeg) {
-			barEl.style.gridColumn = computeSegmentPlacement(homeSeg, homeOffset, undefined).gridColumn;
+		const homeOffset = this.monthRows.find((r) => r.month === segMonth)?.weekdayOffset ?? 0;
+		if (home) {
+			barEl.style.gridColumn = gridArea(home, 0, homeOffset, "horizontal").gridColumn;
 			barEl.removeClass("lc-hidden");
 		} else {
 			barEl.addClass("lc-hidden");
 		}
 
 		// Update ghosts — reuse pooled elements
-		const otherSegs = allSegs.filter((s) => s.month !== segMonth);
 		let gi = 0;
 
-		for (const seg of otherSegs) {
-			const rowRef = this.monthRows.find((r) => r.month === seg.month);
+		for (const ghostSpan of ghosts) {
+			const rowRef = this.monthRows.find((r) => r.month === ghostSpan.month);
 			if (!rowRef) continue;
 
-			const occ = this.occupancyCache.get(seg.month);
-			const { gridColumn, row } = computeSegmentPlacement(seg, rowRef.weekdayOffset, occ);
+			const { gridColumn, gridRow } = gridArea(ghostSpan, ghostSpan.row, rowRef.weekdayOffset, "horizontal");
 
 			let ghost: HTMLElement;
 			if (gi < this.ghostPool.length) {
@@ -204,7 +183,7 @@ export class DragHandler {
 			}
 
 			ghost.style.gridColumn = gridColumn;
-			ghost.style.gridRow = `${row + 2}`;
+			ghost.style.gridRow = gridRow;
 			ghost.style.backgroundColor = barColor;
 			(ghost.firstChild as HTMLElement).textContent = barLabel;
 
@@ -243,7 +222,6 @@ export class DragHandler {
 		const { barEl, filePath, originalStart } = this.ctx;
 
 		this.clearGhosts();
-		this.occupancyCache.clear();
 
 		barEl.removeClass("lc-hidden");
 		barEl.removeClass("lc-dragging");
@@ -255,8 +233,7 @@ export class DragHandler {
 
 		if (dayDelta === 0) return;
 
-		// Delegate write to caller — LinearCalendarView's metadataCache.on("changed")
-		// listener triggers re-render; see the race note in data/CLAUDE.md.
+		// Delegate write to caller; EventNotes.move resolves once the metadata cache is fresh.
 		await this.onDropCommit(filePath, originalStart, newStart, newEnd);
 	}
 
@@ -264,7 +241,6 @@ export class DragHandler {
 		activeDocument.removeEventListener("mousemove", this.boundMouseMove);
 		activeDocument.removeEventListener("mouseup", this.boundMouseUp);
 		this.clearGhosts();
-		this.occupancyCache.clear();
 		this.ctx = null;
 	}
 }

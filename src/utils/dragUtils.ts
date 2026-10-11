@@ -1,13 +1,5 @@
 import type { CalendarItem } from "../types";
 
-export interface GhostSeg {
-	month: number;
-	startDay: number;
-	endDay: number;
-}
-
-export type RowOccupancy = Map<number, [number, number][]>;
-
 /** Recurrence projections and reminder ghosts have no independent frontmatter to drag-write to. */
 export function canDrag(item: CalendarItem): boolean {
 	return item.kind === "event";
@@ -17,53 +9,6 @@ export function addDays(date: Date, days: number): Date {
 	const d = new Date(date);
 	d.setDate(d.getDate() + days);
 	return d;
-}
-
-export function mDays(month: number, year: number): number {
-	return new Date(year, month + 1, 0).getDate();
-}
-
-export function segmentDates(start: Date, end: Date, year: number): GhostSeg[] {
-	const segs: GhostSeg[] = [];
-	const yStart = new Date(year, 0, 1);
-	const yEnd = new Date(year, 11, 31);
-	const s = start < yStart ? yStart : start;
-	const e = end > yEnd ? yEnd : end;
-	if (s > e) return segs;
-
-	const sM = s.getMonth();
-	const eM = e.getMonth();
-
-	if (sM === eM) {
-		segs.push({ month: sM, startDay: s.getDate(), endDay: e.getDate() });
-	} else {
-		segs.push({ month: sM, startDay: s.getDate(), endDay: mDays(sM, year) });
-		for (let m = sM + 1; m < eM; m++) {
-			segs.push({ month: m, startDay: 1, endDay: mDays(m, year) });
-		}
-		segs.push({ month: eM, startDay: 1, endDay: e.getDate() });
-	}
-	return segs;
-}
-
-export function findFreeRow(occ: RowOccupancy, startDay: number, endDay: number): number {
-	for (let r = 0; r < 20; r++) {
-		const spans = occ.get(r);
-		if (!spans || !spans.some(([s, e]) => startDay <= e && endDay >= s)) return r;
-	}
-	return occ.size;
-}
-
-/** Grid placement for a segment: column span always, row only when occ is given (ghosts need a free row; the home bar keeps its own). */
-export function computeSegmentPlacement(
-	seg: GhostSeg,
-	weekdayOffset: number,
-	occ: RowOccupancy | undefined,
-): { gridColumn: string; row: number } {
-	const span = seg.endDay - seg.startDay + 1;
-	const gridColumn = `${weekdayOffset + seg.startDay} / span ${span}`;
-	const row = occ ? findFreeRow(occ, seg.startDay, seg.endDay) : 0;
-	return { gridColumn, row };
 }
 
 export function newDatesFromDelta(

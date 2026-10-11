@@ -1,4 +1,4 @@
-# src root (main.ts, settings.ts, NoteCreator.ts, icon files)
+# src root (main.ts, settings.ts, EventNotes.ts, icon files)
 
 ## Public API — coordinated with obsidian-lhak-dashboard
 
@@ -50,8 +50,12 @@
 
 ## Note creation
 
-- `create()` takes `CreateOptions` (= `CreateEventOptions` + a **required**
-  `openAfterCreate`); `updateEvent()` takes plain `CreateEventOptions` and never opens
-  anything. Omitting the flag is a type error, so nothing to remember — the default-`true`
+- `EventNotes` (`EventNotes.ts`) is the only writer of event-note frontmatter:
+  `create`/`update`/`move`/`promoteReminder`. `create()` takes `CreateOptions` (=
+  `EventFields` + a **required** `openAfterCreate`); `update()` takes plain `EventFields`
+  and never opens anything. `create` merges (omitted field untouched, a template may have
+  set it); `update` replaces (omitted field cleared). Every verb resolves only after the
+  metadata cache reflects the write, never throws, and resolves `false` after a log + Notice.
+  Omitting `openAfterCreate` is a type error, so nothing to remember — the default-`true`
   that silently auto-opened notes for internal callers (bit twice: e915cfc, f6e9234) no
   longer exists.

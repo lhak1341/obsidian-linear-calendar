@@ -2,6 +2,7 @@ import { debounce } from "obsidian";
 import type { TFile } from "obsidian";
 import type { AlignMode, DailyNoteStyle } from "../types";
 import { MAX_WATERFALL_COLS_VERT } from "../constants";
+import { daysInMonth } from "../utils/dateUtils";
 
 function computeTint(color: string | null, hover: boolean): string {
 	const pct = hover ? 22 : 12;
@@ -111,7 +112,7 @@ export class GridRenderer {
 
 		const rows: MonthRowRef[] = [];
 		for (let m = 0; m < 12; m++) {
-			const days = new Date(this.year, m + 1, 0).getDate();
+			const days = daysInMonth(this.year, m);
 			rows.push(this.renderMonthRow(m, days));
 		}
 
@@ -137,7 +138,7 @@ export class GridRenderer {
 
 		// Per-month containers — each holds day cells (col 1) + bars (cols 2+)
 		for (let m = 0; m < 12; m++) {
-			const daysInMonth = new Date(this.year, m + 1, 0).getDate();
+			const days = daysInMonth(this.year, m);
 			const firstDow = new Date(this.year, m, 1).getDay();
 			const weekdayOffset = this.alignMode === "weekday" ? firstDow : 0;
 
@@ -146,7 +147,7 @@ export class GridRenderer {
 			monthCol.style.gridTemplateRows = `repeat(${totalRows}, var(--lc-vert-row-h, 20px))`;
 			monthCol.style.gridTemplateColumns = `22px repeat(${MAX_WATERFALL_COLS_VERT}, 16px)`;
 
-			for (let d = 1; d <= daysInMonth; d++) {
+			for (let d = 1; d <= days; d++) {
 				const cellEl = monthCol.createDiv({ cls: "lc-vert-day-cell" });
 				cellEl.style.gridRow = `${weekdayOffset + d}`;
 				cellEl.dataset.day = String(d);
@@ -156,7 +157,7 @@ export class GridRenderer {
 			rows.push({
 				month: m,
 				barsContainer: monthCol,
-				daysInMonth,
+				daysInMonth: days,
 				weekdayOffset,
 				totalCols: MAX_WATERFALL_COLS_VERT,
 				layout: "vertical",
@@ -174,12 +175,12 @@ export class GridRenderer {
 		this.containerEl.style.removeProperty("grid-template-rows");
 		this.containerEl.style.removeProperty("min-width");
 
-		const daysInMonth = new Date(this.year, month + 1, 0).getDate();
+		const days = daysInMonth(this.year, month);
 		const firstDow = new Date(this.year, month, 1).getDay();
-		this.totalCols = this.alignMode === "weekday" ? firstDow + daysInMonth : daysInMonth;
+		this.totalCols = this.alignMode === "weekday" ? firstDow + days : days;
 		this.colTemplate = `repeat(${this.totalCols}, 1fr)`;
 
-		return this.renderMonthRow(month, daysInMonth);
+		return this.renderMonthRow(month, days);
 	}
 
 	private renderMonthRow(month: number, daysInMonth: number): MonthRowRef {
@@ -224,7 +225,7 @@ export class GridRenderer {
 		let max = 31;
 		for (let m = 0; m < 12; m++) {
 			const offset = new Date(this.year, m, 1).getDay();
-			const days = new Date(this.year, m + 1, 0).getDate();
+			const days = daysInMonth(this.year, m);
 			max = Math.max(max, offset + days);
 		}
 		return max;

@@ -1,13 +1,12 @@
 import { ItemView, Menu, Notice, TFile, WorkspaceLeaf, debounce, setIcon } from "obsidian";
-import type { PluginSettings, ColumnMapping } from "../types";
+import type { PluginSettings } from "../types";
 import { VIEW_TYPE_LINEAR_CALENDAR } from "../constants";
 import type { DataSource } from "../data/DataSource";
-import type { NoteCreator } from "../NoteCreator";
+import type { EventNotes } from "../EventNotes";
 import { CreateEventModal } from "../CreateEventModal";
 import { CalendarRenderer, RenderConfig } from "./CalendarRenderer";
 import { createInteractions } from "./calendarInteractions";
 import { createDailyNote, getDailyNoteMap } from "../utils/dailyNotes";
-import { hasGateTag } from "../utils/frontmatterMapper";
 import { resolveFontVar } from "../utils/fonts";
 
 interface ViewState {
@@ -38,24 +37,21 @@ export class LinearCalendarView extends ItemView {
 	private rowSlider: HTMLInputElement | null = null;
 	private calendarRenderer!: CalendarRenderer;
 	private settings: PluginSettings;
-	private getMapping: () => ColumnMapping;
 	private source: DataSource;
-	private noteCreator: NoteCreator;
+	private eventNotes: EventNotes;
 	private categoriesContainer!: HTMLElement;
 	private dailyNoteMapCache: Map<string, TFile> | null = null;
 
 	constructor(
 		leaf: WorkspaceLeaf,
 		settings: PluginSettings,
-		getMapping: () => ColumnMapping,
 		source: DataSource,
-		noteCreator: NoteCreator,
+		eventNotes: EventNotes,
 	) {
 		super(leaf);
 		this.settings = settings;
-		this.getMapping = getMapping;
 		this.source = source;
-		this.noteCreator = noteCreator;
+		this.eventNotes = eventNotes;
 		this.currentYear = new Date().getFullYear();
 		this.layout = window.innerWidth < 768 ? "vertical" : "horizontal";
 	}
@@ -85,7 +81,7 @@ export class LinearCalendarView extends ItemView {
 
 		const interactions = createInteractions({
 			app: this.app,
-			noteCreator: this.noteCreator,
+			eventNotes: this.eventNotes,
 			getSettings: () => this.settings,
 			rerender: () => this.renderBarsOnly(),
 		});
@@ -95,7 +91,6 @@ export class LinearCalendarView extends ItemView {
 			scrollWrapper,
 			this.categoriesContainer,
 			this.source,
-			() => this.getMapping(),
 			() => this.settings,
 			{
 				onDayDblClick: (y, m, d) => this.createNoteForDate(y, m, d),
@@ -129,18 +124,7 @@ export class LinearCalendarView extends ItemView {
 		});
 
 		const debouncedRender = debounce(() => this.renderCalendar(), 300, true);
-		this.registerEvent(
-			this.app.metadataCache.on("changed", (file) => {
-				// Skip re-render for files that have never been (and aren't now) calendar notes.
-				if (this.source.hasCalendarEntry(file.path)) {
-					debouncedRender();
-					return;
-				}
-				const fm = this.app.metadataCache.getFileCache(file);
-				const inlineTags = (fm?.tags ?? []).map((t) => t.tag);
-				if (hasGateTag(fm?.frontmatter?.tags, inlineTags)) debouncedRender();
-			}),
-		);
+		this.register(this.source.onChange(() => this.renderCalendar()));
 		this.registerEvent(
 			this.app.vault.on("create", () => { this.dailyNoteMapCache = null; debouncedRender(); }),
 		);
@@ -317,7 +301,7 @@ export class LinearCalendarView extends ItemView {
 		menu.addItem((item) =>
 			item.setTitle("Create event")
 				.setIcon("calendar-plus")
-				.onClick(() => new CreateEventModal(this.app, this.noteCreator, this.settings, new Date(year, month, day)).open())
+				.onClick(() => new CreateEventModal(this.app, this.eventNotes, this.settings, new Date(year, month, day)).open())
 		);
 		menu.showAtMouseEvent(event);
 	}
@@ -361,7 +345,7 @@ export class LinearCalendarView extends ItemView {
 	}
 
 	private createNoteForDate(year: number, month: number, day: number): void {
-		void this.noteCreator.create(new Date(year, month, day), { openAfterCreate: true });
+		void this.eventNotes.create(new Date(year, month, day), { openAfterCreate: true });
 	}
 
 	private scrollToNow(): void {

@@ -21,6 +21,11 @@ export function dateFromDayOfYear(day: number, year: number): Date {
 	return date;
 }
 
+/** Days in `month` (0-indexed) of `year`. */
+export function daysInMonth(year: number, month: number): number {
+	return new Date(year, month + 1, 0).getDate();
+}
+
 /** YYYY-MM-DD for a local-midnight Date. */
 export function formatISODate(d: Date): string {
 	return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -151,11 +156,10 @@ export function monthBoundaries(
 	const result: { name: string; startDay: number; days: number }[] = [];
 	for (let m = 0; m < 12; m++) {
 		const firstOfMonth = new Date(year, m, 1);
-		const daysInMonth = new Date(year, m + 1, 0).getDate();
 		result.push({
 			name: names[m],
 			startDay: dayOfYear(firstOfMonth),
-			days: daysInMonth,
+			days: daysInMonth(year, m),
 		});
 	}
 	return result;

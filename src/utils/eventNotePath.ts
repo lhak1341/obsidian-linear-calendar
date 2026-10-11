@@ -27,8 +27,10 @@ export function fileBaseName(date: Date, title: string | undefined, cfg: EventNo
 	return `${datePrefix(date, cfg)} ${safeTitle}`;
 }
 
-/** Whether `dirPath` is exactly the event folder (no subfolders). `""` and `"/"` both mean the vault root. */
-export function isInEventFolder(dirPath: string, cfg: EventNoteConfig): boolean {
+/** Whether the note at `filePath` sits directly in the event folder (no subfolders). `""` and `"/"` both mean the vault root. */
+export function isEventNotePath(filePath: string, cfg: EventNoteConfig): boolean {
+	const slash = filePath.lastIndexOf("/");
+	const dirPath = slash < 0 ? "" : filePath.slice(0, slash);
 	return normalizePath(dirPath || "/") === normalizePath(cfg.folder || "/");
 }
 

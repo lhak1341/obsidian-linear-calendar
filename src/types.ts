@@ -45,7 +45,6 @@ export type DailyNoteStyle = "tint" | "border-top";
 
 export interface PluginSettings {
 	defaultMapping: ColumnMapping;
-	viewConfigs: Record<string, ColumnMapping>;
 	colorMap: Record<string, string>;
 	iconMap: Record<string, string>;
 	alignMode: AlignMode;

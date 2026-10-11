@@ -4,8 +4,8 @@ import { DEFAULT_SETTINGS, VIEW_TYPE_LINEAR_CALENDAR } from "./constants";
 import { LinearCalendarView } from "./view/LinearCalendarView";
 import { LinearCalendarSettingTab } from "./settings";
 import { FrontmatterScanner } from "./data/FrontmatterScanner";
-import type { DataSource, ScannerCache } from "./data/DataSource";
-import { ObsidianNoteCreator } from "./NoteCreator";
+import type { DataSource } from "./data/DataSource";
+import { ObsidianEventNotes } from "./EventNotes";
 import { CreateEventModal } from "./CreateEventModal";
 import { CalendarRenderer, RenderConfig } from "./view/CalendarRenderer";
 import { createInteractions } from "./view/calendarInteractions";
@@ -23,22 +23,21 @@ export interface MonthStripHandle {
 
 export default class LinearCalendarPlugin extends Plugin {
 	settings: PluginSettings = DEFAULT_SETTINGS;
-	private scanner!: DataSource & ScannerCache;
-	private noteCreator!: ObsidianNoteCreator;
+	private scanner!: DataSource;
+	private eventNotes!: ObsidianEventNotes;
 
 	async onload(): Promise<void> {
 		registerLucideIcons();
 		await this.loadSettings();
-		this.scanner = new FrontmatterScanner(this.app);
-		this.noteCreator = new ObsidianNoteCreator(this.app, this.settings, () => this.settings.defaultMapping);
+		this.scanner = new FrontmatterScanner(this.app, this);
+		this.eventNotes = new ObsidianEventNotes(this.app, () => this.settings);
 
 		this.registerView(VIEW_TYPE_LINEAR_CALENDAR, (leaf: WorkspaceLeaf) => {
 			return new LinearCalendarView(
 				leaf,
 				this.settings,
-				() => this.settings.defaultMapping,
 				this.scanner,
-				this.noteCreator,
+				this.eventNotes,
 			);
 		});
 
@@ -51,18 +50,10 @@ export default class LinearCalendarPlugin extends Plugin {
 		this.addCommand({
 			id: "create-event",
 			name: "Create event",
-			callback: () => new CreateEventModal(this.app, this.noteCreator, this.settings).open(),
+			callback: () => new CreateEventModal(this.app, this.eventNotes, this.settings).open(),
 		});
 
 		this.addSettingTab(new LinearCalendarSettingTab(this.app, this));
-
-		// Keep scanner cache consistent with vault mutations.
-		this.registerEvent(
-			this.app.vault.on("delete", (file) => this.scanner.evictFile(file.path)),
-		);
-		this.registerEvent(
-			this.app.vault.on("rename", (_file, oldPath) => this.scanner.evictFile(oldPath)),
-		);
 	}
 
 	onunload(): void {
@@ -82,7 +73,6 @@ export default class LinearCalendarPlugin extends Plugin {
 
 	async saveSettings(): Promise<void> {
 		await this.saveData(this.settings);
-		this.scanner.invalidateMapping();
 		for (const leaf of this.app.workspace.getLeavesOfType(
 			VIEW_TYPE_LINEAR_CALENDAR,
 		)) {
@@ -119,7 +109,7 @@ export default class LinearCalendarPlugin extends Plugin {
 
 		const interactions = createInteractions({
 			app: this.app,
-			noteCreator: this.noteCreator,
+			eventNotes: this.eventNotes,
 			getSettings: () => this.settings,
 			rerender: () => render(),
 		});
@@ -129,7 +119,6 @@ export default class LinearCalendarPlugin extends Plugin {
 			container,
 			categoriesEl,
 			this.scanner,
-			() => this.settings.defaultMapping,
 			() => this.settings,
 			{
 				onCategoryToggle: (tag) => {
@@ -156,6 +145,7 @@ export default class LinearCalendarPlugin extends Plugin {
 		};
 
 		render();
+		const unsubscribe = this.scanner.onChange(render);
 
 		let lastWidth = container.offsetWidth;
 		const ro = new ResizeObserver(() => {
@@ -183,6 +173,7 @@ export default class LinearCalendarPlugin extends Plugin {
 				render();
 			},
 			destroy: () => {
+				unsubscribe();
 				renderer.cleanup();
 				ro.disconnect();
 			},

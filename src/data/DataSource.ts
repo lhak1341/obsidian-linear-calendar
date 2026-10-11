@@ -1,12 +1,11 @@
 import type { CalendarItem, ColumnMapping } from "../types";
 
 export interface DataSource {
+	/** Items for `year`. A changed `mapping` is picked up on the next call — no invalidation needed. */
 	scan(mapping: ColumnMapping, year: number): CalendarItem[];
-	hasCalendarEntry(path: string): boolean;
-}
-
-/** Cache-consistency contract for keeping a DataSource's cache in sync with vault mutations. */
-export interface ScannerCache {
-	evictFile(path: string): void;
-	invalidateMapping(): void;
+	/**
+	 * Calls `cb` (debounced, no arguments) after calendar items may have changed: a calendar
+	 * note was edited, deleted, or renamed. Repaint by calling `scan` again. Returns the unsubscribe.
+	 */
+	onChange(cb: () => void): () => void;
 }

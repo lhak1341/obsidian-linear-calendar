@@ -59,9 +59,9 @@ Reminder bars do **not** reuse the plain `openLinkText` click handler
 path/date, so it must go through a new "materialize" path:
 
 1. Duplicate the source note's frontmatter (title, tag(s), icon, description) into a new
-   note via the existing `ObsidianNoteCreator.create()` (`src/NoteCreator.ts:30-119`),
+   note via the existing `ObsidianEventNotes.create()` (`src/EventNotes.ts`),
    which already handles the `{dateFormat} {title}.md` filename convention and opens the
-   file on creation (`NoteCreator.ts:114`) — reuse this, don't build a second creation path.
+   file on creation (`EventNotes.ts`) — reuse this, don't build a second creation path.
 2. New note's `datestart` = the reminder's date (the old `remindon` value).
 3. New note's `remindon` is **recomputed forward**, not copied verbatim and not dropped:
    `newRemindOn = newDateStart + (oldRemindOn − oldDateStart)` — i.e. the same interval

@@ -1,12 +1,13 @@
 import { App } from "obsidian";
 import type { TFile } from "obsidian";
-import type { CalendarItem, ColumnMapping, PluginSettings, AlignMode, DropCommitFn } from "../types";
+import type { CalendarItem, PluginSettings, AlignMode } from "../types";
 import type { DataSource } from "../data/DataSource";
 import { buildTagColorMap } from "../utils/colorUtils";
 import { categoryLabel, countByCategory, visibleItems } from "../utils/category";
 import { GridRenderer } from "./GridRenderer";
 import type { MonthRowRef } from "./GridRenderer";
 import { BarRenderer } from "./BarRenderer";
+import type { CalendarInteractions } from "./calendarInteractions";
 import { NowIndicator } from "./NowIndicator";
 import { Tooltip } from "./Tooltip";
 
@@ -20,13 +21,10 @@ export interface RenderConfig {
 	dailyNoteMap: Map<string, TFile>;
 }
 
-interface CalendarRendererCallbacks {
+interface CalendarRendererCallbacks extends CalendarInteractions {
 	onDayDblClick?: (y: number, m: number, d: number) => void;
 	onDayContextMenu?: (y: number, m: number, d: number, e: MouseEvent) => void;
 	onCategoryToggle?: (tag: string) => void;
-	onDropCommit?: DropCommitFn;
-	onReminderClick?: (item: CalendarItem) => void;
-	onEditNote?: (filePath: string) => void;
 }
 
 const pad = (n: number) => String(n).padStart(2, "0");
@@ -36,7 +34,6 @@ export class CalendarRenderer {
 	private barRenderer: BarRenderer;
 	private nowIndicator: NowIndicator;
 	private tooltip: Tooltip;
-	private lastRenderedYear = new Date().getFullYear();
 	private lastCategoriesSig: string | null = null;
 	private current: RenderConfig | null = null;
 
@@ -45,19 +42,11 @@ export class CalendarRenderer {
 		container: HTMLElement,
 		private categoriesEl: HTMLElement | null,
 		private source: DataSource,
-		private getMapping: () => ColumnMapping,
 		private getSettings: () => PluginSettings,
-		private callbacks: CalendarRendererCallbacks = {},
+		private callbacks: CalendarRendererCallbacks,
 	) {
 		this.gridRenderer = new GridRenderer(container);
-		this.barRenderer = new BarRenderer(
-			app,
-			() => this.lastRenderedYear,
-			callbacks.onDropCommit,
-			callbacks.onReminderClick,
-			getSettings,
-			callbacks.onEditNote,
-		);
+		this.barRenderer = new BarRenderer(app, callbacks);
 		this.nowIndicator = new NowIndicator();
 		// Anchor tooltip to container's parent to avoid overflow-x clipping
 		this.tooltip = new Tooltip(container.parentElement ?? container);
@@ -67,8 +56,6 @@ export class CalendarRenderer {
 		this.current = config;
 		const { year, months, layout, alignMode, rowHeight, dailyNoteMap } = config;
 		const { dailyNoteColor, dailyNoteStyle, japaneseWeekdayLabels } = this.getSettings();
-
-		this.lastRenderedYear = year;
 
 		const monthRows = this.gridRenderer.render({
 			year, months, layout, alignMode,
@@ -119,7 +106,7 @@ export class CalendarRenderer {
 		this.renderCategories(allItems, year, months, tagColorMap, hiddenCategories);
 
 		const tagIconMap = new Map(Object.entries(iconMap));
-		this.barRenderer.render(monthRows, items, tagColorMap, tagIconMap);
+		this.barRenderer.render(monthRows, items, year, tagColorMap, tagIconMap);
 	}
 
 	updateRowHeight(layout: "horizontal" | "vertical", rowHeight: number): void {
@@ -144,7 +131,7 @@ export class CalendarRenderer {
 		hiddenCategories: Set<string>,
 		colorMap: Record<string, string>,
 	): { allItems: CalendarItem[]; items: CalendarItem[]; tagColorMap: Map<string, string> } {
-		const allItems = this.source.scan(this.getMapping(), year);
+		const allItems = this.source.scan(this.getSettings().defaultMapping, year);
 		const tagColorMap = buildTagColorMap(allItems, colorMap);
 
 		const items = visibleItems(allItems, hiddenCategories);

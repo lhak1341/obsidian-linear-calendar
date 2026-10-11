@@ -1,5 +1,5 @@
 import { App, Modal, Notice, Setting, TFile, moment } from "obsidian";
-import type { NoteCreator } from "./NoteCreator";
+import type { EventNotes } from "./EventNotes";
 import type { PluginSettings } from "./types";
 import { IconField } from "./IconField";
 import { formatTagLabel } from "./utils/tagUtils";
@@ -32,7 +32,7 @@ export class CreateEventModal extends Modal {
 
 	constructor(
 		app: App,
-		private noteCreator: NoteCreator,
+		private eventNotes: EventNotes,
 		private settings: PluginSettings,
 		initialDate: Date = new Date(),
 		private editFilePath?: string,
@@ -287,13 +287,13 @@ export class CreateEventModal extends Modal {
 			anniversary: this.anniversary,
 			dateEnd,
 			description: this.description || undefined,
-			extraFrontmatter: remindProp && remindDate ? { [remindProp]: toInputDate(remindDate) } : undefined,
+			remindOn: remindProp ? remindDate : undefined,
 			openAfterCreate: false,
 		};
 		if (this.isEditing && this.editFilePath) {
-			void this.noteCreator.updateEvent(this.editFilePath, date, options);
+			void this.eventNotes.update(this.editFilePath, date, options);
 		} else {
-			void this.noteCreator.create(date, options);
+			void this.eventNotes.create(date, options);
 		}
 		this.close();
 	}

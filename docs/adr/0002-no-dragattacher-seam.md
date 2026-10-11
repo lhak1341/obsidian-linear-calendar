@@ -7,3 +7,7 @@ We decided against it because the seam does not unlock testability. `BarRenderer
 The one-adapter rule also applies: `DragHandler` has no second adapter (no touch-drag implementation, no test fake that does real work). A seam with one adapter is hypothetical — the interface adds complexity without leverage. If a second adapter appears, revisit.
 
 The real testability move was extracting `assignRowsForMonth` to `src/utils/rowAssignment.ts` — pure interval-scheduling logic with no DOM dependency, following the same pattern as `dragUtils.ts`.
+
+## Addendum: the pure side deepened
+
+`assignRowsForMonth` (`rowAssignment.ts`), `segmentByMonth.ts` and the ghost helpers in `dragUtils.ts` were merged into `src/utils/barLayout.ts` (`layoutBars`, `previewMove`, `gridArea`). It is the same move this ADR endorsed, taken further: bars and drag ghosts now share one splitter and one row cap. `DragHandler` is still constructed by `BarRenderer` and still owns all DOM; no seam was added.

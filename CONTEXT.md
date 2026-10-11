@@ -24,3 +24,7 @@
 **Date prefix** — the start date formatted per `newEventDateFormat` (default `YYYY-MM-DD`), followed by a space, at the start of an event note's name. Dragging an event renames its note to the new date's prefix.
 
 **Uncategorized** — the category of an item with no `linear-calendar/` subtag, shown as "Other". Its key `"__uncategorized__"` is persisted in view state, so it must not change.
+
+**Carry-forward** — moving a note's reminder by the same interval its start moved (on drag) or was promoted: a whole-month gap stays whole months (clamped), otherwise a whole day count. See `carryDateForward`.
+
+**Settle** — an `EventNotes` verb resolving only once the metadata cache reflects its write, so a re-render right after sees fresh data.

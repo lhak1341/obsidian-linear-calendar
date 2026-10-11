@@ -14,7 +14,6 @@ export const DEFAULT_MAPPING: ColumnMapping = {
 
 export const DEFAULT_SETTINGS: PluginSettings = {
 	defaultMapping: { ...DEFAULT_MAPPING },
-	viewConfigs: {},
 	colorMap: {},
 	iconMap: {},
 	alignMode: "date",

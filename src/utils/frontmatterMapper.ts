@@ -34,7 +34,7 @@ export function hasGateTag(rawFmTags: unknown, inlineTags: string[]): boolean {
 
 /**
  * Reads the fields shared by mapFrontmatterToItem, CreateEventModal.prefillFromFile, and
- * NoteCreator.promoteReminder off a note's frontmatter via ColumnMapping. Returns raw
+ * EventNotes.promoteReminder off a note's frontmatter via ColumnMapping. Returns raw
  * matches only — title resolution (the "__filename__" sentinel + its basename fallback)
  * and tag/fallback selection (e.g. promoteReminder alone also matches the bare gate tag)
  * are intentionally caller-specific; don't fold them in here.

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { datePrefix, fileBaseName, isInEventFolder, hasDatePrefix, stripDatePrefix, eventNoteConfig } from "./eventNotePath";
+import { datePrefix, fileBaseName, isEventNotePath, hasDatePrefix, stripDatePrefix, eventNoteConfig } from "./eventNotePath";
 
 const cfg = { folder: "Events", format: "YYYY-MM-DD" };
 const d = new Date(2026, 2, 1);
@@ -24,20 +24,21 @@ describe("fileBaseName", () => {
 	});
 });
 
-describe("isInEventFolder", () => {
-	it("matches the folder exactly", () => expect(isInEventFolder("Events", cfg)).toBe(true));
+describe("isEventNotePath", () => {
+	it("matches a note directly in the folder", () => expect(isEventNotePath("Events/Talk.md", cfg)).toBe(true));
 	it("ignores a trailing slash in the setting", () =>
-		expect(isInEventFolder("Events", { ...cfg, folder: "Events/" })).toBe(true));
+		expect(isEventNotePath("Events/Talk.md", { ...cfg, folder: "Events/" })).toBe(true));
 	it("rejects subfolders and siblings", () => {
-		expect(isInEventFolder("Events/Sub", cfg)).toBe(false);
-		expect(isInEventFolder("Other", cfg)).toBe(false);
+		expect(isEventNotePath("Events/Sub/Talk.md", cfg)).toBe(false);
+		expect(isEventNotePath("Other/Talk.md", cfg)).toBe(false);
+		expect(isEventNotePath("Talk.md", cfg)).toBe(false);
 	});
-	it("treats empty and / as the vault root, on either side", () => {
-		expect(isInEventFolder("", { ...cfg, folder: "" })).toBe(true);
-		expect(isInEventFolder("/", { ...cfg, folder: "" })).toBe(true);
-		expect(isInEventFolder("", { ...cfg, folder: "/" })).toBe(true);
-		expect(isInEventFolder("Events", { ...cfg, folder: "" })).toBe(false);
-		expect(isInEventFolder("", cfg)).toBe(false);
+	it("takes only the last path segment as the file", () =>
+		expect(isEventNotePath("A/Events/Talk.md", cfg)).toBe(false));
+	it("treats an empty or / folder as the vault root", () => {
+		expect(isEventNotePath("Talk.md", { ...cfg, folder: "" })).toBe(true);
+		expect(isEventNotePath("Talk.md", { ...cfg, folder: "/" })).toBe(true);
+		expect(isEventNotePath("Events/Talk.md", { ...cfg, folder: "" })).toBe(false);
 	});
 });
 
