@@ -48,8 +48,14 @@
   override — the modal's default per-field `width: 100%` makes siblings fight for the
   same full-row width otherwise. See `.lc-remind-setting` in `styles.css`.
 
+## Daily notes
+
+- `DailyNotes` (`DailyNotes.ts`) is the only place the daily-note filename format, folder and `YYYY-MM-DD` key are known: hosts call `get(year, month, day)` (0-based month) and `create(...)`, never build a key. The plugin owns one instance (built in `onload`) and passes it to the view and every month strip.
+- Folder and format come from another plugin's settings, which fire no event, so `get` compares a `folder|format` signature with the one the index was built from and rebuilds on a mismatch. Vault events drop the index only for markdown files under the folder (or a folder holding it); `onChange` notifies debounced (300ms).
+
 ## Note creation
 
+- `eventFields.ts` holds `EventFields` and its two mirror images: `applyFields` writes them into frontmatter, `readEventFields` reads `{ date, fields }` back. `title` comes back undefined when the note has none — callers choose the fallback (filename, prefix-stripped filename, blank). `tag` is the first `linear-calendar/*` subtag; a bare-gate-tag note has none, which `create` writes back as the bare tag.
 - `EventNotes` (`EventNotes.ts`) is the only writer of event-note frontmatter:
   `create`/`update`/`move`/`promoteReminder`. `create()` takes `CreateOptions` (=
   `EventFields` + a **required** `openAfterCreate`); `update()` takes plain `EventFields`

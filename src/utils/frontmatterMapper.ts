@@ -1,5 +1,6 @@
 import type { RawCalendarItem, ColumnMapping } from "../types";
 import { parseDateString } from "./dateUtils";
+import { coerceTags } from "./frontmatterUtils";
 
 export interface MappedDisplayFields {
 	/** All linear-calendar/ subtags present, in frontmatter order. Excludes the bare gate tag. */
@@ -9,23 +10,13 @@ export interface MappedDisplayFields {
 	description: string | undefined;
 }
 
-/** Coerces a raw frontmatter.tags value (array, single string, or absent) into a string[]. */
-function coerceTagsField(raw: unknown): string[] {
-	if (!raw) return [];
-	return Array.isArray(raw)
-		? raw.map(String)
-		: typeof raw === "string"
-			? [raw]
-			: [];
-}
-
 /**
  * Whether a note is gated into the calendar: tagged #linear-calendar (or a subtag) either
  * in frontmatter (`rawFmTags`, no "#" prefix) or inline in the note body (`inlineTags`, "#"
  * prefix required — that's how Obsidian's metadataCache reports inline tags).
  */
 export function hasGateTag(rawFmTags: unknown, inlineTags: string[]): boolean {
-	const fmTags = coerceTagsField(rawFmTags);
+	const fmTags = coerceTags(rawFmTags);
 	return (
 		fmTags.some((t) => t === "linear-calendar" || t.startsWith("linear-calendar/")) ||
 		inlineTags.some((t) => t === "#linear-calendar" || t.startsWith("#linear-calendar/"))
@@ -33,17 +24,16 @@ export function hasGateTag(rawFmTags: unknown, inlineTags: string[]): boolean {
 }
 
 /**
- * Reads the fields shared by mapFrontmatterToItem, CreateEventModal.prefillFromFile, and
- * EventNotes.promoteReminder off a note's frontmatter via ColumnMapping. Returns raw
+ * Reads the display fields off a note's frontmatter via ColumnMapping, for mapFrontmatterToItem
+ * and `readEventFields` (eventFields.ts, which the event-note flows use). Returns raw
  * matches only — title resolution (the "__filename__" sentinel + its basename fallback)
- * and tag/fallback selection (e.g. promoteReminder alone also matches the bare gate tag)
- * are intentionally caller-specific; don't fold them in here.
+ * is intentionally caller-specific; don't fold it in here.
  */
 export function extractDisplayFields(
 	frontmatter: Record<string, unknown>,
 	mapping: ColumnMapping,
 ): MappedDisplayFields {
-	const tags = coerceTagsField(frontmatter.tags).filter((t) => t.startsWith("linear-calendar/"));
+	const tags = coerceTags(frontmatter.tags).filter((t) => t.startsWith("linear-calendar/"));
 
 	const iconRaw = frontmatter[mapping.iconProp];
 	const icon =

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { datePrefix, fileBaseName, isEventNotePath, hasDatePrefix, stripDatePrefix, eventNoteConfig } from "./eventNotePath";
+import { datePrefix, fileBaseName, freePath, isEventNotePath, hasDatePrefix, stripDatePrefix, eventNoteConfig } from "./eventNotePath";
 
 const cfg = { folder: "Events", format: "YYYY-MM-DD" };
 const d = new Date(2026, 2, 1);
@@ -60,4 +60,21 @@ describe("hasDatePrefix / stripDatePrefix", () => {
 describe("eventNoteConfig", () => {
 	it("maps settings fields", () =>
 		expect(eventNoteConfig({ newEventFolder: "E", newEventDateFormat: "YY" })).toEqual({ folder: "E", format: "YY" }));
+});
+
+describe("freePath", () => {
+	it("returns the plain path when it is free", () =>
+		expect(freePath("Events/2026-03-01 Talk", "md", () => false)).toBe("Events/2026-03-01 Talk.md"));
+	it("appends the first free counter", () => {
+		const taken = new Set(["Events/Talk.md", "Events/Talk 1.md"]);
+		expect(freePath("Events/Talk", "md", (p) => taken.has(p))).toBe("Events/Talk 2.md");
+	});
+	it("accepts the caller's own path even though it exists", () => {
+		const taken = new Set(["Events/Talk.md"]);
+		expect(freePath("Events/Talk", "md", (p) => taken.has(p), "Events/Talk.md")).toBe("Events/Talk.md");
+	});
+	it("keeps counting past the own path when something else holds the plain one", () => {
+		const taken = new Set(["Events/Talk.md", "Events/Talk 1.md"]);
+		expect(freePath("Events/Talk", "md", (p) => taken.has(p), "Events/Talk 1.md")).toBe("Events/Talk 1.md");
+	});
 });

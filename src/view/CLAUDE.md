@@ -67,4 +67,4 @@
 
 - Vault has native menus on, so a context menu has no DOM to read: call the handler directly (`view.calendarRenderer.barRenderer.<fn>`, `view.calendarRenderer.callbacks.<fn>`) instead of dispatching `contextmenu`.
 - The view restores its persisted `year` — set it first (`view.setState({...view.getState(), year}, {history:false})`) or DOM counts reflect whatever year was last open.
-- Write tests against `lhakZettel` with throwaway notes (`zz` prefix, far-future dates) and trash them in `finally`.
+- Write tests against `lhakZettel` with throwaway notes (`zz` prefix, far-future year ≤ 2068 — its `YYMMDD` formats parse `99` as 1999, so 2099 fixtures are never found) and trash them in `finally`. Assert deltas against a baseline, not totals: the year already holds real bars, and a promoted note with a remind date draws its own ghost.

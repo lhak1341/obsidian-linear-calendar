@@ -33,6 +33,17 @@ export class TFolder extends TAbstractFile {
 	children: TAbstractFile[] = [];
 }
 
+export class Vault {
+	/** Matches Obsidian's: calls `cb` on `root` and every descendant. */
+	static recurseChildren(root: TFolder, cb: (file: TAbstractFile) => unknown): void {
+		cb(root);
+		for (const child of root.children) {
+			if (child instanceof TFolder) Vault.recurseChildren(child, cb);
+			else cb(child);
+		}
+	}
+}
+
 export class Notice {
 	constructor(public message: string) {}
 	hide(): void {}

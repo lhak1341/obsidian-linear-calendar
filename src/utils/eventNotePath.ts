@@ -43,3 +43,12 @@ export function hasDatePrefix(basename: string, date: Date, cfg: EventNoteConfig
 export function stripDatePrefix(basename: string, date: Date, cfg: EventNoteConfig): string {
 	return hasDatePrefix(basename, date, cfg) ? basename.slice(datePrefix(date, cfg).length + 1) : basename;
 }
+
+/** `"{base}.{extension}"`, or the first `"{base} {n}.{extension}"` that `exists` does not report taken. `own` (a path the caller already holds) counts as free. */
+export function freePath(base: string, extension: string, exists: (path: string) => boolean, own?: string): string {
+	let path = normalizePath(`${base}.${extension}`);
+	for (let n = 1; path !== own && exists(path); n++) {
+		path = normalizePath(`${base} ${n}.${extension}`);
+	}
+	return path;
+}

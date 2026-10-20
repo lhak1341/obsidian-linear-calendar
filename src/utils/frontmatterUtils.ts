@@ -1,3 +1,9 @@
+/** Coerces a raw frontmatter.tags value (array, single string/number, or absent) into a string[]. */
+export function coerceTags(raw: unknown): string[] {
+	if (Array.isArray(raw)) return (raw as unknown[]).map(String);
+	return typeof raw === "string" || typeof raw === "number" ? [String(raw)] : [];
+}
+
 /**
  * Resolves the tags array to write for a note: strips any existing bare `linear-calendar`
  * gate tag or subtag, then puts the resolved calendar tag (trimmed `tag`, or the bare gate
@@ -6,10 +12,7 @@
  */
 export function resolveCalendarTags(existingTags: unknown, tag: string | undefined): string[] {
 	const calendarTag = tag?.trim() || "linear-calendar";
-	const existing = Array.isArray(existingTags)
-		? (existingTags as unknown[]).map(String)
-		: (typeof existingTags === "string" || typeof existingTags === "number") ? [String(existingTags)] : [];
-	const withoutGateTag = existing.filter(
+	const withoutGateTag = coerceTags(existingTags).filter(
 		(t) => t !== "linear-calendar" && !t.startsWith("linear-calendar/"),
 	);
 	withoutGateTag.unshift(calendarTag);

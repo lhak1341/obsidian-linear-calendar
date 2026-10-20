@@ -4,27 +4,13 @@ interface TemplaterPlugin {
 	templater: { write_template_to_file(template: TFile, target: TFile): Promise<void> };
 }
 type AppWithPlugins = App & { plugins?: { getPlugin(id: string): TemplaterPlugin | null } };
-import type { PluginSettings, ColumnMapping } from "./types";
+import type { PluginSettings } from "./types";
 import { parseDateString, formatISODate, carryDateForward } from "./utils/dateUtils";
-import { extractDisplayFields } from "./utils/frontmatterMapper";
-import { resolveCalendarTags } from "./utils/frontmatterUtils";
+import { applyFields, readEventFields, type EventFields, type Frontmatter } from "./eventFields";
 import {
-	datePrefix, eventNoteConfig, fileBaseName, hasDatePrefix, isEventNotePath, stripDatePrefix,
+	datePrefix, eventNoteConfig, fileBaseName, freePath, hasDatePrefix, isEventNotePath, stripDatePrefix,
 	type EventNoteConfig,
 } from "./utils/eventNotePath";
-
-/** The user-editable fields of an event note. */
-export interface EventFields {
-	title?: string;
-	/** Full subtag, e.g. "linear-calendar/work". Omit for the bare "linear-calendar" gate tag. */
-	tag?: string;
-	anniversary?: boolean;
-	icon?: string;
-	dateEnd?: Date;
-	description?: string;
-	/** Date the note's reminder ghost appears on; written to the mapping's `remindProp`. */
-	remindOn?: Date;
-}
 
 /**
  * `create`'s options. `openAfterCreate` is deliberately required and has no default:
@@ -57,8 +43,6 @@ export interface EventNotes {
 	promoteReminder(filePath: string): Promise<boolean>;
 }
 
-type Frontmatter = Record<string, unknown>;
-
 /** How long to wait for the metadata cache to catch up before giving up and carrying on. */
 const SETTLE_TIMEOUT_MS = 2000;
 
@@ -86,12 +70,7 @@ export class ObsidianEventNotes implements EventNotes {
 
 			const baseName = fileBaseName(date, options.title, cfg);
 			const base = folder ? `${folder}/${baseName}` : baseName;
-			let path = normalizePath(`${base}.md`);
-			let counter = 1;
-			while (this.app.vault.getAbstractFileByPath(path)) {
-				path = normalizePath(`${base} ${counter}.md`);
-				counter++;
-			}
+			const path = freePath(base, "md", (p) => !!this.app.vault.getAbstractFileByPath(p));
 
 			const templater = (this.app as AppWithPlugins).plugins?.getPlugin("templater-obsidian");
 			const templateSetting = settings.newEventTemplate;
@@ -164,8 +143,8 @@ export class ObsidianEventNotes implements EventNotes {
 			const mapping = settings.defaultMapping;
 			const fm = this.app.metadataCache.getFileCache(sourceFile)?.frontmatter ?? {};
 
-			const oldDateStart = parseDateString(fm[mapping.startDateProp]);
-			const oldRemindOn = mapping.remindProp ? parseDateString(fm[mapping.remindProp]) : null;
+			const { date: oldDateStart, fields: read } = readEventFields(fm, mapping);
+			const oldRemindOn = read.remindOn;
 			if (!oldDateStart || !oldRemindOn) {
 				throw new Error("source note has no valid start/remind date");
 			}
@@ -175,16 +154,7 @@ export class ObsidianEventNotes implements EventNotes {
 			// two date prefixes into the new filename.
 			const strippedBasename = stripDatePrefix(sourceFile.basename, oldDateStart, eventNoteConfig(settings));
 
-			const title = mapping.titleProp === "__filename__"
-				? strippedBasename
-				: typeof fm[mapping.titleProp] === "string" ? (fm[mapping.titleProp] as string) : strippedBasename;
-
-			const tagsRaw = Array.isArray(fm.tags)
-				? (fm.tags as unknown[]).map(String)
-				: typeof fm.tags === "string" ? [fm.tags] : [];
-			const tag = tagsRaw.find((t) => t === "linear-calendar" || t.startsWith("linear-calendar/"));
-
-			const { icon, description } = extractDisplayFields(fm, mapping);
+			const title = read.title ?? strippedBasename;
 
 			// Carry the reminder forward by the same interval, re-anchored at the new note's
 			// date (oldRemindOn) — see carryDateForward for the day-of-month-vs-day-count rule.
@@ -192,9 +162,9 @@ export class ObsidianEventNotes implements EventNotes {
 
 			const created = await this.create(oldRemindOn, {
 				title,
-				tag,
-				icon,
-				description,
+				tag: read.tag,
+				icon: read.icon,
+				description: read.description,
 				remindOn: mapping.remindProp ? newRemindOn : undefined,
 				openAfterCreate: false,
 			});
@@ -267,12 +237,7 @@ export class ObsidianEventNotes implements EventNotes {
 		const rest = file.basename.slice(oldPrefix.length);
 		const parentPrefix = file.parent.path === "/" ? "" : `${file.parent.path}/`;
 		const base = `${parentPrefix}${newPrefix}${rest}`;
-		let newPath = normalizePath(`${base}.${file.extension}`);
-		let counter = 1;
-		while (newPath !== file.path && this.app.vault.getAbstractFileByPath(newPath)) {
-			newPath = normalizePath(`${base} ${counter}.${file.extension}`);
-			counter++;
-		}
+		const newPath = freePath(base, file.extension, (p) => !!this.app.vault.getAbstractFileByPath(p), file.path);
 		if (newPath === file.path) return;
 
 		await this.app.fileManager.renameFile(file, newPath);
@@ -284,38 +249,4 @@ function matches(cached: Frontmatter, written: Frontmatter): boolean {
 	const cachedKeys = Object.keys(cached).filter((k) => k !== "position");
 	if (cachedKeys.length !== Object.keys(written).length) return false;
 	return cachedKeys.every((k) => k in written && JSON.stringify(cached[k]) === JSON.stringify(written[k]));
-}
-
-/**
- * Writes `fields` into `fm` through the column mapping. `merge` (create) leaves omitted
- * fields as they were, since a template may already have set them; `replace` (update)
- * clears them, since the caller submits the note's full state.
- */
-function applyFields(fm: Frontmatter, mapping: ColumnMapping, date: Date, fields: EventFields, mode: "merge" | "replace"): void {
-	const set = (prop: string, value: string | undefined): void => {
-		if (!prop) return;
-		if (value) fm[prop] = value;
-		else if (mode === "replace") delete fm[prop];
-	};
-
-	fm[mapping.startDateProp] = formatISODate(date);
-	set(mapping.endDateProp, fields.dateEnd ? formatISODate(fields.dateEnd) : undefined);
-	if (mapping.titleProp !== "__filename__") set(mapping.titleProp, fields.title?.trim());
-	set(mapping.iconProp, fields.icon?.trim());
-	set(mapping.descriptionProp, fields.description?.trim());
-	set(mapping.remindProp, fields.remindOn ? formatISODate(fields.remindOn) : undefined);
-	if (mapping.anniversaryProp && (fields.anniversary || mode === "replace")) {
-		fm[mapping.anniversaryProp] = !!fields.anniversary;
-	}
-
-	const resolved = resolveCalendarTags(fm.tags, fields.tag);
-	if (mode === "merge") {
-		fm.tags = resolved;
-		return;
-	}
-	// The modal edits one category; keep any further calendar subtags the note carries.
-	const extraSubtags = (Array.isArray(fm.tags) ? (fm.tags as unknown[]).map(String) : [])
-		.filter((t) => t.startsWith("linear-calendar/"))
-		.slice(1);
-	fm.tags = [...resolved, ...extraSubtags.filter((t) => !resolved.includes(t))];
 }

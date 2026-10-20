@@ -11,6 +11,8 @@
 - **recurrence** — a copy of an anniversary note projected into a later year. Carries its **origin year**. Not draggable.
 - **reminder** — a synthetic ghost bar drawn from another note's remind date. A fixed one-off; clicking it promotes it to a real note.
 
+**Daily note** — the note for one calendar day, as defined by the daily-notes settings of `obsidian-calendar-notes` or the core plugin. Not a calendar note unless tagged. Marks its day cell; clicking the cell opens it.
+
 **Anniversary** — a calendar note flagged to repeat on the same date every later year. Produces recurrences.
 
 **Origin year** — the year of an anniversary note's own start date. A recurrence's age is its year minus the origin year.

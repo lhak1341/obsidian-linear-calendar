@@ -21,7 +21,7 @@
 
 ## Reuse existing frontmatter/date helpers
 
-This codebase has repeatedly reinvented logic already in `src/utils/` — grep here before hand-rolling new note-field read/write logic: `frontmatterMapper.ts` = read-side (`extractDisplayFields` for title/tag/icon/anniversary/description, `hasGateTag`), `frontmatterUtils.ts` = tag resolution (`resolveCalendarTags`); the writes themselves live in `../EventNotes.ts`, `dateUtils.ts` = date parsing/formatting (`formatISODate`, `parseDateString`, `carryDateForward`).
+This codebase has repeatedly reinvented logic already in `src/utils/` — grep here before hand-rolling new note-field read/write logic: `frontmatterMapper.ts` = the scanner's read-side (`extractDisplayFields` for tags/icon/anniversary/description, `hasGateTag`), `frontmatterUtils.ts` = tag coercion and resolution (`coerceTags`, `resolveCalendarTags`), `eventNotePath.ts` = event-note naming (`freePath` picks the first unused filename); an event note's fields are written and read back by `applyFields`/`readEventFields` in `../eventFields.ts` (use those, not hand-rolled frontmatter reads, in event flows), `dateUtils.ts` = date parsing/formatting (`formatISODate`, `parseDateString`, `carryDateForward`).
 
 ## Daily note plugin priority
 

@@ -1,7 +1,7 @@
 import { App } from "obsidian";
-import type { TFile } from "obsidian";
 import type { CalendarItem, PluginSettings, AlignMode } from "../types";
 import type { DataSource } from "../data/DataSource";
+import type { DailyNotes } from "../DailyNotes";
 import { buildTagColorMap } from "../utils/colorUtils";
 import { categoryLabel, countByCategory, visibleItems } from "../utils/category";
 import { GridRenderer } from "./GridRenderer";
@@ -18,7 +18,6 @@ export interface RenderConfig {
 	layout: "horizontal" | "vertical";
 	alignMode: AlignMode;
 	rowHeight: number;
-	dailyNoteMap: Map<string, TFile>;
 }
 
 interface CalendarRendererCallbacks extends CalendarInteractions {
@@ -26,8 +25,6 @@ interface CalendarRendererCallbacks extends CalendarInteractions {
 	onDayContextMenu?: (y: number, m: number, d: number, e: MouseEvent) => void;
 	onCategoryToggle?: (tag: string) => void;
 }
-
-const pad = (n: number) => String(n).padStart(2, "0");
 
 export class CalendarRenderer {
 	private gridRenderer: GridRenderer;
@@ -42,6 +39,7 @@ export class CalendarRenderer {
 		container: HTMLElement,
 		private categoriesEl: HTMLElement | null,
 		private source: DataSource,
+		private dailyNotes: DailyNotes,
 		private getSettings: () => PluginSettings,
 		private callbacks: CalendarRendererCallbacks,
 	) {
@@ -54,15 +52,15 @@ export class CalendarRenderer {
 
 	render(config: RenderConfig): void {
 		this.current = config;
-		const { year, months, layout, alignMode, rowHeight, dailyNoteMap } = config;
+		const { year, months, layout, alignMode, rowHeight } = config;
 		const { dailyNoteColor, dailyNoteStyle, japaneseWeekdayLabels } = this.getSettings();
 
 		const monthRows = this.gridRenderer.render({
 			year, months, layout, alignMode,
-			dailyNoteMap, dailyNoteColor, dailyNoteStyle, japaneseWeekdayLabels,
+			dailyNoteAt: (y, m, d) => this.dailyNotes.get(y, m, d), dailyNoteColor, dailyNoteStyle, japaneseWeekdayLabels,
 			callbacks: {
 				onDayClick: (y, m, d) => {
-					const file = dailyNoteMap.get(`${y}-${pad(m + 1)}-${pad(d)}`);
+					const file = this.dailyNotes.get(y, m, d);
 					if (file) void this.app.workspace.openLinkText(file.path, "", false);
 				},
 				onDayDblClick: this.callbacks.onDayDblClick,

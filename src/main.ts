@@ -6,11 +6,11 @@ import { LinearCalendarSettingTab } from "./settings";
 import { FrontmatterScanner } from "./data/FrontmatterScanner";
 import type { DataSource } from "./data/DataSource";
 import { ObsidianEventNotes } from "./EventNotes";
+import { DailyNotes } from "./DailyNotes";
 import { CreateEventModal } from "./CreateEventModal";
 import { CalendarRenderer, RenderConfig } from "./view/CalendarRenderer";
 import { createInteractions } from "./view/calendarInteractions";
 import { buildTagColorMap } from "./utils/colorUtils";
-import { getDailyNoteMap } from "./utils/dailyNotes";
 import { registerLucideIcons } from "./lucide-icons";
 
 /** Handle returned by {@link LinearCalendarPlugin.mountMonthStrip} for host-driven month navigation. */
@@ -25,18 +25,21 @@ export default class LinearCalendarPlugin extends Plugin {
 	settings: PluginSettings = DEFAULT_SETTINGS;
 	private scanner!: DataSource;
 	private eventNotes!: ObsidianEventNotes;
+	private dailyNotes!: DailyNotes;
 
 	async onload(): Promise<void> {
 		registerLucideIcons();
 		await this.loadSettings();
 		this.scanner = new FrontmatterScanner(this.app, this);
 		this.eventNotes = new ObsidianEventNotes(this.app, () => this.settings);
+		this.dailyNotes = new DailyNotes(this.app, this);
 
 		this.registerView(VIEW_TYPE_LINEAR_CALENDAR, (leaf: WorkspaceLeaf) => {
 			return new LinearCalendarView(
 				leaf,
 				this.settings,
 				this.scanner,
+				this.dailyNotes,
 				this.eventNotes,
 			);
 		});
@@ -119,6 +122,7 @@ export default class LinearCalendarPlugin extends Plugin {
 			container,
 			categoriesEl,
 			this.scanner,
+			this.dailyNotes,
 			() => this.settings,
 			{
 				onCategoryToggle: (tag) => {
@@ -138,14 +142,14 @@ export default class LinearCalendarPlugin extends Plugin {
 				layout: "horizontal",
 				alignMode: "date",
 				rowHeight: 0,
-				dailyNoteMap: getDailyNoteMap(this.app),
 			};
 			renderer.render(config);
 			onMonthChange?.(year, month);
 		};
 
 		render();
-		const unsubscribe = this.scanner.onChange(render);
+		const unsubscribeItems = this.scanner.onChange(render);
+		const unsubscribeDailyNotes = this.dailyNotes.onChange(render);
 
 		let lastWidth = container.offsetWidth;
 		const ro = new ResizeObserver(() => {
@@ -173,7 +177,8 @@ export default class LinearCalendarPlugin extends Plugin {
 				render();
 			},
 			destroy: () => {
-				unsubscribe();
+				unsubscribeItems();
+				unsubscribeDailyNotes();
 				renderer.cleanup();
 				ro.disconnect();
 			},

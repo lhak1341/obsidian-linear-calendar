@@ -380,6 +380,25 @@ describe("promoteReminder", () => {
 		expect(v.openLinkText).not.toHaveBeenCalled();
 	});
 
+	it("titles the new note from the frontmatter title, not the filename, when the mapping has one", async () => {
+		const v = makeVault();
+		const mapped = () => makeSettings({ defaultMapping: { ...mapping, titleProp: "title" } });
+		v.addFile("Events/2026-03-01 Whatever.md", { dateStart: "2026-03-01", remindOn: "2026-03-05", title: "Real Talk" });
+		const notes = new ObsidianEventNotes(v.app, mapped);
+
+		expect(await notes.promoteReminder("Events/2026-03-01 Whatever.md")).toBe(true);
+		expect(v.disk.get("Events/2026-03-05 Real Talk.md")!.title).toBe("Real Talk");
+	});
+
+	it("keeps a note with only the bare gate tag uncategorized", async () => {
+		const v = makeVault();
+		v.addFile("Events/2026-03-01 Talk.md", { dateStart: "2026-03-01", remindOn: "2026-03-05", tags: ["linear-calendar"] });
+		const notes = new ObsidianEventNotes(v.app, makeSettings);
+
+		expect(await notes.promoteReminder("Events/2026-03-01 Talk.md")).toBe(true);
+		expect(v.disk.get("Events/2026-03-05 Talk.md")!.tags).toEqual(["linear-calendar"]);
+	});
+
 	it("resolves false and writes nothing when the source has no remind date", async () => {
 		const v = makeVault();
 		v.addFile("Events/2026-03-01 Talk.md", { dateStart: "2026-03-01" });

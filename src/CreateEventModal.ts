@@ -3,8 +3,7 @@ import type { EventNotes } from "./EventNotes";
 import type { PluginSettings } from "./types";
 import { IconField } from "./IconField";
 import { formatTagLabel } from "./utils/tagUtils";
-import { parseDateString } from "./utils/dateUtils";
-import { extractDisplayFields } from "./utils/frontmatterMapper";
+import { readEventFields } from "./eventFields";
 import { eventNoteConfig, fileBaseName } from "./utils/eventNotePath";
 
 const pad = (n: number) => String(n).padStart(2, "0");
@@ -49,26 +48,20 @@ export class CreateEventModal extends Modal {
 		const mapping = this.settings.defaultMapping;
 		const fm = this.app.metadataCache.getFileCache(file)?.frontmatter ?? {};
 
-		this.title = mapping.titleProp === "__filename__"
-			? file.basename
-			: typeof fm[mapping.titleProp] === "string" ? (fm[mapping.titleProp] as string) : "";
+		const { date, fields } = readEventFields(fm, mapping);
 
-		const { tags, icon, anniversary, description } = extractDisplayFields(fm, mapping);
-		this.tag = tags[0] ?? "";
-		if (icon) this.icon = icon;
-		this.anniversary = anniversary;
-		if (description) this.description = description;
+		this.title = mapping.titleProp === "__filename__" ? file.basename : (fields.title ?? "");
+		this.tag = fields.tag ?? "";
+		if (fields.icon) this.icon = fields.icon;
+		this.anniversary = fields.anniversary ?? false;
+		if (fields.description) this.description = fields.description;
 
-		const start = parseDateString(fm[mapping.startDateProp]);
-		if (start) this.dateStr = toInputDate(start);
-		const end = mapping.endDateProp ? parseDateString(fm[mapping.endDateProp]) : null;
-		if (end) this.dateEndStr = toInputDate(end);
-
-		const remind = mapping.remindProp ? parseDateString(fm[mapping.remindProp]) : null;
-		if (remind) {
+		if (date) this.dateStr = toInputDate(date);
+		if (fields.dateEnd) this.dateEndStr = toInputDate(fields.dateEnd);
+		if (fields.remindOn) {
 			this.remindEnabled = true;
 			this.remindMode = "exact";
-			this.remindStr = toInputDate(remind);
+			this.remindStr = toInputDate(fields.remindOn);
 		}
 	}
 

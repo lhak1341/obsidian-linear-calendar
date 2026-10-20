@@ -9,7 +9,7 @@ Dual-prefix tag gating (`frontmatter.tags` vs `cache.tags[].tag`) — see `utils
 - `FrontmatterScanner` owns it: it registers its own `metadataCache` "changed" and vault `delete`/`rename` listeners (via the `Component` passed to its constructor) and tells subscribers through `onChange(cb)`, debounced 300ms, no arguments. Hosts repaint by calling `scan` again; `LinearCalendarView` and `mountMonthStrip` both subscribe.
 - It emits only for calendar notes: a "changed" file that is a known entry (so a note losing its gate tag still counts) or carries the gate tag now, and a delete or rename of a known entry. Vault `create` is not listened to — a new calendar note triggers "changed" once indexed.
 - The "changed" callback signature is `(file: TFile, data, oldData)` — always capture the `TFile` arg; `() => handler()` silently discards it and defeats file-level filtering.
-- Daily-note-map invalidation is not item change: `LinearCalendarView` keeps its own vault `create`/`delete`/`rename` listeners for that.
+- Daily-note changes are not item change: `DailyNotes` (`src/DailyNotes.ts`) has its own `onChange`, and both hosts subscribe to it as well.
 
 ## Category = tags[0]
 
