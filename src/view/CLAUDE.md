@@ -31,7 +31,7 @@
 ## Category toggle re-render scope
 
 - `onCategoryToggle` must call `renderBarsOnly()`, not `renderCalendar()` — `populateDayCell()` never receives `hiddenCategories`, so the day cell DOM is invariant under category filter changes; only bars and chips need rebuilding.
-- `lastCategoriesSig` in `renderCategories()` guards chip DOM rebuilds — include ALL visual chip properties (color, icon, etc.) in the sig or a change to that property will be silently skipped on re-render
+- `CategoryChips`'s `lastSig` guards chip DOM rebuilds — include ALL visual chip properties (color, icon, etc.) in the sig or a change to that property will be silently skipped on re-render
 
 ## Tracking a CSS grid column with a positioned overlay
 
@@ -48,7 +48,7 @@
 - Simulate a real drag with `obsidian-cli dev:cdp method=Input.dispatchMouseEvent params='{"type":"mousePressed"|"mouseMoved"|"mouseReleased", "x":.., "y":.., "button":"left", "buttons":1}'` — a `mousePressed` then `mouseMoved` past the 4px threshold then `mouseReleased`, coordinates from the bar's `getBoundingClientRect()`
 - Check `dev:errors` after release, and re-read the note's frontmatter to confirm the committed dates
 - Activate the calendar leaf (`app.workspace.setActiveLeaf(leaf,{focus:true})`) and assert `.lc-days-grid` `clientWidth > 0` immediately before pressing — a hidden leaf (another session shares the app) makes `dayWidth` 0, the delta `Infinity`, and the release writes `Invalid date` to the note
-- CDP mouse x clamps to `window.innerWidth`, so keep the drag within the window (a 1-day cross-month move works); send `mouseReleased` first if a prior run left the button down, or the next `mousePressed` is swallowed
+- CDP mouse x clamps to `window.innerWidth`, so keep the drag within the window (a 1-day cross-month move works; a bar at the grid's left edge has no room to drag left, so press at ~80% of the bar's width and move one `dayWidth` left); send `mouseReleased` first if a prior run left the button down, or the next `mousePressed` is swallowed
 
 ## ResizeObserver — LinearCalendarView vs mountMonthStrip
 
@@ -65,6 +65,7 @@
 
 ## Live-testing the view via `obsidian eval`
 
+- After `plugin:reload` the leaf's `view` is a deferred placeholder (no `calendarRenderer`, `getState` or DOM) until `await leaf.loadIfDeferred()`; load it before any `view.*` access below.
 - Vault has native menus on, so a context menu has no DOM to read: call the handler directly (`view.calendarRenderer.barRenderer.<fn>`, `view.calendarRenderer.callbacks.<fn>`) instead of dispatching `contextmenu`.
 - The view restores its persisted `year` — set it first (`view.setState({...view.getState(), year}, {history:false})`) or DOM counts reflect whatever year was last open.
-- Write tests against `lhakZettel` with throwaway notes (`zz` prefix, far-future year ≤ 2068 — its `YYMMDD` formats parse `99` as 1999, so 2099 fixtures are never found) and trash them in `finally`. Assert deltas against a baseline, not totals: the year already holds real bars, and a promoted note with a remind date draws its own ghost.
+- Write tests against `lhakZettel` with throwaway notes (`zz` prefix, far-future year ≤ 2068 — its `YYMMDD` formats parse `99` as 1999, so 2099 fixtures are never found) and trash them in `finally`. Create them with `plugin.eventNotes.create(date, { title, openAfterCreate: false })` rather than driving the modal; drive the modal only to test the modal. Assert deltas against a baseline, not totals: the year already holds real bars, and a promoted note with a remind date draws its own ghost.

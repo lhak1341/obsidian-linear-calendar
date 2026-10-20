@@ -8,18 +8,12 @@ import type { DataSource } from "./data/DataSource";
 import { ObsidianEventNotes } from "./EventNotes";
 import { DailyNotes } from "./DailyNotes";
 import { CreateEventModal } from "./CreateEventModal";
-import { CalendarRenderer, RenderConfig } from "./view/CalendarRenderer";
-import { createInteractions } from "./view/calendarInteractions";
+import { MonthStrip } from "./view/MonthStrip";
+import type { MonthStripHandle } from "./view/MonthStrip";
 import { buildTagColorMap } from "./utils/colorUtils";
 import { registerLucideIcons } from "./lucide-icons";
 
-/** Handle returned by {@link LinearCalendarPlugin.mountMonthStrip} for host-driven month navigation. */
-export interface MonthStripHandle {
-	next(): void;
-	prev(): void;
-	today(): void;
-	destroy(): void;
-}
+export type { MonthStripHandle };
 
 export default class LinearCalendarPlugin extends Plugin {
 	settings: PluginSettings = DEFAULT_SETTINGS;
@@ -95,8 +89,8 @@ export default class LinearCalendarPlugin extends Plugin {
 	 * Public API — mount a full single-month calendar strip into `container`,
 	 * starting on the current month. Uses LC's own renderers so styles, bars,
 	 * tooltips, and the now-indicator all work exactly as in the full view.
-	 * `onMonthChange` fires on mount and after every navigation with the
-	 * displayed year/month, so a host view can render its own month label.
+	 * `onMonthChange` fires after every render (mount, navigation, data change,
+	 * resize) with the displayed year/month, so a host view can render its own month label.
 	 * Returns a handle to navigate months and to clean up when the host view closes.
 	 */
 	mountMonthStrip(
@@ -104,85 +98,18 @@ export default class LinearCalendarPlugin extends Plugin {
 		categoriesEl: HTMLElement,
 		onMonthChange?: (year: number, month: number) => void,
 	): MonthStripHandle {
-		let year = new Date().getFullYear();
-		let month = new Date().getMonth();
-		const hiddenCategories = new Set<string>();
-
-		let render!: () => void;
-
-		const interactions = createInteractions({
-			app: this.app,
-			eventNotes: this.eventNotes,
-			getSettings: () => this.settings,
-			rerender: () => render(),
-		});
-
-		const renderer = new CalendarRenderer(
-			this.app,
+		return new MonthStrip(
+			{
+				app: this.app,
+				scanner: this.scanner,
+				dailyNotes: this.dailyNotes,
+				eventNotes: this.eventNotes,
+				getSettings: () => this.settings,
+			},
 			container,
 			categoriesEl,
-			this.scanner,
-			this.dailyNotes,
-			() => this.settings,
-			{
-				onCategoryToggle: (tag) => {
-					if (hiddenCategories.has(tag)) hiddenCategories.delete(tag);
-					else hiddenCategories.add(tag);
-					render();
-				},
-				...interactions,
-			},
+			onMonthChange,
 		);
-
-		render = () => {
-			const config: RenderConfig = {
-				year,
-				months: [month],
-				hiddenCategories,
-				layout: "horizontal",
-				alignMode: "date",
-				rowHeight: 0,
-			};
-			renderer.render(config);
-			onMonthChange?.(year, month);
-		};
-
-		render();
-		const unsubscribeItems = this.scanner.onChange(render);
-		const unsubscribeDailyNotes = this.dailyNotes.onChange(render);
-
-		let lastWidth = container.offsetWidth;
-		const ro = new ResizeObserver(() => {
-			const w = container.offsetWidth;
-			if (w !== lastWidth && w > 0) {
-				lastWidth = w;
-				render();
-			}
-		});
-		ro.observe(container);
-
-		const shiftMonth = (delta: number) => {
-			const total = year * 12 + month + delta;
-			year = Math.floor(total / 12);
-			month = ((total % 12) + 12) % 12;
-			render();
-		};
-
-		return {
-			next: () => shiftMonth(1),
-			prev: () => shiftMonth(-1),
-			today: () => {
-				year = new Date().getFullYear();
-				month = new Date().getMonth();
-				render();
-			},
-			destroy: () => {
-				unsubscribeItems();
-				unsubscribeDailyNotes();
-				renderer.cleanup();
-				ro.disconnect();
-			},
-		};
 	}
 
 	private async activateView(): Promise<void> {

@@ -1,31 +1,16 @@
-import { App, Modal, Notice, Setting, TFile, moment } from "obsidian";
+import { App, Modal, Notice, Setting, TFile } from "obsidian";
 import type { EventNotes } from "./EventNotes";
 import type { PluginSettings } from "./types";
 import { IconField } from "./IconField";
 import { formatTagLabel } from "./utils/tagUtils";
 import { readEventFields } from "./eventFields";
+import { buildEventFields, emptyFormState, formStateFromFields } from "./eventForm";
+import type { EventFormState, RemindUnit } from "./eventForm";
+import { parseDateString } from "./utils/dateUtils";
 import { eventNoteConfig, fileBaseName } from "./utils/eventNotePath";
 
-const pad = (n: number) => String(n).padStart(2, "0");
-const toInputDate = (date: Date) => `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
-const parseInputDate = (value: string): Date | undefined => {
-	const [y, m, d] = value.split("-").map(Number);
-	return y && m && d ? new Date(y, m - 1, d) : undefined;
-};
-
 export class CreateEventModal extends Modal {
-	private title = "";
-	private tag = "";
-	private icon = "";
-	private anniversary = false;
-	private description = "";
-	private dateStr: string;
-	private dateEndStr = "";
-	private remindEnabled = false;
-	private remindMode: "relative" | "exact" = "relative";
-	private remindStr = "";
-	private remindAmount = "";
-	private remindUnit: "days" | "weeks" | "months" | "years" = "days";
+	private form: EventFormState;
 	private filenamePreviewEl!: HTMLElement;
 	private readonly isEditing: boolean;
 
@@ -38,7 +23,7 @@ export class CreateEventModal extends Modal {
 	) {
 		super(app);
 		this.isEditing = !!editFilePath;
-		this.dateStr = toInputDate(initialDate);
+		this.form = emptyFormState(initialDate);
 		if (editFilePath) this.prefillFromFile(editFilePath);
 	}
 
@@ -49,20 +34,8 @@ export class CreateEventModal extends Modal {
 		const fm = this.app.metadataCache.getFileCache(file)?.frontmatter ?? {};
 
 		const { date, fields } = readEventFields(fm, mapping);
-
-		this.title = mapping.titleProp === "__filename__" ? file.basename : (fields.title ?? "");
-		this.tag = fields.tag ?? "";
-		if (fields.icon) this.icon = fields.icon;
-		this.anniversary = fields.anniversary ?? false;
-		if (fields.description) this.description = fields.description;
-
-		if (date) this.dateStr = toInputDate(date);
-		if (fields.dateEnd) this.dateEndStr = toInputDate(fields.dateEnd);
-		if (fields.remindOn) {
-			this.remindEnabled = true;
-			this.remindMode = "exact";
-			this.remindStr = toInputDate(fields.remindOn);
-		}
+		const title = mapping.titleProp === "__filename__" ? file.basename : fields.title;
+		this.form = formStateFromFields(date, { ...fields, title }, this.form);
 	}
 
 	onOpen(): void {
@@ -76,8 +49,8 @@ export class CreateEventModal extends Modal {
 			.setName("Title")
 			.addText((text) => {
 				titleInputEl = text.inputEl;
-				text.setValue(this.title).setPlaceholder("Untitled").onChange((value) => {
-					this.title = value;
+				text.setValue(this.form.title).setPlaceholder("Untitled").onChange((value) => {
+					this.form.title = value;
 					this.updatePreview();
 				});
 				if (this.isEditing && this.settings.defaultMapping.titleProp === "__filename__") {
@@ -95,8 +68,8 @@ export class CreateEventModal extends Modal {
 				for (const tag of tagOptions) {
 					dd.addOption(tag, formatTagLabel(tag));
 				}
-				dd.setValue(this.tag).onChange((value) => {
-					this.tag = value;
+				dd.setValue(this.form.tag).onChange((value) => {
+					this.form.tag = value;
 				});
 			});
 
@@ -104,8 +77,8 @@ export class CreateEventModal extends Modal {
 			.setName("Icon")
 			.then((setting) => {
 				new IconField(this.app, setting.controlEl, {
-					initialValue: this.icon,
-					onPreview: (val) => { this.icon = val; },
+					initialValue: this.form.icon,
+					onPreview: (val) => { this.form.icon = val; },
 				});
 			});
 
@@ -113,8 +86,8 @@ export class CreateEventModal extends Modal {
 			.setName("Date")
 			.addText((text) => {
 				text.inputEl.type = "date";
-				text.setValue(this.dateStr).onChange((value) => {
-					this.dateStr = value;
+				text.setValue(this.form.dateStr).onChange((value) => {
+					this.form.dateStr = value;
 					this.updatePreview();
 				});
 			});
@@ -122,8 +95,8 @@ export class CreateEventModal extends Modal {
 			.setName("Date end")
 			.addText((text) => {
 				text.inputEl.type = "date";
-				text.setValue(this.dateEndStr).onChange((value) => {
-					this.dateEndStr = value;
+				text.setValue(this.form.dateEndStr).onChange((value) => {
+					this.form.dateEndStr = value;
 				});
 			});
 		contentEl.createEl("p", {
@@ -135,8 +108,8 @@ export class CreateEventModal extends Modal {
 			.setName("Anniversary")
 			.setDesc("Repeats on the same date every subsequent year.")
 			.addToggle((toggle) =>
-				toggle.setValue(this.anniversary).onChange((value) => {
-					this.anniversary = value;
+				toggle.setValue(this.form.anniversary).onChange((value) => {
+					this.form.anniversary = value;
 				}),
 			);
 
@@ -149,24 +122,24 @@ export class CreateEventModal extends Modal {
 				.setName("Remind me")
 				.setDesc("Also show a translucent ghost bar at a future date. Click it later to spin off a new note there.")
 				.addToggle((toggle) =>
-					toggle.setValue(this.remindEnabled).onChange((value) => {
-						this.remindEnabled = value;
+					toggle.setValue(this.form.remindEnabled).onChange((value) => {
+						this.form.remindEnabled = value;
 						remindControls.toggleClass("lc-hidden", !value);
 					}),
 				);
 
 			const remindControls = contentEl.createDiv();
-			remindControls.toggleClass("lc-hidden", !this.remindEnabled);
+			remindControls.toggleClass("lc-hidden", !this.form.remindEnabled);
 			new Setting(remindControls)
 				.setClass("lc-remind-setting")
 				.addDropdown((dd) =>
 					dd
 						.addOption("relative", "In…")
 						.addOption("exact", "On date…")
-						.setValue(this.remindMode)
+						.setValue(this.form.remindMode)
 						.onChange((value) => {
-							this.remindMode = value as "relative" | "exact";
-							const isRelative = this.remindMode === "relative";
+							this.form.remindMode = value as "relative" | "exact";
+							const isRelative = this.form.remindMode === "relative";
 							amountInputEl.toggleClass("lc-hidden", !isRelative);
 							unitDropdownEl.toggleClass("lc-hidden", !isRelative);
 							exactDateEl.toggleClass("lc-hidden", isRelative);
@@ -177,7 +150,7 @@ export class CreateEventModal extends Modal {
 					text.inputEl.min = "1";
 					text.inputEl.addClass("lc-remind-amount");
 					text.setPlaceholder("4").onChange((value) => {
-						this.remindAmount = value;
+						this.form.remindAmount = value;
 					});
 					amountInputEl = text.inputEl;
 				})
@@ -186,22 +159,22 @@ export class CreateEventModal extends Modal {
 						.addOption("weeks", "Weeks")
 						.addOption("months", "Months")
 						.addOption("years", "Years")
-						.setValue(this.remindUnit)
+						.setValue(this.form.remindUnit)
 						.onChange((value) => {
-							this.remindUnit = value as "days" | "weeks" | "months" | "years";
+							this.form.remindUnit = value as RemindUnit;
 						});
 					unitDropdownEl = dd.selectEl;
 				})
 				.addText((text) => {
 					text.inputEl.type = "date";
-					text.setValue(this.remindStr).onChange((value) => {
-						this.remindStr = value;
+					text.setValue(this.form.remindStr).onChange((value) => {
+						this.form.remindStr = value;
 					});
 					exactDateEl = text.inputEl;
 				});
-			amountInputEl.toggleClass("lc-hidden", this.remindMode !== "relative");
-			unitDropdownEl.toggleClass("lc-hidden", this.remindMode !== "relative");
-			exactDateEl.toggleClass("lc-hidden", this.remindMode !== "exact");
+			amountInputEl.toggleClass("lc-hidden", this.form.remindMode !== "relative");
+			unitDropdownEl.toggleClass("lc-hidden", this.form.remindMode !== "relative");
+			exactDateEl.toggleClass("lc-hidden", this.form.remindMode !== "exact");
 		}
 
 		if (this.settings.defaultMapping.descriptionProp) {
@@ -209,8 +182,8 @@ export class CreateEventModal extends Modal {
 				.setName("Description")
 				.addTextArea((text) => {
 					text.inputEl.rows = 3;
-					text.setValue(this.description).onChange((value) => {
-						this.description = value;
+					text.setValue(this.form.description).onChange((value) => {
+						this.form.description = value;
 					});
 				});
 		}
@@ -243,50 +216,28 @@ export class CreateEventModal extends Modal {
 			this.filenamePreviewEl.setText(`Editing: ${this.editFilePath} (not renamed or moved)`);
 			return;
 		}
-		const date = parseInputDate(this.dateStr);
+		const date = parseDateString(this.form.dateStr);
 		if (!date) {
 			this.filenamePreviewEl.setText("");
 			return;
 		}
 		const cfg = eventNoteConfig(this.settings);
 		const folder = cfg.folder;
-		const name = `${fileBaseName(date, this.title, cfg)}.md`;
+		const name = `${fileBaseName(date, this.form.title, cfg)}.md`;
 		this.filenamePreviewEl.setText(`Will be created as: ${folder ? `${folder}/${name}` : name}`);
 	}
 
-	private computeRemindDate(eventDate: Date): Date | undefined {
-		if (this.remindMode === "exact") return parseInputDate(this.remindStr);
-		const amount = Number(this.remindAmount);
-		if (!Number.isFinite(amount) || amount <= 0) return undefined;
-		return (moment as unknown as (d: Date) => { add(n: number, unit: string): { toDate(): Date } })(eventDate)
-			.add(amount, this.remindUnit)
-			.toDate();
-	}
-
 	private submit(): void {
-		const date = parseInputDate(this.dateStr);
-		if (!date) return;
-		const dateEnd = parseInputDate(this.dateEndStr);
-		if (dateEnd && dateEnd < date) {
-			new Notice("End date is before the start date.");
+		const built = buildEventFields(this.form, { remindProp: this.settings.defaultMapping.remindProp });
+		if (!built.ok) {
+			if (built.error) new Notice(built.error);
 			return;
 		}
-		const remindProp = this.settings.defaultMapping.remindProp;
-		const remindDate = remindProp && this.remindEnabled ? this.computeRemindDate(date) : undefined;
-		const options = {
-			title: this.title,
-			tag: this.tag || undefined,
-			icon: this.icon || undefined,
-			anniversary: this.anniversary,
-			dateEnd,
-			description: this.description || undefined,
-			remindOn: remindProp ? remindDate : undefined,
-			openAfterCreate: false,
-		};
+		const options = { ...built.fields, openAfterCreate: false };
 		if (this.isEditing && this.editFilePath) {
-			void this.eventNotes.update(this.editFilePath, date, options);
+			void this.eventNotes.update(this.editFilePath, built.date, options);
 		} else {
-			void this.eventNotes.create(date, options);
+			void this.eventNotes.create(built.date, options);
 		}
 		this.close();
 	}

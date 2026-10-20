@@ -3,13 +3,14 @@ import type { CalendarItem, PluginSettings, AlignMode } from "../types";
 import type { DataSource } from "../data/DataSource";
 import type { DailyNotes } from "../DailyNotes";
 import { buildTagColorMap } from "../utils/colorUtils";
-import { categoryLabel, countByCategory, visibleItems } from "../utils/category";
+import { visibleItems } from "../utils/category";
 import { GridRenderer } from "./GridRenderer";
 import type { MonthRowRef } from "./GridRenderer";
 import { BarRenderer } from "./BarRenderer";
 import type { CalendarInteractions } from "./calendarInteractions";
 import { NowIndicator } from "./NowIndicator";
 import { Tooltip } from "./Tooltip";
+import { CategoryChips } from "./CategoryChips";
 
 export interface RenderConfig {
 	year: number;
@@ -31,13 +32,13 @@ export class CalendarRenderer {
 	private barRenderer: BarRenderer;
 	private nowIndicator: NowIndicator;
 	private tooltip: Tooltip;
-	private lastCategoriesSig: string | null = null;
+	private categoryChips: CategoryChips | null;
 	private current: RenderConfig | null = null;
 
 	constructor(
 		private app: App,
 		container: HTMLElement,
-		private categoriesEl: HTMLElement | null,
+		categoriesEl: HTMLElement | null,
 		private source: DataSource,
 		private dailyNotes: DailyNotes,
 		private getSettings: () => PluginSettings,
@@ -48,6 +49,7 @@ export class CalendarRenderer {
 		this.nowIndicator = new NowIndicator();
 		// Anchor tooltip to container's parent to avoid overflow-x clipping
 		this.tooltip = new Tooltip(container.parentElement ?? container);
+		this.categoryChips = categoriesEl ? new CategoryChips(categoriesEl, this.tooltip, callbacks.onCategoryToggle) : null;
 	}
 
 	render(config: RenderConfig): void {
@@ -100,8 +102,8 @@ export class CalendarRenderer {
 		const { year, months, hiddenCategories } = this.current!;
 		const { colorMap, iconMap } = this.getSettings();
 
-		const { allItems, items, tagColorMap } = this.computeVisibleItems(year, months, hiddenCategories, colorMap);
-		this.renderCategories(allItems, year, months, tagColorMap, hiddenCategories);
+		const { allItems, items, tagColorMap } = this.computeVisibleItems(year, hiddenCategories, colorMap);
+		this.categoryChips?.update(allItems, year, months, tagColorMap, hiddenCategories);
 
 		const tagIconMap = new Map(Object.entries(iconMap));
 		this.barRenderer.render(monthRows, items, year, tagColorMap, tagIconMap);
@@ -125,7 +127,6 @@ export class CalendarRenderer {
 	/** Scan, resolve tag colors, and filter out hidden categories — shared by render() and renderBars(). No DOM writes. */
 	private computeVisibleItems(
 		year: number,
-		months: number[],
 		hiddenCategories: Set<string>,
 		colorMap: Record<string, string>,
 	): { allItems: CalendarItem[]; items: CalendarItem[]; tagColorMap: Map<string, string> } {
@@ -135,68 +136,5 @@ export class CalendarRenderer {
 		const items = visibleItems(allItems, hiddenCategories);
 
 		return { allItems, items, tagColorMap };
-	}
-
-	private renderCategories(
-		allItems: CalendarItem[],
-		year: number,
-		months: number[],
-		tagColorMap: Map<string, string>,
-		hiddenCategories: Set<string>,
-	): void {
-		if (!this.categoriesEl) return;
-		const el = this.categoriesEl;
-
-		const countItems = months.length === 12
-			? allItems
-			: allItems.filter((item) => {
-				for (const m of months) {
-					const mStart = new Date(year, m, 1);
-					const mEnd = new Date(year, m + 1, 0);
-					if (item.dateStart <= mEnd && item.dateEnd >= mStart) return true;
-				}
-				return false;
-			});
-
-		const categories = countByCategory(countItems);
-
-		if (categories.size <= 1) {
-			if (this.lastCategoriesSig !== null) {
-				el.empty();
-				this.lastCategoriesSig = null;
-			}
-			return;
-		}
-
-		// Skip the DOM rebuild when categories, colors, and hidden state are all unchanged.
-		const sig = [...categories.entries()]
-			.sort((a, b) => a[0].localeCompare(b[0]))
-			.map(([k, v]) => `${k}:${v}:${tagColorMap.get(k) ?? ""}`)
-			.join("|") + ";" + [...hiddenCategories].sort().join(",");
-		if (sig === this.lastCategoriesSig) return;
-		this.lastCategoriesSig = sig;
-
-		el.empty();
-
-		for (const [tag, count] of categories) {
-			const isHidden = hiddenCategories.has(tag);
-			const displayName = categoryLabel(tag);
-			const color = tagColorMap.get(tag) ?? "#888";
-
-			const chip = el.createDiv({
-				cls: `lc-category-chip${isHidden ? " lc-category-hidden" : ""}`,
-			});
-			chip.addEventListener("mouseenter", (evt) => {
-				const nameEl = chip.querySelector<HTMLElement>(".lc-category-name");
-				if (nameEl && getComputedStyle(nameEl).display !== "none") return;
-				this.tooltip.showForChip(displayName, evt);
-			});
-			chip.addEventListener("mouseleave", () => this.tooltip.hide());
-			chip.createSpan({ cls: "lc-category-dot" }).style.backgroundColor = color;
-			chip.createSpan({ cls: "lc-category-name", text: displayName });
-			chip.createSpan({ cls: "lc-category-count", text: String(count) });
-
-			chip.addEventListener("click", () => this.callbacks.onCategoryToggle?.(tag));
-		}
 	}
 }

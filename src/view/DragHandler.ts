@@ -6,6 +6,12 @@ import type { DropCommitFn } from "../types";
 /** Minimum pointer movement before an ambiguous mousedown (bar body) commits to a drag. */
 const DRAG_THRESHOLD_PX = 4;
 
+/** What one `BarRenderer.render` pass hands every bar it attaches: the month rows and the bar layout drags are previewed against. */
+export interface DragScene {
+	monthRows: MonthRowRef[];
+	layout: BarLayout;
+}
+
 interface DragContext {
 	barEl: HTMLElement;
 	barColor: string;
@@ -14,9 +20,7 @@ interface DragContext {
 	originalStart: Date;
 	originalEnd: Date;
 	segMonth: number;
-	segStartDay: number;
-	segEndDay: number;
-	daysInMonth: number;
+	scene: DragScene;
 	mode: "resize-start" | "resize-end" | "move";
 	startX: number;
 	dayWidth: number;
@@ -24,8 +28,6 @@ interface DragContext {
 
 export class DragHandler {
 	private ctx: DragContext | null = null;
-	private monthRows: MonthRowRef[] = [];
-	private layout: BarLayout | null = null;
 	/** Reusable ghost pool — update in place, hide extras */
 	private ghostPool: HTMLElement[] = [];
 	private activeGhostCount = 0;
@@ -38,19 +40,14 @@ export class DragHandler {
 		this.boundMouseUp = () => { void this.onMouseUp(); };
 	}
 
-	setLayout(rows: MonthRowRef[], layout: BarLayout): void {
-		this.monthRows = rows;
-		this.layout = layout;
-	}
-
-	attach(barEl: HTMLElement, segment: MonthSegment, daysInMonth: number): void {
+	attach(barEl: HTMLElement, segment: MonthSegment, scene: DragScene): void {
 		const leftHandle = barEl.createDiv({ cls: "lc-drag-handle lc-drag-handle-left" });
 		const rightHandle = barEl.createDiv({ cls: "lc-drag-handle lc-drag-handle-right" });
 
 		const initDrag = (e: MouseEvent, mode: DragContext["mode"]) => {
 			e.stopPropagation();
 			e.preventDefault();
-			this.startDrag(e, barEl, segment, daysInMonth, mode);
+			this.startDrag(e, barEl, segment, scene, mode);
 		};
 
 		leftHandle.addEventListener("mousedown", (e) => initDrag(e, "resize-start"));
@@ -61,7 +58,7 @@ export class DragHandler {
 			if ((e.target as HTMLElement).classList.contains("lc-drag-handle")) return;
 			this.watchForDragThreshold(e, (me) => {
 				e.preventDefault();
-				this.startDrag(e, barEl, segment, daysInMonth, "move");
+				this.startDrag(e, barEl, segment, scene, "move");
 				this.onMouseMove(me);
 			});
 		});
@@ -95,28 +92,24 @@ export class DragHandler {
 		e: MouseEvent,
 		barEl: HTMLElement,
 		segment: MonthSegment,
-		dim: number,
+		scene: DragScene,
 		mode: DragContext["mode"],
 	): void {
 		const daysGrid = barEl.closest(".lc-days-grid");
 		if (!daysGrid) return;
-		const totalCols = this.monthRows.find((r) => r.month === segment.month)?.totalCols ?? 31;
+		const totalCols = scene.monthRows.find((r) => r.month === segment.month)?.totalCols ?? 31;
 		const dayWidth = daysGrid.clientWidth / totalCols;
-
-		const labelEl = barEl.querySelector(".calendar-bar-label");
 
 		this.ctx = {
 			barEl,
 			barColor: barEl.style.backgroundColor,
-			barLabel: labelEl?.textContent ?? "",
+			barLabel: segment.item.title,
 			filePath: segment.item.filePath,
 			// Unclamped span: dateStart/dateEnd are cut to the viewed year and would be written back.
 			originalStart: new Date(segment.item.fullStart ?? segment.item.dateStart),
 			originalEnd: new Date(segment.item.fullEnd ?? segment.item.dateEnd),
 			segMonth: segment.month,
-			segStartDay: segment.startDay,
-			segEndDay: segment.endDay,
-			daysInMonth: dim,
+			scene,
 			mode,
 			startX: e.clientX,
 			dayWidth,
@@ -148,14 +141,14 @@ export class DragHandler {
 	}
 
 	private updateVisuals(dayDelta: number): void {
-		if (!this.ctx || !this.layout) return;
-		const { barEl, barColor, barLabel, segMonth } = this.ctx;
+		if (!this.ctx) return;
+		const { barEl, barColor, barLabel, segMonth, scene } = this.ctx;
 
 		const { newStart, newEnd } = this.newDatesFromDelta(dayDelta);
-		const { home, ghosts } = this.layout.previewMove(segMonth, newStart, newEnd);
+		const { home, ghosts } = scene.layout.previewMove(segMonth, newStart, newEnd);
 
 		// Update real bar in home month
-		const homeOffset = this.monthRows.find((r) => r.month === segMonth)?.weekdayOffset ?? 0;
+		const homeOffset = scene.monthRows.find((r) => r.month === segMonth)?.weekdayOffset ?? 0;
 		if (home) {
 			barEl.style.gridColumn = gridArea(home, 0, homeOffset, "horizontal").gridColumn;
 			barEl.removeClass("lc-hidden");
@@ -167,7 +160,7 @@ export class DragHandler {
 		let gi = 0;
 
 		for (const ghostSpan of ghosts) {
-			const rowRef = this.monthRows.find((r) => r.month === ghostSpan.month);
+			const rowRef = scene.monthRows.find((r) => r.month === ghostSpan.month);
 			if (!rowRef) continue;
 
 			const { gridColumn, gridRow } = gridArea(ghostSpan, ghostSpan.row, rowRef.weekdayOffset, "horizontal");

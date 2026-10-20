@@ -42,6 +42,7 @@ export class BarRenderer {
 
 		this.dragHandler.cleanup();
 		const layout = layoutBars(items, year, isVertical ? MAX_WATERFALL_COLS_VERT : MAX_WATERFALL_ROWS);
+		const dragScene = { monthRows, layout };
 
 		for (const rowRef of monthRows) {
 			for (const { segment, row } of layout.placementsFor(rowRef.month)) {
@@ -60,12 +61,10 @@ export class BarRenderer {
 				this.attachContextMenu(barEl, segment.item.filePath);
 
 				if (!isVertical && canDrag(segment.item)) {
-					this.dragHandler.attach(barEl, segment, rowRef.daysInMonth);
+					this.dragHandler.attach(barEl, segment, dragScene);
 				}
 			}
 		}
-
-		if (!isVertical) this.dragHandler.setLayout(monthRows, layout);
 	}
 
 	private createBarEl(

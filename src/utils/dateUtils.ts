@@ -164,3 +164,9 @@ export function monthBoundaries(
 	}
 	return result;
 }
+
+/** `delta` months from (`year`, 0-based `month`), rolling the year over in either direction. */
+export function shiftMonth(year: number, month: number, delta: number): { year: number; month: number } {
+	const total = year * 12 + month + delta;
+	return { year: Math.floor(total / 12), month: ((total % 12) + 12) % 12 };
+}

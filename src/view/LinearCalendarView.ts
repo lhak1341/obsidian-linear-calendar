@@ -8,6 +8,7 @@ import { CreateEventModal } from "../CreateEventModal";
 import { CalendarRenderer, RenderConfig } from "./CalendarRenderer";
 import { createInteractions } from "./calendarInteractions";
 import { resolveFontVar } from "../utils/fonts";
+import { toggleCategory } from "../utils/category";
 
 interface ViewState {
 	year: number;
@@ -99,11 +100,7 @@ export class LinearCalendarView extends ItemView {
 				onDayDblClick: (y, m, d) => this.createNoteForDate(y, m, d),
 				onDayContextMenu: (y, m, d, e) => this.showDayContextMenu(y, m, d, e),
 				onCategoryToggle: (tag) => {
-					if (this.hiddenCategories.has(tag)) {
-						this.hiddenCategories.delete(tag);
-					} else {
-						this.hiddenCategories.add(tag);
-					}
+					toggleCategory(this.hiddenCategories, tag);
 					this.renderBarsOnly();
 				},
 				...interactions,

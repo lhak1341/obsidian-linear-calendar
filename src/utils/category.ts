@@ -31,3 +31,19 @@ export function countByCategory(items: CalendarItem[]): Map<string, number> {
 	}
 	return counts;
 }
+
+/**
+ * Items overlapping any of `months` (0-based) of `year`, by calendar day. A full year skips
+ * the scan: `allItems` is already clamped to the viewed year.
+ */
+export function itemsInMonths(items: CalendarItem[], year: number, months: number[]): CalendarItem[] {
+	if (months.length === 12) return items;
+	return items.filter((item) =>
+		months.some((m) => item.dateStart <= new Date(year, m + 1, 0) && item.dateEnd >= new Date(year, m, 1)),
+	);
+}
+
+/** Flip `category` in `hidden` in place: hide it if shown, show it if hidden. */
+export function toggleCategory(hidden: Set<string>, category: string): void {
+	if (!hidden.delete(category)) hidden.add(category);
+}

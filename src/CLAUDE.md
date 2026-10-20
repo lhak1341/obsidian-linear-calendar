@@ -6,6 +6,7 @@
   `next`/`prev`/`today`/`destroy`) and `getCalendarData(year)` on `LinearCalendarPlugin`
   are called at runtime by `obsidian-lhak-dashboard`. Changing either signature requires
   coordinating both repos.
+- `mountMonthStrip` is a one-line `new MonthStrip(...)`; the strip itself lives in `view/MonthStrip.ts` (a class implementing `MonthStripHandle`). `onMonthChange` fires after every render, not only on navigation.
 - Types used only internally by those two (e.g. `RenderConfig`) are **not** part of the
   coordinated surface.
 - The dashboard only calls `mountMonthStrip`, never `getCalendarData` — `CalendarItem`'s
@@ -56,6 +57,7 @@
 ## Note creation
 
 - `eventFields.ts` holds `EventFields` and its two mirror images: `applyFields` writes them into frontmatter, `readEventFields` reads `{ date, fields }` back. `title` comes back undefined when the note has none — callers choose the fallback (filename, prefix-stripped filename, blank). `tag` is the first `linear-calendar/*` subtag; a bare-gate-tag note has none, which `create` writes back as the bare tag.
+- `eventForm.ts` is the form side of that codec: `buildEventFields` (form state → `EventFields`, with the end-before-start check and relative/exact reminder maths) and `formStateFromFields` (the reverse, for edit prefill). `CreateEventModal` holds widgets and one `EventFormState`; put validation and reminder rules in `eventForm.ts`, not the modal.
 - `EventNotes` (`EventNotes.ts`) is the only writer of event-note frontmatter:
   `create`/`update`/`move`/`promoteReminder`. `create()` takes `CreateOptions` (=
   `EventFields` + a **required** `openAfterCreate`); `update()` takes plain `EventFields`

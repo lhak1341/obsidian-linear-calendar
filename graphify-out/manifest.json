@@ -15,8 +15,8 @@
     "semantic_hash": "8edcd8bd3124814963f348579f3b9737"
   },
   "src/main.ts": {
-    "mtime": 1792500983.4075265,
-    "ast_hash": "97b6ecd7b5c8151314a2cae7330c447c",
+    "mtime": 1792508202.2089825,
+    "ast_hash": "7a26214d4d9c81db191ed78504b4858e",
     "semantic_hash": ""
   },
   "src/settings.ts": {
@@ -35,8 +35,8 @@
     "semantic_hash": ""
   },
   "src/CreateEventModal.ts": {
-    "mtime": 1792504872.1457777,
-    "ast_hash": "28f655bbfc01b3b06f429b4c55d2e1d2",
+    "mtime": 1792508815.4944463,
+    "ast_hash": "fdc87bcf1ff415407986e467b5231569",
     "semantic_hash": ""
   },
   "src/IconSuggest.ts": {
@@ -55,8 +55,8 @@
     "semantic_hash": ""
   },
   "src/utils/dateUtils.ts": {
-    "mtime": 1791732543.5479774,
-    "ast_hash": "052be0d018ae15749688c58ac7ae41a6",
+    "mtime": 1792508229.7008858,
+    "ast_hash": "22bf312080f8464b516d2bc38e108e60",
     "semantic_hash": ""
   },
   "src/utils/colorUtils.ts": {
@@ -70,13 +70,13 @@
     "semantic_hash": ""
   },
   "src/view/LinearCalendarView.ts": {
-    "mtime": 1792500983.4085317,
-    "ast_hash": "a41de6ee0afce5c558571384efa4db3e",
+    "mtime": 1792508202.208286,
+    "ast_hash": "6f8c35a47c84ef26feb978af63b737cc",
     "semantic_hash": ""
   },
   "src/view/DragHandler.ts": {
-    "mtime": 1791732591.839329,
-    "ast_hash": "9730218c267f775b15967649cb5ed340",
+    "mtime": 1792508518.9509633,
+    "ast_hash": "c200477f5c38adcc8e691be09750e51f",
     "semantic_hash": ""
   },
   "src/view/NowIndicator.ts": {
@@ -85,8 +85,8 @@
     "semantic_hash": "21d0ec73ca11a7b129084d57d1f2ff0b"
   },
   "src/view/CalendarRenderer.ts": {
-    "mtime": 1792500983.4064662,
-    "ast_hash": "8988e4450c9d41b84d517df2e0a6fa35",
+    "mtime": 1792508018.9947834,
+    "ast_hash": "b0c999bc3affe1bddbd845cab91f8511",
     "semantic_hash": ""
   },
   "src/view/Tooltip.ts": {
@@ -95,8 +95,8 @@
     "semantic_hash": ""
   },
   "src/view/BarRenderer.ts": {
-    "mtime": 1791733441.7747996,
-    "ast_hash": "70a86afefa5b39b8c51b1a83e218fb60",
+    "mtime": 1792508518.9513392,
+    "ast_hash": "d48e42d1e6aec41f7523238818ac0f3e",
     "semantic_hash": ""
   },
   "src/data/DataSource.ts": {
@@ -130,8 +130,8 @@
     "semantic_hash": ""
   },
   "src/view/CLAUDE.md": {
-    "mtime": 1792507670.042811,
-    "ast_hash": "17f50dc8cae80effa67ca997f723d1b9",
+    "mtime": 1792508970.1321728,
+    "ast_hash": "85f5c020d3cf3c79768425b62bb767c6",
     "semantic_hash": ""
   },
   "src/data/CLAUDE.md": {
@@ -215,8 +215,8 @@
     "semantic_hash": "2e063f21e72e87e8700d86897aa6dada"
   },
   "docs/agents/domain.md": {
-    "mtime": 1787278088.7669523,
-    "ast_hash": "35089ed6a70a657c91fd100ade31b642",
+    "mtime": 1792508059.4639359,
+    "ast_hash": "3a608c32ee502ea55e09a32ceae6d253",
     "semantic_hash": ""
   },
   "docs/agents/issue-tracker.md": {
@@ -240,8 +240,8 @@
     "semantic_hash": ""
   },
   "src/CLAUDE.md": {
-    "mtime": 1792504964.6841717,
-    "ast_hash": "e68ffaba31b3e4f7b5a5b3e9fdd2b05e",
+    "mtime": 1792508923.3584063,
+    "ast_hash": "f92d4dc2eb9224248d9dac33dbc43aa9",
     "semantic_hash": ""
   },
   "src/utils/calendarItems.ts": {
@@ -250,8 +250,8 @@
     "semantic_hash": ""
   },
   "src/utils/category.ts": {
-    "mtime": 1791554308.6296809,
-    "ast_hash": "5dec9e09ec440cf680d39e21fe3cd9d2",
+    "mtime": 1792508214.5516264,
+    "ast_hash": "cca69fa21e5a792848826813de59335c",
     "semantic_hash": ""
   },
   "src/utils/eventNotePath.ts": {
@@ -292,6 +292,26 @@
   "src/eventFields.ts": {
     "mtime": 1792504949.955964,
     "ast_hash": "a1b88c2441d5af81524897b43d26b6da",
+    "semantic_hash": ""
+  },
+  "src/eventForm.ts": {
+    "mtime": 1792508839.0964797,
+    "ast_hash": "dcb5915961fd104e7e652ae1a65e62da",
+    "semantic_hash": ""
+  },
+  "src/view/CategoryChips.ts": {
+    "mtime": 1792507901.5875473,
+    "ast_hash": "0708dc8a9710b5df7ed0edf10a6e7bd2",
+    "semantic_hash": ""
+  },
+  "src/view/MonthStrip.ts": {
+    "mtime": 1792508202.2084646,
+    "ast_hash": "4b196baae5f6bd64ccb2d8a71fa5c7be",
+    "semantic_hash": ""
+  },
+  "GLOSSARY.md": {
+    "mtime": 1792508242.2105696,
+    "ast_hash": "b146dff4512e75e9bd2344c8a537e27b",
     "semantic_hash": ""
   }
 }

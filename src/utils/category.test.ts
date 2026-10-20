@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { UNCATEGORIZED, categoryOf, categoryLabel, visibleItems, countByCategory } from "./category";
+import { UNCATEGORIZED, categoryOf, categoryLabel, visibleItems, countByCategory, itemsInMonths, toggleCategory } from "./category";
 import type { CalendarItem } from "../types";
 
 function item(tags?: string[]): CalendarItem {
@@ -41,4 +41,43 @@ describe("countByCategory", () => {
 		expect([...counts.entries()]).toEqual([["linear-calendar/b", 2], [UNCATEGORIZED, 1], ["linear-calendar/a", 1]]);
 	});
 	it("is empty for no items", () => expect(countByCategory([]).size).toBe(0));
+});
+
+describe("itemsInMonths", () => {
+	function span(start: Date, end: Date): CalendarItem {
+		return { ...item(), dateStart: start, dateEnd: end };
+	}
+	const inJan = span(new Date(2026, 0, 10), new Date(2026, 0, 12));
+	const janToFeb = span(new Date(2026, 0, 30), new Date(2026, 1, 2));
+	const inMar = span(new Date(2026, 2, 5), new Date(2026, 2, 5));
+	const all = [inJan, janToFeb, inMar];
+
+	it("returns everything for all 12 months", () => {
+		expect(itemsInMonths(all, 2026, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11])).toBe(all);
+	});
+	it("keeps items overlapping the month, including spans crossing in", () => {
+		expect(itemsInMonths(all, 2026, [1])).toEqual([janToFeb]);
+	});
+	it("matches the last day of the month", () => {
+		const lastDay = span(new Date(2026, 0, 31), new Date(2026, 0, 31));
+		expect(itemsInMonths([lastDay], 2026, [0])).toEqual([lastDay]);
+		expect(itemsInMonths([lastDay], 2026, [1])).toEqual([]);
+	});
+	it("handles a non-contiguous months list", () => {
+		expect(itemsInMonths(all, 2026, [0, 2])).toEqual(all);
+		expect(itemsInMonths(all, 2026, [3])).toEqual([]);
+	});
+});
+
+describe("toggleCategory", () => {
+	it("hides a shown category", () => {
+		const hidden = new Set<string>();
+		toggleCategory(hidden, "linear-calendar/a");
+		expect([...hidden]).toEqual(["linear-calendar/a"]);
+	});
+	it("shows a hidden category and leaves the others", () => {
+		const hidden = new Set(["linear-calendar/a", "linear-calendar/b"]);
+		toggleCategory(hidden, "linear-calendar/a");
+		expect([...hidden]).toEqual(["linear-calendar/b"]);
+	});
 });

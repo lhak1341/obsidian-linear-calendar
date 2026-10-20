@@ -14,6 +14,7 @@ import {
 	monthBoundaries,
 	projectAnniversaryDates,
 	carryDateForward,
+	shiftMonth,
 } from "./dateUtils";
 
 describe("isLeapYear", () => {
@@ -258,4 +259,15 @@ describe("carryDateForward", () => {
 		const result = carryDateForward(new Date(2026, 7, 21), remindOn, remindOn);
 		expect(result).toEqual(new Date(2027, 3, 21));
 	});
+});
+
+describe("shiftMonth", () => {
+	it("moves within a year", () => expect(shiftMonth(2026, 5, 1)).toEqual({ year: 2026, month: 6 }));
+	it("rolls forward into the next year", () => expect(shiftMonth(2026, 11, 1)).toEqual({ year: 2027, month: 0 }));
+	it("rolls back into the previous year", () => expect(shiftMonth(2026, 0, -1)).toEqual({ year: 2025, month: 11 }));
+	it("handles deltas beyond a year", () => {
+		expect(shiftMonth(2026, 3, 25)).toEqual({ year: 2028, month: 4 });
+		expect(shiftMonth(2026, 3, -15)).toEqual({ year: 2025, month: 0 });
+	});
+	it("is a no-op for zero", () => expect(shiftMonth(2026, 7, 0)).toEqual({ year: 2026, month: 7 }));
 });
