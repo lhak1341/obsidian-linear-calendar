@@ -10,6 +10,8 @@ Domain terms as this repo uses them. Code names in backticks.
 
 **Reminder**: a synthetic ghost item drawn from another note's remind property. Its `filePath` still points at the source note.
 
+**Birthday**: an item tagged `linear-calendar/birthday`. Its recurrences show an age badge ("Turns N", from `describeItem`); its origin-year event does not.
+
 **Anniversary**: a note flagged to repeat yearly. Yields an event in its origin year and recurrences after.
 
 **Event note**: a note with the gate tag that the plugin reads (scanner) and writes (`EventNotes`). Its frontmatter fields are `EventFields`.

@@ -4,18 +4,13 @@ import { VIEW_TYPE_LINEAR_CALENDAR } from "../constants";
 import type { DataSource } from "../data/DataSource";
 import type { EventNotes } from "../EventNotes";
 import type { DailyNotes } from "../DailyNotes";
+import type { SettingsChanges } from "../SettingsChanges";
 import { CreateEventModal } from "../CreateEventModal";
 import { CalendarRenderer, RenderConfig } from "./CalendarRenderer";
 import { createInteractions } from "./calendarInteractions";
 import { resolveFontVar } from "../utils/fonts";
 import { toggleCategory } from "../utils/category";
-
-interface ViewState {
-	year: number;
-	hiddenCategories: string[];
-	rowHeight: number;
-	layout: "horizontal" | "vertical";
-}
+import { restoreViewState, type ViewState } from "../utils/viewState";
 
 /**
  * Public interface:
@@ -35,26 +30,30 @@ export class LinearCalendarView extends ItemView {
 	private rowHeight = 0;
 	private layout: "horizontal" | "vertical";
 	private layoutToggleBtn!: HTMLElement;
+	private yearLabelEl!: HTMLElement;
 	private rowSlider: HTMLInputElement | null = null;
 	private calendarRenderer!: CalendarRenderer;
-	private settings: PluginSettings;
+	private getSettings: () => PluginSettings;
 	private source: DataSource;
 	private dailyNotes: DailyNotes;
 	private eventNotes: EventNotes;
+	private settingsChanges: SettingsChanges;
 	private categoriesContainer!: HTMLElement;
 
 	constructor(
 		leaf: WorkspaceLeaf,
-		settings: PluginSettings,
+		getSettings: () => PluginSettings,
 		source: DataSource,
 		dailyNotes: DailyNotes,
 		eventNotes: EventNotes,
+		settingsChanges: SettingsChanges,
 	) {
 		super(leaf);
-		this.settings = settings;
+		this.getSettings = getSettings;
 		this.source = source;
 		this.dailyNotes = dailyNotes;
 		this.eventNotes = eventNotes;
+		this.settingsChanges = settingsChanges;
 		this.currentYear = new Date().getFullYear();
 		this.layout = window.innerWidth < 768 ? "vertical" : "horizontal";
 	}
@@ -85,7 +84,7 @@ export class LinearCalendarView extends ItemView {
 		const interactions = createInteractions({
 			app: this.app,
 			eventNotes: this.eventNotes,
-			getSettings: () => this.settings,
+			getSettings: this.getSettings,
 			rerender: () => this.renderBarsOnly(),
 		});
 
@@ -95,7 +94,7 @@ export class LinearCalendarView extends ItemView {
 			this.categoriesContainer,
 			this.source,
 			this.dailyNotes,
-			() => this.settings,
+			this.getSettings,
 			{
 				onDayDblClick: (y, m, d) => this.createNoteForDate(y, m, d),
 				onDayContextMenu: (y, m, d, e) => this.showDayContextMenu(y, m, d, e),
@@ -125,13 +124,14 @@ export class LinearCalendarView extends ItemView {
 
 		this.register(this.source.onChange(() => this.renderCalendar()));
 		this.register(this.dailyNotes.onChange(() => this.renderCalendar()));
+		this.register(this.settingsChanges.onChange(() => this.refresh()));
 	}
 
 	async onClose(): Promise<void> {
 		this.calendarRenderer.cleanup();
 	}
 
-	getState(): Record<string, unknown> {
+	getState(): ViewState {
 		return {
 			year: this.currentYear,
 			hiddenCategories: [...this.hiddenCategories],
@@ -141,19 +141,12 @@ export class LinearCalendarView extends ItemView {
 	}
 
 	async setState(state: unknown, result: unknown): Promise<void> {
-		const s = state as Partial<ViewState> | undefined;
-		if (s?.year) this.currentYear = s.year;
-		if (s?.hiddenCategories) {
-			this.hiddenCategories = new Set(s.hiddenCategories);
-		}
-		if (s?.rowHeight != null) this.rowHeight = s.rowHeight;
-		if (s?.layout) this.layout = s.layout;
-		if (this.calendarRenderer) {
-			this.updateYearLabel();
-			if (this.rowSlider) this.rowSlider.value = String(this.rowHeight);
-			this.updateLayoutToggleIcon();
-			this.renderCalendar();
-		}
+		const s = restoreViewState(state, this.getState());
+		this.currentYear = s.year;
+		this.hiddenCategories = new Set(s.hiddenCategories);
+		this.rowHeight = s.rowHeight;
+		this.layout = s.layout;
+		if (this.calendarRenderer) this.renderCalendar();
 		await super.setState(state, result as { history: boolean });
 	}
 
@@ -169,10 +162,7 @@ export class LinearCalendarView extends ItemView {
 			this.navigateYear(-1);
 		});
 
-		nav.createSpan({
-			cls: "lc-year-label",
-			text: String(this.currentYear),
-		}).dataset.role = "year-label";
+		this.yearLabelEl = nav.createSpan({ cls: "lc-year-label" });
 
 		const nextBtn = nav.createEl("button", {
 			cls: "lc-nav-btn clickable-icon",
@@ -214,13 +204,18 @@ export class LinearCalendarView extends ItemView {
 		this.layoutToggleBtn = toolbar.createEl("button", {
 			cls: "lc-layout-toggle clickable-icon",
 		});
-		this.updateLayoutToggleIcon();
 		this.registerDomEvent(this.layoutToggleBtn, "click", () => {
 			this.layout = this.layout === "horizontal" ? "vertical" : "horizontal";
-			this.updateLayoutToggleIcon();
 			this.renderCalendar();
 			window.requestAnimationFrame(() => this.scrollToNow());
 		});
+	}
+
+	/** Brings every toolbar control in line with the view state; `renderCalendar` runs it first, so no state path can skip it. */
+	private syncChrome(): void {
+		this.yearLabelEl.textContent = String(this.currentYear);
+		if (this.rowSlider) this.rowSlider.value = String(this.rowHeight);
+		this.updateLayoutToggleIcon();
 	}
 
 	private updateLayoutToggleIcon(): void {
@@ -231,31 +226,25 @@ export class LinearCalendarView extends ItemView {
 		);
 	}
 
-	private updateYearLabel(): void {
-		const label = this.contentEl.querySelector('[data-role="year-label"]');
-		if (label) label.textContent = String(this.currentYear);
-	}
-
 	private navigateYear(delta: number): void {
 		this.currentYear += delta;
 		this.renderCalendar();
-		this.updateYearLabel();
 	}
 
 	private goToToday(): void {
 		this.currentYear = new Date().getFullYear();
 		this.renderCalendar();
-		this.updateYearLabel();
 		this.scrollToNow();
 	}
 
 	private renderCalendar(): void {
+		this.syncChrome();
 		const config: RenderConfig = {
 			year: this.currentYear,
 			months: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
 			hiddenCategories: this.hiddenCategories,
 			layout: this.layout,
-			alignMode: this.settings.alignMode,
+			alignMode: this.getSettings().alignMode,
 			rowHeight: this.rowHeight,
 		};
 		this.calendarRenderer.render(config);
@@ -285,7 +274,7 @@ export class LinearCalendarView extends ItemView {
 		menu.addItem((item) =>
 			item.setTitle("Create event")
 				.setIcon("calendar-plus")
-				.onClick(() => new CreateEventModal(this.app, this.eventNotes, this.settings, new Date(year, month, day)).open())
+				.onClick(() => new CreateEventModal(this.app, this.eventNotes, this.getSettings(), new Date(year, month, day)).open())
 		);
 		menu.showAtMouseEvent(event);
 	}
@@ -296,7 +285,7 @@ export class LinearCalendarView extends ItemView {
 	}
 
 	private applyFonts(): void {
-		const { fontHeading, fontHeadingCustom, fontBody, fontBodyCustom, fontMono, fontMonoCustom } = this.settings;
+		const { fontHeading, fontHeadingCustom, fontBody, fontBodyCustom, fontMono, fontMonoCustom } = this.getSettings();
 		const el = this.contentEl;
 		const set = (prop: string, choice: typeof fontHeading, custom: string) => {
 			const v = resolveFontVar(choice, custom);

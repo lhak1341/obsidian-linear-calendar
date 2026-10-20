@@ -72,7 +72,7 @@ export class CalendarRenderer {
 
 		this.updateRowHeight(layout, rowHeight);
 
-		this.renderVisibleBars(monthRows);
+		this.renderVisibleBars(config, monthRows);
 
 		// NowIndicator manages its own interval lifecycle; only restarts on year change.
 		this.nowIndicator.render(monthRows, year);
@@ -82,24 +82,21 @@ export class CalendarRenderer {
 
 	/** Rebuild only bars and category chips using the config from the last render(); preserves the day-cell grid DOM. */
 	renderBars(): void {
+		const config = this.current;
 		const monthRows = this.gridRenderer.getMonthRows();
-		if (!this.current || monthRows.length === 0) return;
+		if (!config || monthRows.length === 0) return;
 
 		for (const rowRef of monthRows) {
 			// Vertical layout reuses the month column (day cells included) as barsContainer — remove bars only.
 			rowRef.barsContainer.querySelectorAll(":scope > .calendar-bar").forEach((el) => el.remove());
 		}
 
-		this.renderVisibleBars(monthRows);
+		this.renderVisibleBars(config, monthRows);
 	}
 
-	/**
-	 * Compute visible items, refresh category chips, and (re)paint bars into monthRows —
-	 * shared tail of render() and renderBars(). Reads year/months/hiddenCategories off
-	 * `this.current`, which both callers guarantee is set before this runs.
-	 */
-	private renderVisibleBars(monthRows: MonthRowRef[]): void {
-		const { year, months, hiddenCategories } = this.current!;
+	/** Compute visible items, refresh category chips, and (re)paint bars into monthRows — shared tail of render() and renderBars(). */
+	private renderVisibleBars(config: RenderConfig, monthRows: MonthRowRef[]): void {
+		const { year, months, hiddenCategories } = config;
 		const { colorMap, iconMap } = this.getSettings();
 
 		const { allItems, items, tagColorMap } = this.computeVisibleItems(year, hiddenCategories, colorMap);
@@ -109,6 +106,10 @@ export class CalendarRenderer {
 		this.barRenderer.render(monthRows, items, year, tagColorMap, tagIconMap);
 	}
 
+	/**
+	 * Applies a row height by setting one CSS variable, with no rebuild. The density slider
+	 * calls this on every input event, so folding it into render() would rebuild every day cell per tick.
+	 */
 	updateRowHeight(layout: "horizontal" | "vertical", rowHeight: number): void {
 		const grid = this.gridRenderer.getContainer();
 		if (layout === "vertical") {

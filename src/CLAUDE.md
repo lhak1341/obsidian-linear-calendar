@@ -49,6 +49,8 @@
   override — the modal's default per-field `width: 100%` makes siblings fight for the
   same full-row width otherwise. See `.lc-remind-setting` in `styles.css`.
 
+- `settings.ts` mutates `plugin.settings` in place, then `saveSettings()` saves and calls `SettingsChanges.notify()`. Every host (`LinearCalendarView`, each `MonthStrip`) subscribes via `onChange` and repaints fully; hosts read settings through a `getSettings` getter, never a captured object. A new host must subscribe, or it goes stale after a settings save. Not unit-tested (a subscriber set); verify live via `obsidian eval`: mount a strip with an `onMonthChange` counter, toggle a setting and `await plugin.saveSettings()`, and the count rises by one; after `destroy()` it no longer rises. Restore the setting afterwards. Run 2026-10-21 in `lhakZettel`: passed (render count only, DOM change not inspected).
+
 ## Daily notes
 
 - `DailyNotes` (`DailyNotes.ts`) is the only place the daily-note filename format, folder and `YYYY-MM-DD` key are known: hosts call `get(year, month, day)` (0-based month) and `create(...)`, never build a key. The plugin owns one instance (built in `onload`) and passes it to the view and every month strip.
@@ -56,7 +58,7 @@
 
 ## Note creation
 
-- `eventFields.ts` holds `EventFields` and its two mirror images: `applyFields` writes them into frontmatter, `readEventFields` reads `{ date, fields }` back. `title` comes back undefined when the note has none — callers choose the fallback (filename, prefix-stripped filename, blank). `tag` is the first `linear-calendar/*` subtag; a bare-gate-tag note has none, which `create` writes back as the bare tag.
+- `eventFields.ts` holds `EventFields` and its two mirror images: `applyFields` writes them into frontmatter, `readEventFields` reads `{ date, fields }` back. `title` comes back undefined when the note has none — callers choose the fallback (filename, prefix-stripped filename, blank). They differ on purpose, so don't fold them into one shared read: `promoteReminder` strips the date prefix so the new note, named `{date} {title}`, doesn't get two prefixes; the edit modal shows the raw basename because its title input is disabled in filename mode and nothing is written back. `tag` is the first `linear-calendar/*` subtag; a bare-gate-tag note has none, which `create` writes back as the bare tag.
 - `eventForm.ts` is the form side of that codec: `buildEventFields` (form state → `EventFields`, with the end-before-start check and relative/exact reminder maths) and `formStateFromFields` (the reverse, for edit prefill). `CreateEventModal` holds widgets and one `EventFormState`; put validation and reminder rules in `eventForm.ts`, not the modal.
 - `EventNotes` (`EventNotes.ts`) is the only writer of event-note frontmatter:
   `create`/`update`/`move`/`promoteReminder`. `create()` takes `CreateOptions` (=

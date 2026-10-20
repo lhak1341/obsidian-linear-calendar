@@ -1,9 +1,5 @@
-import { formatDateRange } from "../utils/dateUtils";
-import { ageOn } from "../utils/calendarItems";
-import { formatTagLabel } from "../utils/tagUtils";
+import { describeItem } from "../utils/calendarItems";
 import type { BarInfo } from "./BarRenderer";
-
-const BIRTHDAY_TAG = "linear-calendar/birthday";
 
 export class Tooltip {
 	private el: HTMLElement;
@@ -47,27 +43,21 @@ export class Tooltip {
 		const { item, tagColor } = barInfo;
 
 		this.el.empty();
-		this.el.createDiv({ cls: "tooltip-title", text: item.title });
+		const { title, dates, tagLabels, ageLabel, description } = describeItem(item);
+		this.el.createDiv({ cls: "tooltip-title", text: title });
 
 		const metaRow = this.el.createDiv({ cls: "tooltip-meta" });
-		metaRow.createSpan({ cls: "tooltip-dates", text: formatDateRange(item.fullStart ?? item.dateStart, item.fullEnd ?? item.dateEnd) });
-		if (item.tags?.length) {
-			for (const tag of item.tags) {
-				const chip = metaRow.createSpan({ cls: "tooltip-tag-chip" });
-				const dot = chip.createSpan({ cls: "tooltip-tag-dot" });
-				dot.style.backgroundColor = tagColor || "#888";
-				chip.createSpan({ text: formatTagLabel(tag) });
-			}
+		metaRow.createSpan({ cls: "tooltip-dates", text: dates });
+		for (const label of tagLabels) {
+			const chip = metaRow.createSpan({ cls: "tooltip-tag-chip" });
+			const dot = chip.createSpan({ cls: "tooltip-tag-dot" });
+			dot.style.backgroundColor = tagColor || "#888";
+			chip.createSpan({ text: label });
 		}
 
-		const age = ageOn(item);
-		if (age !== undefined && item.tags?.includes(BIRTHDAY_TAG)) {
-			metaRow.createSpan({ cls: "tooltip-age", text: `Turns ${age}` });
-		}
+		if (ageLabel) metaRow.createSpan({ cls: "tooltip-age", text: ageLabel });
 
-		if (item.description) {
-			this.el.createDiv({ cls: "tooltip-description", text: item.description });
-		}
+		if (description) this.el.createDiv({ cls: "tooltip-description", text: description });
 
 		this.visible = true;
 		this.el.removeClass("lc-hidden");

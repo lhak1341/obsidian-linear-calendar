@@ -15,8 +15,8 @@
     "semantic_hash": "8edcd8bd3124814963f348579f3b9737"
   },
   "src/main.ts": {
-    "mtime": 1792508202.2089825,
-    "ast_hash": "7a26214d4d9c81db191ed78504b4858e",
+    "mtime": 1792534843.089955,
+    "ast_hash": "43fb4886aafa3e2c628c60bbc807aa60",
     "semantic_hash": ""
   },
   "src/settings.ts": {
@@ -70,8 +70,8 @@
     "semantic_hash": ""
   },
   "src/view/LinearCalendarView.ts": {
-    "mtime": 1792508202.208286,
-    "ast_hash": "6f8c35a47c84ef26feb978af63b737cc",
+    "mtime": 1792535354.022175,
+    "ast_hash": "2b1fdb56d730e8f21a9b98d83ecac810",
     "semantic_hash": ""
   },
   "src/view/DragHandler.ts": {
@@ -85,13 +85,13 @@
     "semantic_hash": "21d0ec73ca11a7b129084d57d1f2ff0b"
   },
   "src/view/CalendarRenderer.ts": {
-    "mtime": 1792508018.9947834,
-    "ast_hash": "b0c999bc3affe1bddbd845cab91f8511",
+    "mtime": 1792535908.6663353,
+    "ast_hash": "0f777c59af421bdd3fe607685173f223",
     "semantic_hash": ""
   },
   "src/view/Tooltip.ts": {
-    "mtime": 1791623115.461962,
-    "ast_hash": "58f94f17925f201d6d53fcb9900fd21e",
+    "mtime": 1792535678.7211561,
+    "ast_hash": "ff3792afdcad311feced035d3aa17007",
     "semantic_hash": ""
   },
   "src/view/BarRenderer.ts": {
@@ -130,8 +130,8 @@
     "semantic_hash": ""
   },
   "src/view/CLAUDE.md": {
-    "mtime": 1792508970.1321728,
-    "ast_hash": "85f5c020d3cf3c79768425b62bb767c6",
+    "mtime": 1792536065.9513338,
+    "ast_hash": "9da5c15bcf4131ac901279c5893f8805",
     "semantic_hash": ""
   },
   "src/data/CLAUDE.md": {
@@ -240,13 +240,13 @@
     "semantic_hash": ""
   },
   "src/CLAUDE.md": {
-    "mtime": 1792508923.3584063,
-    "ast_hash": "f92d4dc2eb9224248d9dac33dbc43aa9",
+    "mtime": 1792535852.8421035,
+    "ast_hash": "2de7c37a9c6586b9307619d44cd9334a",
     "semantic_hash": ""
   },
   "src/utils/calendarItems.ts": {
-    "mtime": 1791623115.4586616,
-    "ast_hash": "399f7fea0dfa0d933b7b111888e761d9",
+    "mtime": 1792535695.6333346,
+    "ast_hash": "3d83fef343e86e5fbd3e399d2f538726",
     "semantic_hash": ""
   },
   "src/utils/category.ts": {
@@ -305,13 +305,23 @@
     "semantic_hash": ""
   },
   "src/view/MonthStrip.ts": {
-    "mtime": 1792508202.2084646,
-    "ast_hash": "4b196baae5f6bd64ccb2d8a71fa5c7be",
+    "mtime": 1792534846.5542898,
+    "ast_hash": "f2803e329ef6987416c719d409895466",
     "semantic_hash": ""
   },
   "GLOSSARY.md": {
-    "mtime": 1792508242.2105696,
-    "ast_hash": "b146dff4512e75e9bd2344c8a537e27b",
+    "mtime": 1792535678.722093,
+    "ast_hash": "8fc08b9c9e1788102719d73ed8227665",
+    "semantic_hash": ""
+  },
+  "src/SettingsChanges.ts": {
+    "mtime": 1792534840.083244,
+    "ast_hash": "46322f7de11e55c3f7c035122a2dc36d",
+    "semantic_hash": ""
+  },
+  "src/utils/viewState.ts": {
+    "mtime": 1792535390.2415128,
+    "ast_hash": "30e3f59e5c9dfc55eb254a361f292276",
     "semantic_hash": ""
   }
 }

@@ -2,7 +2,7 @@
 
 ## Bar placement lives in `utils/barLayout.ts`
 
-`BarRenderer` and `DragHandler` do no geometry. `layoutBars(items, year, maxRows)` splits items into month segments and packs rows; `BarRenderer` reads `placementsFor(month)` and hands the same `BarLayout` to `DragHandler.setLayout`, whose `previewMove` places drag ghosts in the first free row under the same cap (a ghost with no free row is not drawn, like a bar). `gridArea(span, row, weekdayOffset, layout)` is the only place the CSS-grid column/row strings are built. Items arrive already clamped to the viewed year by `expandForYear`; `splitByMonth` compares calendar days, not timestamps, so a time-of-day at the year's edge cannot empty a span.
+`BarRenderer` and `DragHandler` do no geometry. `layoutBars(items, year, maxRows)` splits items into month segments and packs rows; `BarRenderer` reads `placementsFor(month)` and hands the same `BarLayout` to `DragHandler.attach` (inside its `DragScene`), whose `previewMove` places drag ghosts in the first free row under the same cap (a ghost with no free row is not drawn, like a bar). `gridArea(span, row, weekdayOffset, layout)` is the only place the CSS-grid column/row strings are built. Items arrive already clamped to the viewed year by `expandForYear`; `splitByMonth` compares calendar days, not timestamps, so a time-of-day at the year's edge cannot empty a span.
 
 ## Bar/chip colors
 
@@ -32,6 +32,7 @@
 
 - `onCategoryToggle` must call `renderBarsOnly()`, not `renderCalendar()` — `populateDayCell()` never receives `hiddenCategories`, so the day cell DOM is invariant under category filter changes; only bars and chips need rebuilding.
 - `CategoryChips`'s `lastSig` guards chip DOM rebuilds — include ALL visual chip properties (color, icon, etc.) in the sig or a change to that property will be silently skipped on re-render
+- `MonthStrip` does a full `render()` on toggle on purpose: `onMonthChange` is part of the dashboard contract and fires once per render, so switching it to `renderBars()` would silence it for toggles.
 
 ## Tracking a CSS grid column with a positioned overlay
 
@@ -53,7 +54,7 @@
 ## ResizeObserver — LinearCalendarView vs mountMonthStrip
 
 - LinearCalendarView has no ResizeObserver: CSS grid `1fr` columns adapt to container resize natively — no JS re-render needed. Adding one causes a full 372-node rebuild on every panel resize.
-- `mountMonthStrip` in main.ts legitimately uses ResizeObserver because it renders a single fixed-month strip whose width is dynamically constrained by an external host view.
+- `MonthStrip` (`mountMonthStrip`) legitimately uses ResizeObserver because it renders a single fixed-month strip whose width is dynamically constrained by an external host view.
 
 ## Note-mutating callbacks
 
@@ -69,3 +70,4 @@
 - Vault has native menus on, so a context menu has no DOM to read: call the handler directly (`view.calendarRenderer.barRenderer.<fn>`, `view.calendarRenderer.callbacks.<fn>`) instead of dispatching `contextmenu`.
 - The view restores its persisted `year` — set it first (`view.setState({...view.getState(), year}, {history:false})`) or DOM counts reflect whatever year was last open.
 - Write tests against `lhakZettel` with throwaway notes (`zz` prefix, far-future year ≤ 2068 — its `YYMMDD` formats parse `99` as 1999, so 2099 fixtures are never found) and trash them in `finally`. Create them with `plugin.eventNotes.create(date, { title, openAfterCreate: false })` rather than driving the modal; drive the modal only to test the modal. Assert deltas against a baseline, not totals: the year already holds real bars, and a promoted note with a remind date draws its own ghost.
+- Assert what a change repainted, not how it looks: tag an existing day cell (`cell.dataset.mark`) and check it survives (bars-only repaint) or vanishes (full rebuild); count a strip's repaints with an `onMonthChange` counter; read tooltip text after `bar.dispatchEvent(new MouseEvent("mouseenter"))` (`Tooltip` listens in the capture phase on the grid, so a non-bubbling event at the bar reaches it).

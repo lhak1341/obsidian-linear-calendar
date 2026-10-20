@@ -7,6 +7,7 @@ import { FrontmatterScanner } from "./data/FrontmatterScanner";
 import type { DataSource } from "./data/DataSource";
 import { ObsidianEventNotes } from "./EventNotes";
 import { DailyNotes } from "./DailyNotes";
+import { SettingsChanges } from "./SettingsChanges";
 import { CreateEventModal } from "./CreateEventModal";
 import { MonthStrip } from "./view/MonthStrip";
 import type { MonthStripHandle } from "./view/MonthStrip";
@@ -20,6 +21,7 @@ export default class LinearCalendarPlugin extends Plugin {
 	private scanner!: DataSource;
 	private eventNotes!: ObsidianEventNotes;
 	private dailyNotes!: DailyNotes;
+	private settingsChanges = new SettingsChanges();
 
 	async onload(): Promise<void> {
 		registerLucideIcons();
@@ -31,10 +33,11 @@ export default class LinearCalendarPlugin extends Plugin {
 		this.registerView(VIEW_TYPE_LINEAR_CALENDAR, (leaf: WorkspaceLeaf) => {
 			return new LinearCalendarView(
 				leaf,
-				this.settings,
+				() => this.settings,
 				this.scanner,
 				this.dailyNotes,
 				this.eventNotes,
+				this.settingsChanges,
 			);
 		});
 
@@ -70,12 +73,7 @@ export default class LinearCalendarPlugin extends Plugin {
 
 	async saveSettings(): Promise<void> {
 		await this.saveData(this.settings);
-		for (const leaf of this.app.workspace.getLeavesOfType(
-			VIEW_TYPE_LINEAR_CALENDAR,
-		)) {
-			const view = leaf.view as LinearCalendarView;
-			view.refresh();
-		}
+		this.settingsChanges.notify();
 	}
 
 	/** Public API for other plugins — returns current-year items + resolved color map. */
@@ -105,6 +103,7 @@ export default class LinearCalendarPlugin extends Plugin {
 				dailyNotes: this.dailyNotes,
 				eventNotes: this.eventNotes,
 				getSettings: () => this.settings,
+				settingsChanges: this.settingsChanges,
 			},
 			container,
 			categoriesEl,

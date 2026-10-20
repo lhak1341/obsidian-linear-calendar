@@ -3,6 +3,7 @@ import type { PluginSettings } from "../types";
 import type { DataSource } from "../data/DataSource";
 import type { DailyNotes } from "../DailyNotes";
 import type { EventNotes } from "../EventNotes";
+import type { SettingsChanges } from "../SettingsChanges";
 import { toggleCategory } from "../utils/category";
 import { shiftMonth } from "../utils/dateUtils";
 import { CalendarRenderer, RenderConfig } from "./CalendarRenderer";
@@ -22,6 +23,7 @@ export interface MonthStripDeps {
 	dailyNotes: DailyNotes;
 	eventNotes: EventNotes;
 	getSettings: () => PluginSettings;
+	settingsChanges: SettingsChanges;
 }
 
 /**
@@ -35,6 +37,7 @@ export class MonthStrip implements MonthStripHandle {
 	private renderer: CalendarRenderer;
 	private unsubscribeItems: () => void;
 	private unsubscribeDailyNotes: () => void;
+	private unsubscribeSettings: () => void;
 	private resizeObserver: ResizeObserver;
 
 	/** `onMonthChange` fires after every render (mount, navigation, data or resize), not only on navigation. */
@@ -70,6 +73,7 @@ export class MonthStrip implements MonthStripHandle {
 		this.render();
 		this.unsubscribeItems = deps.scanner.onChange(() => this.render());
 		this.unsubscribeDailyNotes = deps.dailyNotes.onChange(() => this.render());
+		this.unsubscribeSettings = deps.settingsChanges.onChange(() => this.render());
 
 		let lastWidth = container.offsetWidth;
 		this.resizeObserver = new ResizeObserver(() => {
@@ -99,6 +103,7 @@ export class MonthStrip implements MonthStripHandle {
 	destroy(): void {
 		this.unsubscribeItems();
 		this.unsubscribeDailyNotes();
+		this.unsubscribeSettings();
 		this.renderer.cleanup();
 		this.resizeObserver.disconnect();
 	}

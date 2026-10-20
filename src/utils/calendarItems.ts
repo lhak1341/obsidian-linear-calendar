@@ -1,5 +1,6 @@
 import type { CalendarItem, RawCalendarItem } from "../types";
-import { projectAnniversaryDates } from "./dateUtils";
+import { formatDateRange, projectAnniversaryDates } from "./dateUtils";
+import { formatTagLabel } from "./tagUtils";
 
 /**
  * Turns the notes' raw items into the items shown for `year`: projects anniversary notes
@@ -45,4 +46,29 @@ export function expandForYear(rawItems: RawCalendarItem[], year: number): Calend
 /** Years elapsed since the note's own date, for a projected `recurrence`; undefined for other kinds. */
 export function ageOn(item: CalendarItem): number | undefined {
 	return item.kind === "recurrence" ? item.dateStart.getFullYear() - item.originYear : undefined;
+}
+
+/** Tag of the notes whose recurrences show their age ("Turns N"). */
+const BIRTHDAY_TAG = "linear-calendar/birthday";
+
+/** What a bar's tooltip says about an item, as text; `Tooltip` only paints it. */
+export interface ItemDescription {
+	title: string;
+	/** The note's own span (not clamped to the viewed year), one date or `start → end`. */
+	dates: string;
+	tagLabels: string[];
+	/** "Turns N" for a birthday recurrence; undefined otherwise (including a birthday in its origin year). */
+	ageLabel?: string;
+	description?: string;
+}
+
+export function describeItem(item: CalendarItem): ItemDescription {
+	const age = ageOn(item);
+	return {
+		title: item.title,
+		dates: formatDateRange(item.fullStart ?? item.dateStart, item.fullEnd ?? item.dateEnd),
+		tagLabels: (item.tags ?? []).map(formatTagLabel),
+		ageLabel: age !== undefined && item.tags?.includes(BIRTHDAY_TAG) ? `Turns ${age}` : undefined,
+		description: item.description,
+	};
 }
