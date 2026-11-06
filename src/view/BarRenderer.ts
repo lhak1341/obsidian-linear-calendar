@@ -2,10 +2,10 @@ import { type App, Menu, setIcon } from "obsidian";
 import type { CalendarItem } from "../types";
 import type { CalendarInteractions } from "./calendarInteractions";
 import { resolveLucideIconId } from "../lucide-icons";
-import { COLOR_PALETTE, MAX_WATERFALL_ROWS, MAX_WATERFALL_COLS_VERT } from "../constants";
+import { COLOR_PALETTE } from "../constants";
 import { getContrastColor } from "../utils/colorUtils";
 import type { MonthRowRef } from "./GridRenderer";
-import { gridArea, layoutBars, type MonthSegment } from "../utils/barLayout";
+import { gridArea, type BarLayout, type MonthSegment } from "../utils/barLayout";
 import { categoryOf } from "../utils/category";
 import { canDrag } from "../utils/dragUtils";
 import { DragHandler } from "./DragHandler";
@@ -33,15 +33,13 @@ export class BarRenderer {
 
 	render(
 		monthRows: MonthRowRef[],
-		items: CalendarItem[],
-		year: number,
+		layout: BarLayout,
 		tagColorMap: Map<string, string>,
 		tagIconMap: Map<string, string>,
 	): void {
 		const isVertical = monthRows[0]?.layout === "vertical";
 
 		this.dragHandler.cleanup();
-		const layout = layoutBars(items, year, isVertical ? MAX_WATERFALL_COLS_VERT : MAX_WATERFALL_ROWS);
 		const dragScene = { monthRows, layout };
 
 		for (const rowRef of monthRows) {

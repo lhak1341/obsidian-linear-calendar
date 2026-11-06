@@ -2,18 +2,18 @@
 
 ## Public API — coordinated with obsidian-lhak-dashboard
 
-- `mountMonthStrip(container, categoriesEl, onMonthChange?)` (returns `MonthStripHandle`:
+- `mountRollingStrip(container, categoriesEl, onRangeChange?)` (returns `RollingStripHandle`:
   `next`/`prev`/`today`/`destroy`) and `getCalendarData(year)` on `LinearCalendarPlugin`
   are called at runtime by `obsidian-lhak-dashboard`. Changing either signature requires
   coordinating both repos.
-- `mountMonthStrip` is a one-line `new MonthStrip(...)`; the strip itself lives in `view/MonthStrip.ts` (a class implementing `MonthStripHandle`). `onMonthChange` fires after every render, not only on navigation.
+- `mountRollingStrip` is a one-line `new RollingStrip(...)`; the strip itself lives in `view/RollingStrip.ts` (a class implementing `RollingStripHandle`). `onRangeChange` fires after every render, not only on navigation.
 - Types used only internally by those two (e.g. `RenderConfig`) are **not** part of the
   coordinated surface.
-- The dashboard only calls `mountMonthStrip`, never `getCalendarData` — `CalendarItem`'s
+- The dashboard only calls `mountRollingStrip`, never `getCalendarData` — `CalendarItem`'s
   field shape (e.g. `kind`/`originYear`) is free to reshape without cross-repo
   coordination.
-- `mountMonthStrip`'s `alignMode` is hardcoded to `"date"` regardless of
-  `settings.alignMode`. Intentional for the single-month embed context — don't fold it
+- `mountRollingStrip`'s `alignMode` is hardcoded to `"date"` regardless of
+  `settings.alignMode`. Intentional for the one-row embed context — don't fold it
   into a settings-accessor refactor.
 - No gate pins these signatures (a type-pin test here can only restate the declaration, so
   it would go stale in lockstep with a rename rather than catching it). The real check is a
@@ -49,7 +49,7 @@
   override — the modal's default per-field `width: 100%` makes siblings fight for the
   same full-row width otherwise. See `.lc-remind-setting` in `styles.css`.
 
-- `settings.ts` mutates `plugin.settings` in place, then `saveSettings()` saves and calls `SettingsChanges.notify()`. Every host (`LinearCalendarView`, each `MonthStrip`) subscribes via `onChange` and repaints fully; hosts read settings through a `getSettings` getter, never a captured object. A new host must subscribe, or it goes stale after a settings save. Not unit-tested (a subscriber set); verify live via `obsidian eval`: mount a strip with an `onMonthChange` counter, toggle a setting and `await plugin.saveSettings()`, and the count rises by one; after `destroy()` it no longer rises. Restore the setting afterwards. Run 2026-10-21 in `lhakZettel`: passed (render count only, DOM change not inspected).
+- `settings.ts` mutates `plugin.settings` in place, then `saveSettings()` saves and calls `SettingsChanges.notify()`. Every host (`LinearCalendarView`, each `RollingStrip`) subscribes via `onChange` and repaints fully; hosts read settings through a `getSettings` getter, never a captured object. A new host must subscribe, or it goes stale after a settings save. Not unit-tested (a subscriber set); verify live via `obsidian eval`: mount a strip with an `onRangeChange` counter, toggle a setting and `await plugin.saveSettings()`, and the count rises by one; after `destroy()` it no longer rises. Restore the setting afterwards. Run 2026-10-21 in `lhakZettel`: passed (render count only, DOM change not inspected).
 
 ## Daily notes
 

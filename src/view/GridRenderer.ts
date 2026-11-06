@@ -3,6 +3,7 @@ import type { TFile } from "obsidian";
 import type { AlignMode, DailyNoteStyle } from "../types";
 import { MAX_WATERFALL_COLS_VERT } from "../constants";
 import { daysInMonth } from "../utils/dateUtils";
+import { WINDOW_ROW, windowColumn, windowDays, type DayWindow } from "../utils/dayWindow";
 
 function computeTint(color: string | null, hover: boolean): string {
 	const pct = hover ? 22 : 12;
@@ -33,6 +34,8 @@ export interface MonthRowRef {
 	weekdayOffset: number;
 	totalCols: number;
 	layout: "horizontal" | "vertical";
+	/** Set on a day window's row: the 0-based column of a date, null when outside. A month row derives it from the day. */
+	columnOf?: (date: Date) => number | null;
 }
 
 export interface GridRenderCallbacks {
@@ -44,6 +47,8 @@ export interface GridRenderCallbacks {
 export interface GridRenderOptions {
 	year: number;
 	months: number[];
+	/** When set, one row of these days replaces `months`. */
+	window?: DayWindow;
 	layout: "horizontal" | "vertical";
 	alignMode: AlignMode;
 	/** The day's daily note, if it has one. */
@@ -89,7 +94,9 @@ export class GridRenderer {
 		this.onDayDblClick = callbacks.onDayDblClick;
 		this.onDayContextMenu = callbacks.onDayContextMenu;
 
-		if (months.length === 1) {
+		if (options.window) {
+			this.monthRows = [this.renderWindow(options.window)];
+		} else if (months.length === 1) {
 			this.monthRows = [this.renderSingleMonth(months[0])];
 		} else if (layout === "vertical") {
 			this.monthRows = this.renderVerticalGrid();
@@ -152,7 +159,7 @@ export class GridRenderer {
 				const cellEl = monthCol.createDiv({ cls: "lc-vert-day-cell" });
 				cellEl.style.gridRow = `${weekdayOffset + d}`;
 				cellEl.dataset.day = String(d);
-				this.populateDayCell(cellEl, m, d, firstDow);
+				this.populateDayCell(cellEl, this.year, m, d, firstDow);
 			}
 
 			rows.push({
@@ -184,6 +191,43 @@ export class GridRenderer {
 		return this.renderMonthRow(month, days);
 	}
 
+	private renderWindow(window: DayWindow): MonthRowRef {
+		this.containerEl.empty();
+		this.containerEl.removeClass("lc-vert-grid");
+		this.containerEl.addClass("linear-calendar-grid");
+		this.containerEl.style.removeProperty("grid-template-columns");
+		this.containerEl.style.removeProperty("grid-template-rows");
+		this.containerEl.style.removeProperty("min-width");
+
+		this.totalCols = window.days;
+		this.colTemplate = `repeat(${this.totalCols}, 1fr)`;
+
+		const row = this.containerEl.createDiv({ cls: "lc-month-row" });
+		row.createDiv({ cls: "lc-month-label", text: MONTH_NAMES[window.start.getMonth()] });
+		const daysGrid = row.createDiv({ cls: "lc-days-grid" });
+		daysGrid.style.gridTemplateColumns = this.colTemplate;
+
+		windowDays(window).forEach(({ year, month, day }, column) => {
+			const cellEl = daysGrid.createDiv({ cls: "lc-day-cell" });
+			cellEl.style.gridColumn = `${column + 1}`;
+			this.populateDayCell(cellEl, year, month, day, new Date(year, month, 1).getDay());
+			if (day === 1 && column > 0) {
+				cellEl.addClass("lc-day-month-start");
+				cellEl.querySelector(".lc-day-num")?.setText(`${month + 1}/1`);
+			}
+		});
+
+		return {
+			month: WINDOW_ROW,
+			barsContainer: daysGrid.createDiv({ cls: "lc-bars-container" }),
+			daysInMonth: window.days,
+			weekdayOffset: 0,
+			totalCols: window.days,
+			layout: "horizontal",
+			columnOf: (date) => windowColumn(window, date),
+		};
+	}
+
 	private renderMonthRow(month: number, daysInMonth: number): MonthRowRef {
 		const row = this.containerEl.createDiv({ cls: "lc-month-row" });
 
@@ -204,13 +248,13 @@ export class GridRenderer {
 				const cellEl = daysGrid.createDiv({ cls: "lc-day-cell" });
 				cellEl.style.gridColumn = `${d}`;
 				if (d > daysInMonth) { cellEl.addClass("lc-day-empty"); continue; }
-				this.populateDayCell(cellEl, month, d, firstDow);
+				this.populateDayCell(cellEl, this.year, month, d, firstDow);
 			}
 		} else {
 			for (let d = 1; d <= daysInMonth; d++) {
 				const cellEl = daysGrid.createDiv({ cls: "lc-day-cell" });
 				cellEl.style.gridColumn = `${weekdayOffset + d}`;
-				this.populateDayCell(cellEl, month, d, firstDow);
+				this.populateDayCell(cellEl, this.year, month, d, firstDow);
 			}
 		}
 
@@ -234,6 +278,7 @@ export class GridRenderer {
 
 	private populateDayCell(
 		cellEl: HTMLElement,
+		year: number,
 		month: number,
 		day: number,
 		firstDow: number,
@@ -241,17 +286,18 @@ export class GridRenderer {
 		const dow = (firstDow + day - 1) % 7;
 		if (dow === 0 || dow === 6) cellEl.addClass("lc-day-weekend");
 
-		const hasDailyNote = this.dailyNoteAt(this.year, month, day) !== undefined;
+		const hasDailyNote = this.dailyNoteAt(year, month, day) !== undefined;
 		if (hasDailyNote) cellEl.addClass("lc-has-daily-note");
 
 		cellEl.createSpan({ cls: "lc-day-num", text: String(day) });
 		cellEl.createSpan({ cls: "lc-day-weekday", text: (this.japaneseWeekdayLabels ? WEEKDAY_KANJI : WEEKDAY_ABBR)[dow] });
 
-		this.attachCellHandlers(cellEl, month, day, hasDailyNote);
+		this.attachCellHandlers(cellEl, year, month, day, hasDailyNote);
 	}
 
 	private attachCellHandlers(
 		cellEl: HTMLElement,
+		year: number,
 		month: number,
 		day: number,
 		hasDailyNote: boolean,
@@ -270,24 +316,24 @@ export class GridRenderer {
 			// `resetTimer: true` both delays and (via `.cancel()`) disambiguates against a
 			// following dblclick.
 			const singleClickDebounced = debounce(
-				() => this.onDayClick?.(this.year, month, day),
+				() => this.onDayClick?.(year, month, day),
 				220,
 				true,
 			);
 			cellEl.addEventListener("click", () => singleClickDebounced());
 			cellEl.addEventListener("dblclick", () => {
 				singleClickDebounced.cancel();
-				this.onDayDblClick?.(this.year, month, day);
+				this.onDayDblClick?.(year, month, day);
 			});
 		} else {
 			cellEl.addEventListener("dblclick", () => {
-				this.onDayDblClick?.(this.year, month, day);
+				this.onDayDblClick?.(year, month, day);
 			});
 		}
 
 		cellEl.addEventListener("contextmenu", (event: MouseEvent) => {
 			event.preventDefault();
-			this.onDayContextMenu?.(this.year, month, day, event);
+			this.onDayContextMenu?.(year, month, day, event);
 		});
 	}
 

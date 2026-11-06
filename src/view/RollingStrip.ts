@@ -5,19 +5,22 @@ import type { DailyNotes } from "../DailyNotes";
 import type { EventNotes } from "../EventNotes";
 import type { SettingsChanges } from "../SettingsChanges";
 import { toggleCategory } from "../utils/category";
-import { shiftMonth } from "../utils/dateUtils";
+import { dayAt, windowEnd, type DayWindow } from "../utils/dayWindow";
 import { CalendarRenderer, RenderConfig } from "./CalendarRenderer";
 import { createInteractions } from "./calendarInteractions";
 
-/** Handle returned by {@link LinearCalendarPlugin.mountMonthStrip} for host-driven month navigation. */
-export interface MonthStripHandle {
+/** Handle returned by {@link LinearCalendarPlugin.mountRollingStrip} for host-driven paging. */
+export interface RollingStripHandle {
+	/** Show the next 30 days. */
 	next(): void;
+	/** Show the previous 30 days. */
 	prev(): void;
+	/** Back to the 30 days starting today. */
 	today(): void;
 	destroy(): void;
 }
 
-export interface MonthStripDeps {
+export interface RollingStripDeps {
 	app: App;
 	scanner: DataSource;
 	dailyNotes: DailyNotes;
@@ -26,26 +29,32 @@ export interface MonthStripDeps {
 	settingsChanges: SettingsChanges;
 }
 
+const WINDOW_DAYS = 30;
+/** How often to look for midnight. A host can stay open for days, and nothing else repaints an idle strip. */
+const ROLLOVER_CHECK_MS = 60_000;
+
 /**
- * Single-month calendar host for cross-plugin embeds (`obsidian-lhak-dashboard`). A sibling of
+ * Rolling 30-day calendar host for cross-plugin embeds (`obsidian-lhak-dashboard`). A sibling of
  * `LinearCalendarView`: it builds its own `CalendarRenderer` and owns its own resize policy (ADR-0001).
+ * The window starts today and moves with the date; paging keeps its distance from today.
  */
-export class MonthStrip implements MonthStripHandle {
-	private year = new Date().getFullYear();
-	private month = new Date().getMonth();
+export class RollingStrip implements RollingStripHandle {
+	private pageOffset = 0;
+	private renderedDay = "";
 	private hiddenCategories = new Set<string>();
 	private renderer: CalendarRenderer;
 	private unsubscribeItems: () => void;
 	private unsubscribeDailyNotes: () => void;
 	private unsubscribeSettings: () => void;
 	private resizeObserver: ResizeObserver;
+	private rolloverTimer: number;
 
-	/** `onMonthChange` fires after every render (mount, navigation, data or resize), not only on navigation. */
+	/** `onRangeChange` fires after every render (mount, navigation, data, resize or midnight), not only on navigation. */
 	constructor(
-		deps: MonthStripDeps,
+		deps: RollingStripDeps,
 		private container: HTMLElement,
 		categoriesEl: HTMLElement,
-		private onMonthChange?: (year: number, month: number) => void,
+		private onRangeChange?: (start: Date, end: Date) => void,
 	) {
 		const interactions = createInteractions({
 			app: deps.app,
@@ -84,23 +93,29 @@ export class MonthStrip implements MonthStripHandle {
 			}
 		});
 		this.resizeObserver.observe(container);
+
+		this.rolloverTimer = window.setInterval(() => {
+			if (new Date().toDateString() !== this.renderedDay) this.render();
+		}, ROLLOVER_CHECK_MS);
 	}
 
 	next(): void {
-		this.shift(1);
+		this.pageOffset += WINDOW_DAYS;
+		this.render();
 	}
 
 	prev(): void {
-		this.shift(-1);
+		this.pageOffset -= WINDOW_DAYS;
+		this.render();
 	}
 
 	today(): void {
-		this.year = new Date().getFullYear();
-		this.month = new Date().getMonth();
+		this.pageOffset = 0;
 		this.render();
 	}
 
 	destroy(): void {
+		window.clearInterval(this.rolloverTimer);
 		this.unsubscribeItems();
 		this.unsubscribeDailyNotes();
 		this.unsubscribeSettings();
@@ -108,21 +123,20 @@ export class MonthStrip implements MonthStripHandle {
 		this.resizeObserver.disconnect();
 	}
 
-	private shift(delta: number): void {
-		({ year: this.year, month: this.month } = shiftMonth(this.year, this.month, delta));
-		this.render();
-	}
-
 	private render(): void {
+		const now = new Date();
+		this.renderedDay = now.toDateString();
+		const window: DayWindow = { start: dayAt(now, this.pageOffset), days: WINDOW_DAYS };
 		const config: RenderConfig = {
-			year: this.year,
-			months: [this.month],
+			year: window.start.getFullYear(),
+			months: [],
+			window,
 			hiddenCategories: this.hiddenCategories,
 			layout: "horizontal",
 			alignMode: "date",
 			rowHeight: 0,
 		};
 		this.renderer.render(config);
-		this.onMonthChange?.(this.year, this.month);
+		this.onRangeChange?.(window.start, windowEnd(window));
 	}
 }

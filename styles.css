@@ -282,6 +282,11 @@
 }
 
 /* Weekend */
+/* A rolling strip's month change, mid-row: thickens the separator already there, so it stays one line. */
+.lc-day-cell:has(+ .lc-day-month-start) {
+	border-right: 2px solid var(--text-faint);
+}
+
 .lc-day-weekend .lc-day-num {
 	color: var(--text-faint);
 }

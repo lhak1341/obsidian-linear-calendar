@@ -72,7 +72,7 @@ export function layoutBars(items: CalendarItem[], year: number, maxRows: number)
 	}
 
 	const placed = new Map<number, Placement[]>();
-	for (const [month, segments] of byMonth) placed.set(month, pack(segments, maxRows));
+	for (const [month, segments] of byMonth) placed.set(month, packSegments(segments, maxRows));
 
 	// Built on first preview, then reused for the rest of the drag.
 	const occupancy = new Map<number, [number, number][][]>();
@@ -114,7 +114,7 @@ export function layoutBars(items: CalendarItem[], year: number, maxRows: number)
  * occupant ends strictly before it starts (same-day adjacency goes to a new row). Segments that
  * would need more than `maxRows` rows are dropped.
  */
-function pack(segments: MonthSegment[], maxRows: number): Placement[] {
+export function packSegments(segments: MonthSegment[], maxRows: number): Placement[] {
 	const sorted = [...segments].sort((a, b) => a.startDay - b.startDay);
 	const rowEnds: number[] = [];
 	const placements: Placement[] = [];

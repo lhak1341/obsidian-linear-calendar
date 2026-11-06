@@ -20,7 +20,7 @@
 
 ## Tooltips in cross-plugin embeds
 
-- `setTooltip` does not fire in cross-plugin embeds (`mountMonthStrip`). Use
+- `setTooltip` does not fire in cross-plugin embeds (`mountRollingStrip`). Use
   `Tooltip.showForChip()` instead — it works anywhere via direct listeners.
 
 ## Scoping shared CSS rules
@@ -32,7 +32,7 @@
 
 - `onCategoryToggle` must call `renderBarsOnly()`, not `renderCalendar()` — `populateDayCell()` never receives `hiddenCategories`, so the day cell DOM is invariant under category filter changes; only bars and chips need rebuilding.
 - `CategoryChips`'s `lastSig` guards chip DOM rebuilds — include ALL visual chip properties (color, icon, etc.) in the sig or a change to that property will be silently skipped on re-render
-- `MonthStrip` does a full `render()` on toggle on purpose: `onMonthChange` is part of the dashboard contract and fires once per render, so switching it to `renderBars()` would silence it for toggles.
+- `RollingStrip` does a full `render()` on toggle on purpose: `onRangeChange` is part of the dashboard contract and fires once per render, so switching it to `renderBars()` would silence it for toggles.
 
 ## Tracking a CSS grid column with a positioned overlay
 
@@ -51,18 +51,18 @@
 - Activate the calendar leaf (`app.workspace.setActiveLeaf(leaf,{focus:true})`) and assert `.lc-days-grid` `clientWidth > 0` immediately before pressing — a hidden leaf (another session shares the app) makes `dayWidth` 0, the delta `Infinity`, and the release writes `Invalid date` to the note
 - CDP mouse x clamps to `window.innerWidth`, so keep the drag within the window (a 1-day cross-month move works; a bar at the grid's left edge has no room to drag left, so press at ~80% of the bar's width and move one `dayWidth` left); send `mouseReleased` first if a prior run left the button down, or the next `mousePressed` is swallowed
 
-## ResizeObserver — LinearCalendarView vs mountMonthStrip
+## ResizeObserver — LinearCalendarView vs mountRollingStrip
 
 - LinearCalendarView has no ResizeObserver: CSS grid `1fr` columns adapt to container resize natively — no JS re-render needed. Adding one causes a full 372-node rebuild on every panel resize.
-- `MonthStrip` (`mountMonthStrip`) legitimately uses ResizeObserver because it renders a single fixed-month strip whose width is dynamically constrained by an external host view.
+- `RollingStrip` (`mountRollingStrip`) legitimately uses ResizeObserver because it renders a single one-row strip whose width is dynamically constrained by an external host view.
 
 ## Note-mutating callbacks
 
-`onDropCommit`/`onReminderClick`/`onEditNote`/`canEditNote` come from `createInteractions()` (`calendarInteractions.ts`), spread into `CalendarRenderer`'s callbacks by both `LinearCalendarView` and `mountMonthStrip`. They are required (`CalendarRendererCallbacks extends CalendarInteractions`) and `BarRenderer` takes the whole `CalendarInteractions`, so a host that forgets one fails to compile; only `onDayDblClick`/`onDayContextMenu`/`onCategoryToggle` are optional host extras. Add a new one there, not inline in a host; construction and resize policy stay per-host (ADR-0001).
+`onDropCommit`/`onReminderClick`/`onEditNote`/`canEditNote` come from `createInteractions()` (`calendarInteractions.ts`), spread into `CalendarRenderer`'s callbacks by both `LinearCalendarView` and `mountRollingStrip`. They are required (`CalendarRendererCallbacks extends CalendarInteractions`) and `BarRenderer` takes the whole `CalendarInteractions`, so a host that forgets one fails to compile; only `onDayDblClick`/`onDayContextMenu`/`onCategoryToggle` are optional host extras. Add a new one there, not inline in a host; construction and resize policy stay per-host (ADR-0001).
 
-## Testing mountMonthStrip for a specific month without faking the date
+## Testing mountRollingStrip for another date range without faking the date
 
-`mountMonthStrip` always starts on the current month, but its returned handle exposes `next()`/`prev()`/`today()`. Mount a throwaway instance via `eval` (append a scratch div, call `plugin.mountMonthStrip(containerEl, catsEl)`, keep the handle on `window`), then call `.next()`/`.prev()` to walk to any month for inspection — call `.destroy()` and remove the div when done. Avoids needing a real date in a short month to test short-month-specific rendering.
+`mountRollingStrip` always starts today, but its returned handle exposes `next()`/`prev()`/`today()`, which page by 30 days. Mount a throwaway instance via `eval` (append a scratch div, call `plugin.mountRollingStrip(containerEl, catsEl)`, keep the handle on `window`), then call `.next()`/`.prev()` to walk to any range for inspection — call `.destroy()` and remove the div when done. Avoids needing a real date in a short month to test short-month-specific rendering.
 
 ## Live-testing the view via `obsidian eval`
 
@@ -70,4 +70,8 @@
 - Vault has native menus on, so a context menu has no DOM to read: call the handler directly (`view.calendarRenderer.barRenderer.<fn>`, `view.calendarRenderer.callbacks.<fn>`) instead of dispatching `contextmenu`.
 - The view restores its persisted `year` — set it first (`view.setState({...view.getState(), year}, {history:false})`) or DOM counts reflect whatever year was last open.
 - Write tests against `lhakZettel` with throwaway notes (`zz` prefix, far-future year ≤ 2068 — its `YYMMDD` formats parse `99` as 1999, so 2099 fixtures are never found) and trash them in `finally`. Create them with `plugin.eventNotes.create(date, { title, openAfterCreate: false })` rather than driving the modal; drive the modal only to test the modal. Assert deltas against a baseline, not totals: the year already holds real bars, and a promoted note with a remind date draws its own ghost.
-- Assert what a change repainted, not how it looks: tag an existing day cell (`cell.dataset.mark`) and check it survives (bars-only repaint) or vanishes (full rebuild); count a strip's repaints with an `onMonthChange` counter; read tooltip text after `bar.dispatchEvent(new MouseEvent("mouseenter"))` (`Tooltip` listens in the capture phase on the grid, so a non-bubbling event at the bar reaches it).
+- Assert what a change repainted, not how it looks: tag an existing day cell (`cell.dataset.mark`) and check it survives (bars-only repaint) or vanishes (full rebuild); count a strip's repaints with an `onRangeChange` counter; read tooltip text after `bar.dispatchEvent(new MouseEvent("mouseenter"))` (`Tooltip` listens in the capture phase on the grid, so a non-bubbling event at the bar reaches it).
+
+## Day windows
+
+`RenderConfig.window` (`utils/dayWindow.ts`, tested) puts consecutive days in one row, crossing months and years. Its bars use `layoutWindow`, a `BarLayout` whose `DaySpan` days are 1-based window columns under `WINDOW_ROW`, so `gridArea`, `BarRenderer` and `DragHandler` work unchanged and a drag has no ghosts. `DataSource.scan` answers per year and clamps to it, so a window spanning New Year goes through `itemsInWindow`, which merges the scans. Bars measure from `fullStart`/`fullEnd`. `MonthRowRef.columnOf` is how `NowIndicator` finds today in a window.

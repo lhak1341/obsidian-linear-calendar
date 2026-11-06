@@ -1,5 +1,5 @@
 import type { CalendarItem } from "../types";
-import { categoryLabel, countByCategory, itemsInMonths } from "../utils/category";
+import { categoryLabel, countByCategory } from "../utils/category";
 import type { Tooltip } from "./Tooltip";
 
 /** Category filter chips: one per category with its item count; click toggles the category's visibility. */
@@ -12,15 +12,13 @@ export class CategoryChips {
 		private onToggle?: (tag: string) => void,
 	) {}
 
-	/** Rebuild the chips for `months` of `year`; a no-op when nothing the chips show has changed. */
+	/** Rebuild the chips for the items in view; a no-op when nothing the chips show has changed. */
 	update(
-		allItems: CalendarItem[],
-		year: number,
-		months: number[],
+		itemsInView: CalendarItem[],
 		tagColorMap: Map<string, string>,
 		hiddenCategories: Set<string>,
 	): void {
-		const categories = countByCategory(itemsInMonths(allItems, year, months));
+		const categories = countByCategory(itemsInView);
 
 		if (categories.size <= 1) {
 			if (this.lastSig !== null) {

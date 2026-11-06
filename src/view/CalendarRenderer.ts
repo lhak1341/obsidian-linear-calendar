@@ -3,7 +3,10 @@ import type { CalendarItem, PluginSettings, AlignMode } from "../types";
 import type { DataSource } from "../data/DataSource";
 import type { DailyNotes } from "../DailyNotes";
 import { buildTagColorMap } from "../utils/colorUtils";
-import { visibleItems } from "../utils/category";
+import { itemsInMonths, visibleItems } from "../utils/category";
+import { layoutBars } from "../utils/barLayout";
+import { itemsInWindow, layoutWindow, type DayWindow } from "../utils/dayWindow";
+import { MAX_WATERFALL_COLS_VERT, MAX_WATERFALL_ROWS } from "../constants";
 import { GridRenderer } from "./GridRenderer";
 import type { MonthRowRef } from "./GridRenderer";
 import { BarRenderer } from "./BarRenderer";
@@ -15,6 +18,8 @@ import { CategoryChips } from "./CategoryChips";
 export interface RenderConfig {
 	year: number;
 	months: number[];
+	/** When set, the strip shows these days instead of `months`; `year` and `months` are then ignored. */
+	window?: DayWindow;
 	hiddenCategories: Set<string>;
 	layout: "horizontal" | "vertical";
 	alignMode: AlignMode;
@@ -54,11 +59,11 @@ export class CalendarRenderer {
 
 	render(config: RenderConfig): void {
 		this.current = config;
-		const { year, months, layout, alignMode, rowHeight } = config;
+		const { year, months, window, layout, alignMode, rowHeight } = config;
 		const { dailyNoteColor, dailyNoteStyle, japaneseWeekdayLabels } = this.getSettings();
 
 		const monthRows = this.gridRenderer.render({
-			year, months, layout, alignMode,
+			year, months, window, layout, alignMode,
 			dailyNoteAt: (y, m, d) => this.dailyNotes.get(y, m, d), dailyNoteColor, dailyNoteStyle, japaneseWeekdayLabels,
 			callbacks: {
 				onDayClick: (y, m, d) => {
@@ -75,7 +80,8 @@ export class CalendarRenderer {
 		this.renderVisibleBars(config, monthRows);
 
 		// NowIndicator manages its own interval lifecycle; only restarts on year change.
-		this.nowIndicator.render(monthRows, year);
+		// A window can start in another year and still hold today, so it never turns the indicator off.
+		this.nowIndicator.render(monthRows, window ? new Date().getFullYear() : year);
 
 		this.tooltip.attach(this.gridRenderer.getContainer(), this.barRenderer.getBarInfo.bind(this.barRenderer));
 	}
@@ -96,14 +102,18 @@ export class CalendarRenderer {
 
 	/** Compute visible items, refresh category chips, and (re)paint bars into monthRows — shared tail of render() and renderBars(). */
 	private renderVisibleBars(config: RenderConfig, monthRows: MonthRowRef[]): void {
-		const { year, months, hiddenCategories } = config;
+		const { year, months, window, layout, hiddenCategories } = config;
 		const { colorMap, iconMap } = this.getSettings();
 
-		const { allItems, items, tagColorMap } = this.computeVisibleItems(year, hiddenCategories, colorMap);
-		this.categoryChips?.update(allItems, year, months, tagColorMap, hiddenCategories);
+		const { allItems, items, tagColorMap } = this.computeVisibleItems(config, colorMap);
+		// A window's scan is already limited to what it shows.
+		this.categoryChips?.update(window ? allItems : itemsInMonths(allItems, year, months), tagColorMap, hiddenCategories);
 
+		const barLayout = window
+			? layoutWindow(items, window, MAX_WATERFALL_ROWS)
+			: layoutBars(items, year, layout === "vertical" ? MAX_WATERFALL_COLS_VERT : MAX_WATERFALL_ROWS);
 		const tagIconMap = new Map(Object.entries(iconMap));
-		this.barRenderer.render(monthRows, items, year, tagColorMap, tagIconMap);
+		this.barRenderer.render(monthRows, barLayout, tagColorMap, tagIconMap);
 	}
 
 	/**
@@ -127,11 +137,11 @@ export class CalendarRenderer {
 
 	/** Scan, resolve tag colors, and filter out hidden categories — shared by render() and renderBars(). No DOM writes. */
 	private computeVisibleItems(
-		year: number,
-		hiddenCategories: Set<string>,
+		{ year, window, hiddenCategories }: RenderConfig,
 		colorMap: Record<string, string>,
 	): { allItems: CalendarItem[]; items: CalendarItem[]; tagColorMap: Map<string, string> } {
-		const allItems = this.source.scan(this.getSettings().defaultMapping, year);
+		const scan = (y: number) => this.source.scan(this.getSettings().defaultMapping, y);
+		const allItems = window ? itemsInWindow(window, scan) : scan(year);
 		const tagColorMap = buildTagColorMap(allItems, colorMap);
 
 		const items = visibleItems(allItems, hiddenCategories);

@@ -57,14 +57,15 @@ export class NowIndicator {
 		const month = date.getMonth();
 		const day = date.getDate();
 
-		const row = monthRows.find((r) => r.month === month);
+		const row = monthRows.find((r) => (r.columnOf ? r.columnOf(date) !== null : r.month === month));
 		if (!row) return;
 
 		const daysGrid = row.barsContainer.parentElement;
 		if (!daysGrid) return;
 
 		const cells = daysGrid.querySelectorAll(".lc-day-cell");
-		const cell = cells[day - 1] as HTMLElement | undefined;
+		const windowCol = row.columnOf?.(date) ?? null;
+		const cell = cells[windowCol ?? day - 1] as HTMLElement | undefined;
 		if (!cell) return;
 
 		const numSpan = cell.querySelector(".lc-day-num");
@@ -76,7 +77,7 @@ export class NowIndicator {
 		const outline = daysGrid.createDiv({ cls: "lc-today-column" });
 		// Percentage-based left/width reflows with the grid on container resize.
 		// Grid uses repeat(totalCols, 1fr) so each column is exactly 100%/totalCols wide.
-		const colIdx = row.weekdayOffset + day - 1; // 0-indexed column
+		const colIdx = windowCol ?? row.weekdayOffset + day - 1; // 0-indexed column
 		outline.style.left = `${(colIdx / row.totalCols) * 100}%`;
 		outline.style.width = `${100 / row.totalCols}%`;
 		this.createdElements.push(outline);

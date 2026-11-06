@@ -9,12 +9,12 @@ import { ObsidianEventNotes } from "./EventNotes";
 import { DailyNotes } from "./DailyNotes";
 import { SettingsChanges } from "./SettingsChanges";
 import { CreateEventModal } from "./CreateEventModal";
-import { MonthStrip } from "./view/MonthStrip";
-import type { MonthStripHandle } from "./view/MonthStrip";
+import { RollingStrip } from "./view/RollingStrip";
+import type { RollingStripHandle } from "./view/RollingStrip";
 import { buildTagColorMap } from "./utils/colorUtils";
 import { registerLucideIcons } from "./lucide-icons";
 
-export type { MonthStripHandle };
+export type { RollingStripHandle };
 
 export default class LinearCalendarPlugin extends Plugin {
 	settings: PluginSettings = DEFAULT_SETTINGS;
@@ -85,18 +85,18 @@ export default class LinearCalendarPlugin extends Plugin {
 
 	/**
 	 * Public API — mount a full single-month calendar strip into `container`,
-	 * starting on the current month. Uses LC's own renderers so styles, bars,
+	 * of the next 30 days, starting today. Uses LC's own renderers so styles, bars,
 	 * tooltips, and the now-indicator all work exactly as in the full view.
-	 * `onMonthChange` fires after every render (mount, navigation, data change,
-	 * resize) with the displayed year/month, so a host view can render its own month label.
-	 * Returns a handle to navigate months and to clean up when the host view closes.
+	 * `onRangeChange` fires after every render (mount, navigation, data change,
+	 * resize) with the first and last day shown, so a host view can render its own range label.
+	 * Returns a handle to page the window and to clean up when the host view closes.
 	 */
-	mountMonthStrip(
+	mountRollingStrip(
 		container: HTMLElement,
 		categoriesEl: HTMLElement,
-		onMonthChange?: (year: number, month: number) => void,
-	): MonthStripHandle {
-		return new MonthStrip(
+		onRangeChange?: (start: Date, end: Date) => void,
+	): RollingStripHandle {
+		return new RollingStrip(
 			{
 				app: this.app,
 				scanner: this.scanner,
@@ -107,7 +107,7 @@ export default class LinearCalendarPlugin extends Plugin {
 			},
 			container,
 			categoriesEl,
-			onMonthChange,
+			onRangeChange,
 		);
 	}
 
