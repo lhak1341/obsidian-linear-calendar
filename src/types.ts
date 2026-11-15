@@ -1,6 +1,6 @@
-export type AlignMode = "date" | "weekday";
+import type { FontRoleSettings } from "@lhak/style/obsidian-helpers/font-roles";
 
-export type FontChoice = "plugin" | "obsidian-interface" | "obsidian-text" | "obsidian-monospace" | "custom";
+export type AlignMode = "date" | "weekday";
 
 /** Writes a drag-committed date change to a note's frontmatter. */
 export type DropCommitFn = (filePath: string, oldStart: Date, newStart: Date, newEnd: Date) => Promise<void>;
@@ -43,7 +43,8 @@ export interface ColumnMapping {
 
 export type DailyNoteStyle = "tint" | "border-top";
 
-export interface PluginSettings {
+/** Font keys (`fontHeading`, `fontHeadingCustom`, …) come from the shared @lhak/style font-role helper. */
+export interface PluginSettings extends FontRoleSettings {
 	defaultMapping: ColumnMapping;
 	colorMap: Record<string, string>;
 	iconMap: Record<string, string>;
@@ -53,11 +54,5 @@ export interface PluginSettings {
 	newEventFolder: string;
 	newEventDateFormat: string;
 	newEventTemplate: string;
-	fontHeading: FontChoice;
-	fontHeadingCustom: string;
-	fontBody: FontChoice;
-	fontBodyCustom: string;
-	fontMono: FontChoice;
-	fontMonoCustom: string;
 	japaneseWeekdayLabels: boolean;
 }

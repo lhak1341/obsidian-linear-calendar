@@ -37,18 +37,23 @@
   prose: a lint rule banning bare `setIcon` would have to tell user-configured values apart
   from literal built-in ids, which is the reasoning, not the rule. Ruled out unless the
   `Menu` path disappears.
-- `IconSuggest.getSuggestions()` ranks via `utils/iconSearch.ts`'s
-  `rankIconSuggestions()` (name matches first, then tag matches against
-  `lucide-icon-tags.json`'s per-icon search synonyms) — so typing "chem" surfaces
-  flask-conical/atom/biohazard even though none of those names contain "chem".
+- The icon picker is `@lhak/style`'s shared `IconSuggest` (shared with obsidian-health), wired
+  in `IconField.ts` with this plugin's offline set: `names: allLucideIconNames`,
+  `tags: getLucideIconTags`, `iconId: resolveLucideIconId`. Its ranking puts name matches
+  first, then tag matches against `lucide-icon-tags.json`'s search synonyms, so "chem"
+  surfaces flask-conical/atom. It writes bare names, as `iconMap` already stores them. Its
+  popover rows (`lk-icon-suggest-*`) are styled in `styles.src.css`; the package ships no CSS for them.
 
 ## Settings modal
 
 - Chaining multiple controls onto one `Setting` (e.g. a mode dropdown + number + unit on
   one row) needs a scoped `.setting-item-control > * { width: auto !important }`
   override — the modal's default per-field `width: 100%` makes siblings fight for the
-  same full-row width otherwise. See `.lc-remind-setting` in `styles.css`.
+  same full-row width otherwise. See `.lc-remind-setting` in `styles.src.css`.
 
+- Saved data loads through `settingsFromSaved` (`savedSettings.ts`, tested): defaults filled,
+  nested maps copied, font keys read by `@lhak/style`'s `parseFontRoleSettings` (the old
+  `"plugin"` font choice reads as `"default"`). The font rows are the shared `addFontRoleSetting`.
 - `settings.ts` mutates `plugin.settings` in place, then `saveSettings()` saves and calls `SettingsChanges.notify()`. Every host (`LinearCalendarView`, each `RollingStrip`) subscribes via `onChange` and repaints fully; hosts read settings through a `getSettings` getter, never a captured object. A new host must subscribe, or it goes stale after a settings save. Not unit-tested (a subscriber set); verify live via `obsidian eval`: mount a strip with an `onRangeChange` counter, toggle a setting and `await plugin.saveSettings()`, and the count rises by one; after `destroy()` it no longer rises. Restore the setting afterwards. Run 2026-10-21 in `lhakZettel`: passed (render count only, DOM change not inspected).
 
 ## Daily notes

@@ -13,6 +13,7 @@ import { RollingStrip } from "./view/RollingStrip";
 import type { RollingStripHandle } from "./view/RollingStrip";
 import { buildTagColorMap } from "./utils/colorUtils";
 import { registerLucideIcons } from "./lucide-icons";
+import { settingsFromSaved } from "./savedSettings";
 
 export type { RollingStripHandle };
 
@@ -61,14 +62,7 @@ export default class LinearCalendarPlugin extends Plugin {
 	}
 
 	async loadSettings(): Promise<void> {
-		// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- loadData() returns unknown; shape is trusted plugin-authored settings JSON
-		const saved: Partial<PluginSettings> = (await this.loadData()) ?? {};
-		this.settings = Object.assign({}, DEFAULT_SETTINGS, saved);
-		this.settings.defaultMapping = Object.assign(
-			{},
-			DEFAULT_SETTINGS.defaultMapping,
-			saved.defaultMapping ?? {},
-		);
+		this.settings = settingsFromSaved(await this.loadData());
 	}
 
 	async saveSettings(): Promise<void> {

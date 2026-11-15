@@ -7,7 +7,7 @@ import { WINDOW_ROW, windowColumn, windowDays, type DayWindow } from "../utils/d
 
 function computeTint(color: string | null, hover: boolean): string {
 	const pct = hover ? 22 : 12;
-	if (!color) return `color-mix(in srgb, var(--color-accent) ${pct}%, transparent)`;
+	if (!color) return `color-mix(in srgb, var(--lk-accent) ${pct}%, transparent)`;
 	const r = parseInt(color.slice(1, 3), 16);
 	const g = parseInt(color.slice(3, 5), 16);
 	const b = parseInt(color.slice(5, 7), 16);
@@ -15,7 +15,7 @@ function computeTint(color: string | null, hover: boolean): string {
 }
 
 function computeSolidColor(color: string | null): string {
-	return color ?? "var(--color-accent)";
+	return color ?? "var(--lk-accent)";
 }
 
 const MONTH_NAMES = [

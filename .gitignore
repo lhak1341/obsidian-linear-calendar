@@ -1,5 +1,7 @@
 # Build output
 main.js
+# Generated from styles.src.css by esbuild (scripts/styles.mjs)
+styles.css
 *.js.map
 coverage/
 

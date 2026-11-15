@@ -1,3 +1,4 @@
+import { DEFAULT_FONT_ROLE_SETTINGS } from "@lhak/style/obsidian-helpers/font-roles";
 import type { ColumnMapping, PluginSettings } from "./types";
 
 export const VIEW_TYPE_LINEAR_CALENDAR = "linear-calendar-view";
@@ -22,12 +23,7 @@ export const DEFAULT_SETTINGS: PluginSettings = {
 	newEventFolder: "",
 	newEventDateFormat: "YYYY-MM-DD",
 	newEventTemplate: "",
-	fontHeading: "plugin",
-	fontHeadingCustom: "",
-	fontBody: "plugin",
-	fontBodyCustom: "",
-	fontMono: "plugin",
-	fontMonoCustom: "",
+	...DEFAULT_FONT_ROLE_SETTINGS,
 	japaneseWeekdayLabels: false,
 };
 

@@ -8,7 +8,7 @@ import type { SettingsChanges } from "../SettingsChanges";
 import { CreateEventModal } from "../CreateEventModal";
 import { CalendarRenderer, RenderConfig } from "./CalendarRenderer";
 import { createInteractions } from "./calendarInteractions";
-import { resolveFontVar } from "../utils/fonts";
+import { applyFontRoles } from "@lhak/style/obsidian-helpers/font-roles";
 import { toggleCategory } from "../utils/category";
 import { restoreViewState, type ViewState } from "../utils/viewState";
 
@@ -73,7 +73,8 @@ export class LinearCalendarView extends ItemView {
 	async onOpen(): Promise<void> {
 		const { contentEl } = this;
 		contentEl.empty();
-		contentEl.addClass("linear-calendar-container");
+		// lk-root: the @lhak/style alias layer resolves its --lk- roles under this class.
+		contentEl.addClass("linear-calendar-container", "lk-root");
 		this.applyFonts();
 
 		const toolbar = contentEl.createDiv({ cls: "linear-calendar-toolbar" });
@@ -285,16 +286,7 @@ export class LinearCalendarView extends ItemView {
 	}
 
 	private applyFonts(): void {
-		const { fontHeading, fontHeadingCustom, fontBody, fontBodyCustom, fontMono, fontMonoCustom } = this.getSettings();
-		const el = this.contentEl;
-		const set = (prop: string, choice: typeof fontHeading, custom: string) => {
-			const v = resolveFontVar(choice, custom);
-			if (v) el.style.setProperty(prop, v);
-			else   el.style.removeProperty(prop);
-		};
-		set("--lc-fh", fontHeading, fontHeadingCustom);
-		set("--lc-fb", fontBody, fontBodyCustom);
-		set("--lc-fm", fontMono, fontMonoCustom);
+		applyFontRoles(this.contentEl, this.getSettings());
 	}
 
 	private handleKeydown(evt: KeyboardEvent): void {

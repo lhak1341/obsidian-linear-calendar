@@ -1,6 +1,6 @@
 import { App, setIcon } from "obsidian";
-import { IconSuggest } from "./IconSuggest";
-import { resolveLucideIconId } from "./lucide-icons";
+import { IconSuggest } from "@lhak/style/obsidian-helpers";
+import { allLucideIconNames, getLucideIconTags, resolveLucideIconId } from "./lucide-icons";
 
 interface IconFieldOptions {
 	initialValue?: string;
@@ -25,7 +25,12 @@ export class IconField {
 		this.previewEl = wrap.createSpan({ cls: "lc-icon-preview" });
 		if (options.initialValue) setIcon(this.previewEl, resolveLucideIconId(options.initialValue));
 
-		new IconSuggest(app, this.inputEl);
+		// The shared picker, fed LCAL's full offline Lucide set and its search tags.
+		new IconSuggest(app, this.inputEl, {
+			names: allLucideIconNames,
+			tags: getLucideIconTags,
+			iconId: resolveLucideIconId,
+		});
 
 		this.inputEl.addEventListener("input", () => {
 			const value = this.inputEl.value.trim();

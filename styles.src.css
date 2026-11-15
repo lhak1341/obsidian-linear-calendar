@@ -1,14 +1,29 @@
+@import '@lhak/style/obsidian.css';
+
 /* ============================================
    Linear Calendar — AnnuCal-style annual view
    ============================================ */
+
+/* ── Token layer ─────────────────────────────────────────────────────────────
+   Colours, fonts and the rest come from the @lhak/style alias layer above, which maps every --lk-
+   role onto the active theme's variables under `.lk-root`. The full view's contentEl carries
+   `.lk-root` (LinearCalendarView.onOpen); a rolling strip and its tooltip read their host's root
+   (the dashboard's view root). The settings tab, the create-event modal and the icon-suggest
+   popover sit outside every root, so their rules keep Obsidian's own variables.
+   Font roles: heading = --lk-font-label, body = --lk-font-interface, mono = --lk-font-code, set
+   inline on the root from the font settings (applyFontRoles). Font sizes are rem at Obsidian's
+   19px root (the Text size setting), so they match the old px sizes.
+   LCAL's own values keep the --lc- prefix: layout (--lc-row-min, --lc-vert-row-h) and the daily
+   note colour (--lc-daily-*), all set inline from TypeScript. Event colours are still inline hex
+   (lhak-style-adoption 06 moves them to the hues). */
 
 .linear-calendar-container {
 	display: flex;
 	flex-direction: column;
 	height: 100%;
 	overflow: hidden;
-	background: var(--background-primary);
-	font-family: var(--lc-fh, var(--font-interface));
+	background: var(--lk-surface);
+	font-family: var(--lk-font-label);
 	position: relative;
 	container-type: inline-size;
 }
@@ -29,9 +44,9 @@
 }
 
 .lc-year-label {
-	font-size: 15px;
+	font-size: 0.7895rem;
 	font-weight: 600;
-	color: var(--text-normal);
+	color: var(--lk-text);
 	min-width: 40px;
 	text-align: center;
 	padding: 0 2px;
@@ -41,32 +56,32 @@
 	background: transparent;
 	border: none;
 	border-radius: 4px;
-	color: var(--text-muted);
+	color: var(--lk-text-muted);
 	cursor: pointer;
 	padding: 2px 6px;
-	font-size: 16px;
+	font-size: 0.8421rem;
 	line-height: 1;
 }
 
 .lc-nav-btn:hover {
-	background: var(--background-modifier-hover);
-	color: var(--text-normal);
+	background: var(--lk-surface-hover);
+	color: var(--lk-text);
 }
 
 .lc-today-btn {
 	background: transparent;
-	border: 1px solid var(--background-modifier-border);
+	border: 1px solid var(--lk-border);
 	border-radius: 4px;
-	color: var(--text-muted);
+	color: var(--lk-text-muted);
 	cursor: pointer;
 	padding: 2px 8px;
-	font-size: 12px;
+	font-size: 0.6316rem;
 	line-height: 1.4;
 }
 
 .lc-today-btn:hover {
-	background: var(--background-modifier-hover);
-	color: var(--text-normal);
+	background: var(--lk-surface-hover);
+	color: var(--lk-text);
 }
 
 /* ---- Density slider ---- */
@@ -81,7 +96,7 @@
 	appearance: none;
 	width: 32px;
 	height: 4px;
-	background: var(--background-modifier-border);
+	background: var(--lk-border);
 	border-radius: 2px;
 	outline: none;
 	cursor: pointer;
@@ -98,7 +113,7 @@
 	width: 10px;
 	height: 10px;
 	border-radius: 50%;
-	background: var(--text-muted);
+	background: var(--lk-text-muted);
 	cursor: pointer;
 }
 
@@ -106,7 +121,7 @@
 	width: 10px;
 	height: 10px;
 	border-radius: 50%;
-	background: var(--text-muted);
+	background: var(--lk-text-muted);
 	border: none;
 	cursor: pointer;
 }
@@ -116,7 +131,7 @@
 	background: transparent;
 	border: none;
 	border-radius: 4px;
-	color: var(--text-muted);
+	color: var(--lk-text-muted);
 	flex-shrink: 0;
 	cursor: pointer;
 	padding: 2px 4px;
@@ -125,8 +140,8 @@
 }
 
 .lc-layout-toggle:hover {
-	background: var(--background-modifier-hover);
-	color: var(--text-normal);
+	background: var(--lk-surface-hover);
+	color: var(--lk-text);
 }
 
 /* ---- Category filter chips (inline in toolbar) ---- */
@@ -149,15 +164,15 @@
 	gap: 4px;
 	padding: 2px 8px 2px 6px;
 	border-radius: 10px;
-	font-size: 11px;
+	font-size: 0.5789rem;
 	cursor: pointer;
-	background: var(--background-secondary);
+	background: var(--lk-surface-chrome);
 	transition: opacity 0.12s ease;
 	user-select: none;
 }
 
 .lc-category-chip:hover {
-	background: var(--background-modifier-hover);
+	background: var(--lk-surface-hover);
 }
 
 .lc-category-hidden {
@@ -172,7 +187,7 @@
 }
 
 .lc-category-name {
-	color: var(--text-normal);
+	color: var(--lk-text);
 	font-weight: 500;
 	max-width: 120px;
 	overflow: hidden;
@@ -181,8 +196,8 @@
 }
 
 .lc-category-count {
-	color: var(--text-faint);
-	font-size: 10px;
+	color: var(--lk-text-faint);
+	font-size: 0.5263rem;
 }
 
 /* ---- Scroll wrapper ---- */
@@ -204,15 +219,15 @@
 .lc-month-row {
 	display: grid;
 	grid-template-columns: 18px 1fr;
-	border-bottom: 1px solid var(--background-modifier-border);
+	border-bottom: 1px solid var(--lk-border);
 	min-height: 32px;
 	container-type: inline-size;
 }
 
 .lc-month-label {
-	font-size: 10px;
+	font-size: 0.5263rem;
 	font-weight: 700;
-	color: var(--text-muted);
+	color: var(--lk-text-muted);
 	text-transform: uppercase;
 	letter-spacing: 0.2px;
 	user-select: none;
@@ -249,7 +264,7 @@
 	padding-top: 3px;
 	justify-content: center;
 	gap: 0;
-	border-right: 1px solid var(--background-modifier-border-hover, rgba(128, 128, 128, 0.1));
+	border-right: 1px solid var(--lk-border-strong);
 	user-select: none;
 	position: relative;
 }
@@ -260,17 +275,17 @@
 
 /* Day number */
 .lc-day-num {
-	font-size: 10px;
+	font-size: 0.5263rem;
 	font-weight: 600;
-	color: var(--text-normal);
+	color: var(--lk-text);
 	line-height: 1;
 }
 
 /* Weekday abbr — inline after number, dimmer */
 .lc-day-weekday {
-	font-size: 9px;
+	font-size: 0.4737rem;
 	font-weight: 400;
-	color: var(--text-faint);
+	color: var(--lk-text-faint);
 	line-height: 1;
 	margin-left: 1px;
 	opacity: 0.7;
@@ -284,11 +299,11 @@
 /* Weekend */
 /* A rolling strip's month change, mid-row: thickens the separator already there, so it stays one line. */
 .lc-day-cell:has(+ .lc-day-month-start) {
-	border-right: 2px solid var(--text-faint);
+	border-right: 2px solid var(--lk-text-faint);
 }
 
 .lc-day-weekend .lc-day-num {
-	color: var(--text-faint);
+	color: var(--lk-text-faint);
 }
 
 /* Daily note indicators — cursor applies to both styles */
@@ -326,10 +341,10 @@
 	width: 16px;
 	height: 16px;
 	border-radius: 50%;
-	background: var(--color-accent);
-	color: var(--text-on-accent, #fff) !important;
+	background: var(--lk-accent);
+	color: var(--lk-text-on-accent) !important;
 	font-weight: 700;
-	font-size: 9px;
+	font-size: 0.4737rem;
 }
 
 /* Vertical: rectangle on day number span */
@@ -340,8 +355,8 @@
 	width: 16px;
 	height: 14px;
 	border-radius: 2px;
-	background: var(--color-accent);
-	color: var(--text-on-accent, #fff) !important;
+	background: var(--lk-accent);
+	color: var(--lk-text-on-accent) !important;
 	font-weight: 700;
 }
 
@@ -350,7 +365,7 @@
 	position: absolute;
 	top: 0;
 	bottom: 0;
-	border: 1.5px solid var(--color-accent);
+	border: 1.5px solid var(--lk-accent);
 	border-radius: 3px;
 	pointer-events: none;
 	z-index: 15;
@@ -364,7 +379,7 @@
 .calendar-bar {
 	height: 16px;
 	border-radius: 3px;
-	font-size: 12px;
+	font-size: 0.6316rem;
 	font-weight: 500;
 	padding: 0 4px;
 	cursor: pointer;
@@ -383,12 +398,12 @@
 
 .calendar-bar:hover {
 	opacity: 1;
-	box-shadow: var(--shadow-s);
+	box-shadow: var(--lk-shadow-s);
 	z-index: 10;
 }
 
 .calendar-bar:focus-visible {
-	outline: 2px solid var(--color-accent);
+	outline: 2px solid var(--lk-accent);
 	outline-offset: 1px;
 	z-index: 10;
 }
@@ -493,20 +508,23 @@ body.lc-drag-cursor-resize {
 .linear-calendar-tooltip {
 	position: absolute;
 	z-index: 100;
-	background: var(--background-secondary);
-	border: 1px solid var(--background-modifier-border);
+	background: var(--lk-surface-chrome);
+	border: 1px solid var(--lk-border);
 	border-radius: 6px;
 	padding: 6px 8px;
-	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+	box-shadow: var(--lk-shadow-s);
 	pointer-events: none;
 	max-width: 220px;
-	font-size: 11px;
+	font-size: 0.5789rem;
 	overflow-wrap: anywhere;
+	/* Title and meta row read the heading role; the description sets the body role. Set here, not
+	   inherited from the view: in a rolling strip the tooltip hangs off the host's element. */
+	font-family: var(--lk-font-label);
 }
 
 .tooltip-title {
 	font-weight: 600;
-	color: var(--text-normal);
+	color: var(--lk-text);
 	margin-bottom: 1px;
 }
 
@@ -519,13 +537,13 @@ body.lc-drag-cursor-resize {
 }
 
 .tooltip-dates {
-	color: var(--text-muted);
-	font-size: 10px;
+	color: var(--lk-text-muted);
+	font-size: 0.5263rem;
 }
 
 .tooltip-age {
-	color: var(--text-muted);
-	font-size: 10px;
+	color: var(--lk-text-muted);
+	font-size: 0.5263rem;
 	font-weight: 600;
 }
 
@@ -533,8 +551,8 @@ body.lc-drag-cursor-resize {
 	display: inline-flex;
 	align-items: center;
 	gap: 3px;
-	font-size: 10px;
-	color: var(--text-muted);
+	font-size: 0.5263rem;
+	color: var(--lk-text-muted);
 }
 
 .tooltip-tag-dot {
@@ -545,9 +563,9 @@ body.lc-drag-cursor-resize {
 }
 
 .tooltip-description {
-	color: var(--text-muted);
-	font-family: var(--lc-fb, var(--font-text));
-	font-size: 10px;
+	color: var(--lk-text-muted);
+	font-family: var(--lk-font-interface);
+	font-size: 0.5263rem;
 	margin-top: 4px;
 	white-space: pre-wrap;
 	overflow-wrap: anywhere;
@@ -569,7 +587,7 @@ body.lc-drag-cursor-resize {
 }
 
 .linear-calendar-scroll::-webkit-scrollbar-thumb {
-	background: var(--background-modifier-border);
+	background: var(--lk-border);
 	border-radius: 2px;
 }
 
@@ -690,11 +708,11 @@ body.lc-drag-cursor-resize {
 	}
 
 	.lc-day-num {
-		font-size: 8px;
+		font-size: 0.4211rem;
 	}
 
 	.lc-month-label {
-		font-size: 8px;
+		font-size: 0.4211rem;
 	}
 
 	.lc-month-row {
@@ -709,7 +727,7 @@ body.lc-drag-cursor-resize {
 
 	.calendar-bar {
 		height: 12px;
-		font-size: 9px;
+		font-size: 0.4737rem;
 		line-height: 12px;
 		padding: 0 2px;
 	}
@@ -735,18 +753,18 @@ body.lc-drag-cursor-resize {
 
 .lc-vert-month-header {
 	grid-row: 1;
-	font-size: 10px;
+	font-size: 0.5263rem;
 	font-weight: 700;
 	text-align: center;
 	text-transform: uppercase;
 	letter-spacing: 0.2px;
 	padding: 4px 0 3px;
-	color: var(--text-muted);
+	color: var(--lk-text-muted);
 	position: sticky;
 	top: 0;
-	background: var(--background-primary);
+	background: var(--lk-surface);
 	z-index: 10;
-	border-bottom: 1px solid var(--background-modifier-border);
+	border-bottom: 1px solid var(--lk-border);
 }
 
 /* Per-month container: left = date header, right = bars */
@@ -769,16 +787,16 @@ body.lc-drag-cursor-resize {
 	padding-top: 2px;
 	padding-right: 3px;
 	overflow: hidden;
-	border-right: 1px solid var(--background-modifier-border-hover, rgba(128,128,128,0.1));
+	border-right: 1px solid var(--lk-border-strong);
 }
 
 .lc-vert-day-cell .lc-day-num {
-	font-size: 10px;
+	font-size: 0.5263rem;
 	line-height: 1;
 }
 
 .lc-vert-day-cell .lc-day-weekday {
-	font-size: 8px;
+	font-size: 0.4211rem;
 	line-height: 1;
 }
 
@@ -787,7 +805,7 @@ body.lc-drag-cursor-resize {
 }
 
 .lc-vert-day-cell.lc-day-weekend {
-	background: color-mix(in srgb, var(--background-modifier-border) 30%, transparent);
+	background: color-mix(in srgb, var(--lk-border) 30%, transparent);
 }
 
 /* Daily note — left-edge line in vertical (overrides top-edge) */
@@ -831,7 +849,7 @@ body.lc-drag-cursor-resize {
 	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: nowrap;
-	font-size: 10px;
+	font-size: 0.5263rem;
 	line-height: 1;
 	padding: 0;
 }
@@ -851,7 +869,7 @@ body.lc-drag-cursor-resize {
 
 /* Today indicator — column accent */
 .lc-today-vert-col {
-	box-shadow: inset 0 0 0 1.5px var(--color-accent);
+	box-shadow: inset 0 0 0 1.5px var(--lk-accent);
 	border-radius: 2px;
 }
 
@@ -959,14 +977,43 @@ body.lc-drag-cursor-resize {
 	word-break: break-all;
 }
 
-/* Lucide icon suggest popover — icon + name on one centered row */
-.lc-icon-suggest-item {
+/* Shared icon picker (@lhak/style IconSuggest) popover: icon + name on one centered row.
+   The package ships no CSS for these classes. */
+.lk-icon-suggest-item {
 	display: flex;
 	align-items: center;
 	gap: 6px;
 }
 
-.lc-icon-suggest-icon {
+.lk-icon-suggest-icon {
 	display: inline-flex;
 	align-items: center;
+}
+
+/* ============================================
+   Embedded mode: a rolling strip (mountRollingStrip)
+   RollingStrip adds `lc-embedded` to the host's container. Moved here from the dashboard's
+   stylesheet (lhak-style-adoption 05), which reached into these classes.
+   ============================================ */
+
+.lc-embedded .linear-calendar-grid {
+	width: 100% !important;
+}
+
+/* Collapse the label column: display:none breaks grid auto-placement, so use a 0px column. */
+.lc-embedded .lc-month-row {
+	width: 100% !important;
+	box-sizing: border-box;
+	border-bottom: none;
+	grid-template-columns: 0px 1fr;
+}
+
+.lc-embedded .lc-month-label {
+	overflow: hidden;
+	visibility: hidden;
+}
+
+.lc-embedded .lc-days-grid {
+	width: 100% !important;
+	box-sizing: border-box;
 }

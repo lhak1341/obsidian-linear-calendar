@@ -27,6 +27,8 @@
 
 - `@media`/`@container` rules on shared `.lc-*` classes must be scoped to
   `.linear-calendar-container`, or they bleed into dashboard embeds.
+- Rules for dashboard embeds only go under `.lc-embedded`, the class `RollingStrip` adds to
+  the host's container (and removes on `destroy`). The host styles only its own wrappers.
 
 ## Category toggle re-render scope
 

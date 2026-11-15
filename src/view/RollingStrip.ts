@@ -56,6 +56,8 @@ export class RollingStrip implements RollingStripHandle {
 		categoriesEl: HTMLElement,
 		private onRangeChange?: (start: Date, end: Date) => void,
 	) {
+		// Embedded mode: styles.src.css lays the strip out to the host's width under this class.
+		container.addClass("lc-embedded");
 		const interactions = createInteractions({
 			app: deps.app,
 			eventNotes: deps.eventNotes,
@@ -121,6 +123,7 @@ export class RollingStrip implements RollingStripHandle {
 		this.unsubscribeSettings();
 		this.renderer.cleanup();
 		this.resizeObserver.disconnect();
+		this.container.removeClass("lc-embedded");
 	}
 
 	private render(): void {
