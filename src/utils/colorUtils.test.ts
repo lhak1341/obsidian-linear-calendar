@@ -1,16 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { getContrastColor, buildTagColorMap } from "./colorUtils";
+import { buildTagColorMap } from "./colorUtils";
 import type { CalendarItem } from "../types";
-import { COLOR_PALETTE } from "../constants";
-
-describe("getContrastColor", () => {
-	it("white background → black text", () => expect(getContrastColor("#ffffff")).toBe("#000"));
-	it("black background → white text", () => expect(getContrastColor("#000000")).toBe("#fff"));
-	it("3-digit hex expanded correctly", () => expect(getContrastColor("#fff")).toBe("#000"));
-	it("mid-dark blue → white text", () => expect(getContrastColor("#039BE5")).toBe("#000"));
-	it("dark red → white text", () => expect(getContrastColor("#D50000")).toBe("#fff"));
-	it("invalid hex → defaults to black", () => expect(getContrastColor("not-a-color")).toBe("#000"));
-});
 
 function makeItem(tag?: string): CalendarItem {
 	return {
@@ -33,30 +23,27 @@ describe("buildTagColorMap", () => {
 		expect(map.has("__uncategorized__")).toBe(true);
 	});
 
-	it("assigns palette colors in order", () => {
+	it("assigns hues in the contract's fixed order", () => {
 		const items = [makeItem("a"), makeItem("b"), makeItem("c")];
 		const map = buildTagColorMap(items, {});
-		expect(map.get("a")).toBe(COLOR_PALETTE[0]);
-		expect(map.get("b")).toBe(COLOR_PALETTE[1]);
-		expect(map.get("c")).toBe(COLOR_PALETTE[2]);
+		expect([map.get("a"), map.get("b"), map.get("c")]).toEqual(["blue", "orange", "green"]);
 	});
 
 	it("user colorMap takes priority over palette", () => {
-		const map = buildTagColorMap([makeItem("work")], { work: "#ff0000" });
-		expect(map.get("work")).toBe("#ff0000");
+		const map = buildTagColorMap([makeItem("work")], { work: "red" });
+		expect(map.get("work")).toBe("red");
 	});
 
 	it("duplicate tags assigned same color, palette index not advanced", () => {
 		const items = [makeItem("a"), makeItem("a"), makeItem("b")];
 		const map = buildTagColorMap(items, {});
-		expect(map.get("a")).toBe(COLOR_PALETTE[0]);
-		expect(map.get("b")).toBe(COLOR_PALETTE[1]);
+		expect(map.get("a")).toBe("blue");
+		expect(map.get("b")).toBe("orange");
 	});
 
-	it("wraps palette when more tags than colors", () => {
-		const tags = Array.from({ length: COLOR_PALETTE.length + 1 }, (_, i) => `tag${i}`);
-		const items = tags.map((t) => makeItem(t));
+	it("repeats the hues past 8 categories", () => {
+		const items = Array.from({ length: 10 }, (_, i) => makeItem(`tag${i}`));
 		const map = buildTagColorMap(items, {});
-		expect(map.get(`tag${COLOR_PALETTE.length}`)).toBe(COLOR_PALETTE[0]);
+		expect([...map.values()]).toEqual(["blue", "orange", "green", "purple", "cyan", "pink", "yellow", "red", "blue", "orange"]);
 	});
 });

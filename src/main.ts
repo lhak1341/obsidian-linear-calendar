@@ -1,4 +1,5 @@
 import { Plugin, WorkspaceLeaf } from "obsidian";
+import type { Hue } from "@lhak/style";
 import type { CalendarItem, PluginSettings } from "./types";
 import { DEFAULT_SETTINGS, VIEW_TYPE_LINEAR_CALENDAR } from "./constants";
 import { LinearCalendarView } from "./view/LinearCalendarView";
@@ -13,7 +14,7 @@ import { RollingStrip } from "./view/RollingStrip";
 import type { RollingStripHandle } from "./view/RollingStrip";
 import { buildTagColorMap } from "./utils/colorUtils";
 import { registerLucideIcons } from "./lucide-icons";
-import { settingsFromSaved } from "./savedSettings";
+import { loadSettingsFrom } from "./savedSettings";
 
 export type { RollingStripHandle };
 
@@ -62,7 +63,7 @@ export default class LinearCalendarPlugin extends Plugin {
 	}
 
 	async loadSettings(): Promise<void> {
-		this.settings = settingsFromSaved(await this.loadData());
+		this.settings = await loadSettingsFrom(this);
 	}
 
 	async saveSettings(): Promise<void> {
@@ -70,8 +71,8 @@ export default class LinearCalendarPlugin extends Plugin {
 		this.settingsChanges.notify();
 	}
 
-	/** Public API for other plugins — returns current-year items + resolved color map. */
-	getCalendarData(year: number): { items: CalendarItem[]; colorMap: Map<string, string> } {
+	/** Public API for other plugins — returns current-year items + each tag's resolved hue name. */
+	getCalendarData(year: number): { items: CalendarItem[]; colorMap: Map<string, Hue> } {
 		const items = this.scanner.scan(this.settings.defaultMapping, year);
 		const colorMap = buildTagColorMap(items, this.settings.colorMap);
 		return { items, colorMap };

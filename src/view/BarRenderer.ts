@@ -2,8 +2,8 @@ import { type App, Menu, setIcon } from "obsidian";
 import type { CalendarItem } from "../types";
 import type { CalendarInteractions } from "./calendarInteractions";
 import { resolveLucideIconId } from "../lucide-icons";
-import { COLOR_PALETTE } from "../constants";
-import { getContrastColor } from "../utils/colorUtils";
+import type { Hue } from "@lhak/style";
+import { HUE_ORDER, hueColour } from "../constants";
 import type { MonthRowRef } from "./GridRenderer";
 import { gridArea, type BarLayout, type MonthSegment } from "../utils/barLayout";
 import { categoryOf } from "../utils/category";
@@ -13,7 +13,7 @@ import { DragHandler } from "./DragHandler";
 /** Data a bar carries for consumers (e.g. Tooltip) that need it without touching the DOM. */
 export interface BarInfo {
 	item: CalendarItem;
-	tagColor: string;
+	hue: Hue;
 }
 
 export class BarRenderer {
@@ -34,7 +34,7 @@ export class BarRenderer {
 	render(
 		monthRows: MonthRowRef[],
 		layout: BarLayout,
-		tagColorMap: Map<string, string>,
+		tagColorMap: Map<string, Hue>,
 		tagIconMap: Map<string, string>,
 	): void {
 		const isVertical = monthRows[0]?.layout === "vertical";
@@ -88,7 +88,7 @@ export class BarRenderer {
 	private decorateBar(
 		barEl: HTMLElement,
 		segment: MonthSegment,
-		tagColorMap: Map<string, string>,
+		tagColorMap: Map<string, Hue>,
 		tagIconMap: Map<string, string>,
 	): void {
 		const tag = categoryOf(segment.item);
@@ -99,14 +99,14 @@ export class BarRenderer {
 		}
 		barEl.createSpan({ cls: "calendar-bar-label", text: segment.item.title });
 
-		const bgColor = tagColorMap.get(tag) ?? COLOR_PALETTE[0];
-		barEl.style.backgroundColor = bgColor;
-		barEl.style.color = getContrastColor(bgColor);
+		// The fill and its contrasting text come from --lc-hue in CSS, so they follow flavor and mode.
+		const hue = tagColorMap.get(tag) ?? HUE_ORDER[0];
+		barEl.style.setProperty("--lc-hue", hueColour(hue));
 
 		if (segment.item.kind === "recurrence") barEl.addClass("calendar-bar-anniversary");
 		if (segment.item.kind === "reminder") barEl.addClass("calendar-bar-reminder");
 
-		this.barInfo.set(barEl, { item: segment.item, tagColor: bgColor });
+		this.barInfo.set(barEl, { item: segment.item, hue });
 	}
 
 	getBarInfo(barEl: HTMLElement): BarInfo | undefined {

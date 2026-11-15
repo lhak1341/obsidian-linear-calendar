@@ -6,8 +6,15 @@
 
 ## Bar/chip colors
 
-- Set via inline `style.backgroundColor` in JS, not CSS — CSS cannot override them.
-  Contrast and theming adaptations happen in JS at render time.
+- A tag's colour is a hue name (`colorMap`, `buildTagColorMap`). JS sets only `--lc-hue` inline,
+  to `hueColour(hue)` = `var(--lk-<hue>)`, on the bar, its drag ghosts, the chip dot and the
+  tooltip dot; `styles.src.css` paints from it, so flavor and mode changes need no re-render.
+  A bar's text colour is CSS too (relative `oklch`, black or white by the hue's lightness, cut at the APCA split, 0.73).
+  `src/styles.test.ts` fails on any inline `style.backgroundColor`/`style.color` in `src/`.
+- `--lk-<hue>` resolves only under `.lk-root`: the settings tab has none, so its hue dots and
+  picker carry `lk-root` themselves.
+- A rolling strip adds no `lk-root`: it reads its host's (DASH's view root). In a host without
+  one, `var(--lk-<hue>)` is empty and bars and dots draw no colour.
 
 ## Sticky headers vs bars
 
@@ -26,7 +33,9 @@
 ## Scoping shared CSS rules
 
 - `@media`/`@container` rules on shared `.lc-*` classes must be scoped to
-  `.linear-calendar-container`, or they bleed into dashboard embeds.
+  `.linear-calendar-container`, or they bleed into dashboard embeds. One exception on purpose:
+  the narrow-panel rule hiding `.lc-category-name` stays unscoped, so a narrow dashboard strip
+  hides chip names too (user decision, lhak-style-adoption 06).
 - Rules for dashboard embeds only go under `.lc-embedded`, the class `RollingStrip` adds to
   the host's container (and removes on `destroy`). The host styles only its own wrappers.
 

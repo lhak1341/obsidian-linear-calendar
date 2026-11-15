@@ -51,9 +51,14 @@
   override — the modal's default per-field `width: 100%` makes siblings fight for the
   same full-row width otherwise. See `.lc-remind-setting` in `styles.src.css`.
 
-- Saved data loads through `settingsFromSaved` (`savedSettings.ts`, tested): defaults filled,
-  nested maps copied, font keys read by `@lhak/style`'s `parseFontRoleSettings` (the old
-  `"plugin"` font choice reads as `"default"`). The font rows are the shared `addFontRoleSetting`.
+- Saved data loads through `loadSettingsFrom(plugin)` → `settingsFromSaved` (`savedSettings.ts`,
+  tested): defaults filled, nested maps copied, font keys read by `@lhak/style`'s
+  `parseFontRoleSettings` (the old `"plugin"` font choice reads as `"default"`). The font rows
+  are the shared `addFontRoleSetting`.
+- `colorMap` stores hue names. A saved hex value reads as `nearestHue` (from `@lhak/style`), an
+  unmappable one is dropped, and `loadSettingsFrom` saves once when that changed anything; a
+  hue name maps to itself, so later loads save nothing. The settings hue picker offers only the
+  8 hues (`HUE_ORDER`, `constants.ts`). The daily-note highlight colour is still a free hex.
 - `settings.ts` mutates `plugin.settings` in place, then `saveSettings()` saves and calls `SettingsChanges.notify()`. Every host (`LinearCalendarView`, each `RollingStrip`) subscribes via `onChange` and repaints fully; hosts read settings through a `getSettings` getter, never a captured object. A new host must subscribe, or it goes stale after a settings save. Not unit-tested (a subscriber set); verify live via `obsidian eval`: mount a strip with an `onRangeChange` counter, toggle a setting and `await plugin.saveSettings()`, and the count rises by one; after `destroy()` it no longer rises. Restore the setting afterwards. Run 2026-10-21 in `lhakZettel`: passed (render count only, DOM change not inspected).
 
 ## Daily notes

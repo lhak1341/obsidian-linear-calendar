@@ -75,6 +75,27 @@ describe("built styles.css", () => {
 		}
 	});
 
+	it("fills bars with their category hue, with black or white text by the hue's lightness", async () => {
+		const css = await buildStyles();
+		const bar = ruleBody(css, ".calendar-bar");
+		expect(value(bar, "background")).toBe("var(--lc-hue)");
+		expect(bar).toContain("color: oklch(from var(--lc-hue) clamp(0, (0.73 - l) * 1000, 1) 0 0);");
+	});
+
+	it("shows a category's hue as a dot, never as the chip's fill", async () => {
+		const css = await buildStyles();
+		expect(value(ruleBody(css, ".lc-category-dot"), "background")).toBe("var(--lc-hue, var(--lk-text-faint))");
+		expect(value(ruleBody(css, ".lc-category-chip"), "background")).toBe("var(--lk-surface-chrome)");
+		expect(value(ruleBody(css, ".tooltip-tag-dot"), "background")).toBe("var(--lc-hue)");
+	});
+
+	it("draws the hue picker's swatches in their hue, the chosen one ringed", async () => {
+		const css = await buildStyles();
+		expect(value(ruleBody(css, "button.lc-hue-swatch"), "background")).toBe("var(--lc-hue)");
+		expect(value(ruleBody(css, "button.lc-hue-swatch[aria-pressed=true]"), "border-color")).toBe("var(--lk-text)");
+		expect(css).not.toMatch(/lc-color-swatch/);
+	});
+
 	it("styles the shared icon picker's suggestion rows", async () => {
 		const css = await buildStyles();
 		expect(value(ruleBody(css, ".lk-icon-suggest-item"), "display")).toBe("flex");
@@ -91,6 +112,15 @@ describe("plugin source", () => {
 
 	it("reads the accent from the contract in TypeScript too (the daily-note fallback)", () => {
 		const offenders = sourceFiles(join(root, "src")).filter((f) => /var\(--color-accent\)/.test(readFileSync(f, "utf8")));
+		expect(offenders).toEqual([]);
+	});
+
+	it("sets event colours as contract hues, never an inline colour", () => {
+		const offenders = sourceFiles(join(root, "src")).filter((f) =>
+			/style\.(background\w*|color|border\w*Color)\s*=|setProperty\(\s*"(background(-color)?|color|border(-\w+)?-color)"|COLOR_PALETTE|getContrastColor/.test(
+				readFileSync(f, "utf8"),
+			),
+		);
 		expect(offenders).toEqual([]);
 	});
 

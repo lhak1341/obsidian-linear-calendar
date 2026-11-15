@@ -1,5 +1,6 @@
 import { describeItem } from "../utils/calendarItems";
 import type { BarInfo } from "./BarRenderer";
+import { hueColour } from "../constants";
 
 export class Tooltip {
 	private el: HTMLElement;
@@ -40,7 +41,7 @@ export class Tooltip {
 	}
 
 	private show(barInfo: BarInfo, evt: MouseEvent): void {
-		const { item, tagColor } = barInfo;
+		const { item, hue } = barInfo;
 
 		this.el.empty();
 		const { title, dates, tagLabels, ageLabel, description } = describeItem(item);
@@ -51,7 +52,7 @@ export class Tooltip {
 		for (const label of tagLabels) {
 			const chip = metaRow.createSpan({ cls: "tooltip-tag-chip" });
 			const dot = chip.createSpan({ cls: "tooltip-tag-dot" });
-			dot.style.backgroundColor = tagColor || "#888";
+			dot.style.setProperty("--lc-hue", hueColour(hue));
 			chip.createSpan({ text: label });
 		}
 

@@ -20,7 +20,7 @@ Domain terms as this repo uses them. Code names in backticks.
 
 **Category**: an item's first `linear-calendar/*` subtag, else `UNCATEGORIZED` (displayed "Other"). The key is persisted in view state as `hiddenCategories`; don't change it.
 
-**Category chip**: a clickable pill showing a category's dot, name and item count; click hides or shows that category's bars. Owned by `CategoryChips`. Counts cover only the viewed months, so a month strip counts one month and the year view counts twelve.
+**Category chip**: a clickable pill showing a category's hue dot, name and item count (a narrow panel hides the name; the tooltip shows it); click hides or shows that category's bars. Owned by `CategoryChips`. Counts cover only the viewed months, so a month strip counts one month and the year view counts twelve.
 
 **Bar**: the rendered span of an item, split into one segment per month and packed into rows by `layoutBars`.
 

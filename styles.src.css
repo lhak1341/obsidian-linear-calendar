@@ -14,8 +14,9 @@
    inline on the root from the font settings (applyFontRoles). Font sizes are rem at Obsidian's
    19px root (the Text size setting), so they match the old px sizes.
    LCAL's own values keep the --lc- prefix: layout (--lc-row-min, --lc-vert-row-h) and the daily
-   note colour (--lc-daily-*), all set inline from TypeScript. Event colours are still inline hex
-   (lhak-style-adoption 06 moves them to the hues). */
+   note colour (--lc-daily-*), all set inline from TypeScript. Event colours are the 8 contract
+   hues (lhak-style-adoption 06): TypeScript sets --lc-hue to `var(--lk-<hue>)` on each bar, ghost,
+   chip dot and tooltip dot, so they follow flavor and mode. */
 
 .linear-calendar-container {
 	display: flex;
@@ -184,6 +185,7 @@
 	height: 8px;
 	border-radius: 50%;
 	flex-shrink: 0;
+	background: var(--lc-hue, var(--lk-text-faint));
 }
 
 .lc-category-name {
@@ -376,7 +378,15 @@
 	display: contents;
 }
 
+/* Solid hue fill. The text is black or white by the hue's OKLCH lightness, at the APCA split
+   (perceptual contrast; WCAG 2 luminance under-rates white on saturated mid-tones such as
+   Capritarius light red and green): over the 32 flavor x mode hues, APCA prefers white up to
+   L 0.727 (Capritarius light orange, a near tie) and black from 0.732 (Primary dark green), so
+   the cut is 0.73. Without relative colour support the text falls back to the theme's text colour. */
 .calendar-bar {
+	background: var(--lc-hue);
+	color: var(--lk-text);
+	color: oklch(from var(--lc-hue) clamp(0, (0.73 - l) * 1000, 1) 0 0);
 	height: 16px;
 	border-radius: 3px;
 	font-size: 0.6316rem;
@@ -560,6 +570,7 @@ body.lc-drag-cursor-resize {
 	height: 7px;
 	border-radius: 50%;
 	flex-shrink: 0;
+	background: var(--lc-hue);
 }
 
 .tooltip-description {
@@ -599,9 +610,10 @@ body.lc-drag-cursor-resize {
 	border-radius: 50%;
 	margin-right: 6px;
 	vertical-align: middle;
+	background: var(--lc-hue);
 }
 
-.lc-color-swatches {
+.lc-hue-swatches {
 	display: flex;
 	gap: 4px;
 	flex-wrap: wrap;
@@ -609,8 +621,8 @@ body.lc-drag-cursor-resize {
 	margin-right: 8px;
 }
 
-/* "Add tag color" packs a text input, 12 swatches, a color picker, an icon
-   input, and a button into one row — wider than the control column at
+/* "Add tag hue" packs a text input, 8 hue swatches, an icon input and a
+   button into one row — wider than the control column at
    typical panel widths. Obsidian's default `justify-content: flex-end` +
    `flex-wrap: nowrap` + `overflow: visible` lets the overflow spill left
    past the control box, over the name/description text. Wrap onto a second
@@ -621,21 +633,36 @@ body.lc-drag-cursor-resize {
 	row-gap: 8px;
 }
 
-.lc-color-swatch {
+/* Hue swatches are buttons: `button.` ties Obsidian's `button:not(.clickable-icon)` (0,1,1)
+   and wins by load order, so its fill, padding and shadow never reach a swatch. */
+button.lc-hue-swatch {
+	box-sizing: border-box;
 	width: 18px;
 	height: 18px;
-	border-radius: 50%;
-	cursor: pointer;
+	min-width: 0;
+	padding: 0;
 	border: 2px solid transparent;
+	border-radius: 50%;
+	background: var(--lc-hue);
+	box-shadow: none;
+	cursor: pointer;
 	transition: border-color 0.1s ease, transform 0.1s ease;
 }
 
-.lc-color-swatch:hover {
+button.lc-hue-swatch:hover {
+	background: var(--lc-hue);
+	box-shadow: none;
 	transform: scale(1.15);
 }
 
-.lc-color-swatch.is-active {
-	border-color: var(--text-normal);
+button.lc-hue-swatch:focus-visible {
+	outline: 2px solid var(--lk-focus-ring);
+	outline-offset: 1px;
+	box-shadow: none;
+}
+
+button.lc-hue-swatch[aria-pressed="true"] {
+	border-color: var(--lk-text);
 }
 
 .lc-icon-input-wrap {

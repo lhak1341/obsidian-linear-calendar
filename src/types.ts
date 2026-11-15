@@ -1,3 +1,4 @@
+import type { Hue } from "@lhak/style";
 import type { FontRoleSettings } from "@lhak/style/obsidian-helpers/font-roles";
 
 export type AlignMode = "date" | "weekday";
@@ -46,7 +47,8 @@ export type DailyNoteStyle = "tint" | "border-top";
 /** Font keys (`fontHeading`, `fontHeadingCustom`, …) come from the shared @lhak/style font-role helper. */
 export interface PluginSettings extends FontRoleSettings {
 	defaultMapping: ColumnMapping;
-	colorMap: Record<string, string>;
+	/** Tag → hue name (one of the 8 contract hues); hues repeat past 8 tags. */
+	colorMap: Record<string, Hue>;
 	iconMap: Record<string, string>;
 	alignMode: AlignMode;
 	dailyNoteColor: string | null; // null = use accent

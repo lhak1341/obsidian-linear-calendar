@@ -1,3 +1,4 @@
+import type { Hue } from "@lhak/style";
 import { App } from "obsidian";
 import type { CalendarItem, PluginSettings, AlignMode } from "../types";
 import type { DataSource } from "../data/DataSource";
@@ -138,8 +139,8 @@ export class CalendarRenderer {
 	/** Scan, resolve tag colors, and filter out hidden categories — shared by render() and renderBars(). No DOM writes. */
 	private computeVisibleItems(
 		{ year, window, hiddenCategories }: RenderConfig,
-		colorMap: Record<string, string>,
-	): { allItems: CalendarItem[]; items: CalendarItem[]; tagColorMap: Map<string, string> } {
+		colorMap: Record<string, Hue>,
+	): { allItems: CalendarItem[]; items: CalendarItem[]; tagColorMap: Map<string, Hue> } {
 		const scan = (y: number) => this.source.scan(this.getSettings().defaultMapping, y);
 		const allItems = window ? itemsInWindow(window, scan) : scan(year);
 		const tagColorMap = buildTagColorMap(allItems, colorMap);

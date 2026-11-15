@@ -1,6 +1,7 @@
-import { App, PluginSettingTab, Setting, type ColorComponent } from "obsidian";
+import { App, PluginSettingTab, Setting, setTooltip } from "obsidian";
+import type { Hue } from "@lhak/style";
 import type LinearCalendarPlugin from "./main";
-import { COLOR_PALETTE } from "./constants";
+import { HUE_ORDER, hueColour } from "./constants";
 import { buildTagColorMap } from "./utils/colorUtils";
 import { categoryLabel } from "./utils/category";
 import { formatTagLabel } from "./utils/tagUtils";
@@ -287,9 +288,9 @@ export class LinearCalendarSettingTab extends PluginSettingTab {
 	}
 
 	private renderColorMapSection(containerEl: HTMLElement, mapping: ColumnMapping): void {
-		new Setting(containerEl).setName("Tag color map").setHeading();
+		new Setting(containerEl).setName("Tag hues").setHeading();
 		containerEl.createEl("p", {
-			text: 'Assign colors to linear-calendar subtags (e.g., "work", "personal"). Unmapped tags get auto-assigned from the palette.',
+			text: 'Assign one of the 8 theme hues to linear-calendar subtags (e.g., "work", "personal"). Unmapped tags take the hues in order. Hues repeat past 8 tags, so give tags icons to tell them apart.',
 			cls: "setting-item-description",
 		});
 
@@ -301,24 +302,23 @@ export class LinearCalendarSettingTab extends PluginSettingTab {
 
 	private renderPinnedTags(
 		containerEl: HTMLElement,
-		colorMap: Record<string, string>,
+		colorMap: Record<string, Hue>,
 	): void {
 		const entries = Object.entries(colorMap);
 		if (entries.length === 0) return;
 
 		const iconMap = this.plugin.settings.iconMap;
 		const items = containerEl.createDiv("setting-group").createDiv("setting-items");
-		for (const [tag, color] of entries) {
+		for (const [tag, hue] of entries) {
 			const shortName = formatTagLabel(tag);
 			new Setting(items)
 				.setName("")
 				.then((setting) => {
 					const nameEl = setting.nameEl;
-					const dot = nameEl.createSpan({ cls: "lc-settings-dot" });
-					dot.style.backgroundColor = color;
+					addHueDot(nameEl, hue);
 					nameEl.createSpan({ text: shortName });
-					this.addSwatches(setting.controlEl, color, (c) => {
-						colorMap[tag] = c;
+					this.addHuePicker(setting.controlEl, hue, (picked) => {
+						colorMap[tag] = picked;
 						void this.plugin.saveSettings();
 						this.refresh();
 					});
@@ -331,13 +331,6 @@ export class LinearCalendarSettingTab extends PluginSettingTab {
 						},
 					});
 				})
-				.addColorPicker((picker) =>
-					picker.setValue(color).onChange((value) => {
-						colorMap[tag] = value;
-						void this.plugin.saveSettings();
-						this.refresh();
-					}),
-				)
 				.addExtraButton((btn) =>
 					btn.setIcon("x").setTooltip("Remove").onClick(async () => {
 						delete colorMap[tag];
@@ -351,7 +344,7 @@ export class LinearCalendarSettingTab extends PluginSettingTab {
 
 	private renderDetectedTags(
 		containerEl: HTMLElement,
-		colorMap: Record<string, string>,
+		colorMap: Record<string, Hue>,
 		mapping: ColumnMapping,
 	): void {
 		const { items } = this.plugin.getCalendarData(new Date().getFullYear());
@@ -362,24 +355,23 @@ export class LinearCalendarSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl).setName("Detected tags").setHeading();
 		containerEl.createEl("p", {
-			text: "Auto-assigned colors from your notes. Pin to customize.",
+			text: "Tags from your notes with their automatic hue. Pin one to choose its hue.",
 			cls: "setting-item-description",
 		});
 		const detectedItems = containerEl.createDiv("setting-group").createDiv("setting-items");
 
-		for (const [tag, color] of unpinned) {
+		for (const [tag, hue] of unpinned) {
 			const shortName = categoryLabel(tag);
 			new Setting(detectedItems)
 				.setName("")
 				.then((setting) => {
 					const nameEl = setting.nameEl;
-					const dot = nameEl.createSpan({ cls: "lc-settings-dot" });
-					dot.style.backgroundColor = color;
+					addHueDot(nameEl, hue);
 					nameEl.createSpan({ text: shortName });
 				})
 				.addExtraButton((btn) =>
-					btn.setIcon("pin").setTooltip("Pin to color map").onClick(async () => {
-						colorMap[tag] = color;
+					btn.setIcon("pin").setTooltip("Pin to tag hues").onClick(async () => {
+						colorMap[tag] = hue;
 						await this.plugin.saveSettings();
 						this.refresh();
 					}),
@@ -389,18 +381,17 @@ export class LinearCalendarSettingTab extends PluginSettingTab {
 
 	private renderAddColorMapping(
 		containerEl: HTMLElement,
-		colorMap: Record<string, string>,
+		colorMap: Record<string, Hue>,
 	): void {
 		const iconMap = this.plugin.settings.iconMap;
-		let newTagColor =
-			COLOR_PALETTE.find((c) => !new Set(Object.values(colorMap)).has(c)) ?? COLOR_PALETTE[0];
+		const used = new Set(Object.values(colorMap));
+		let newTagHue: Hue = HUE_ORDER.find((h) => !used.has(h)) ?? HUE_ORDER[0];
 		let newTagInput: HTMLInputElement;
-		let newTagPicker: ColorComponent;
 		let newIconValue = "";
 
 		const items = containerEl.createDiv("setting-group").createDiv("setting-items");
 		const addSetting = new Setting(items)
-			.setName("Add tag color")
+			.setName("Add tag hue")
 			.setDesc('Subtag name (without "linear-calendar/" prefix)')
 			.then((setting) => setting.settingEl.addClass("lc-add-tag-color"));
 
@@ -409,16 +400,7 @@ export class LinearCalendarSettingTab extends PluginSettingTab {
 			newTagInput = text.inputEl;
 		});
 
-		this.addSwatches(addSetting.controlEl, newTagColor, (c) => {
-			newTagColor = c;
-			// eslint-disable-next-line @typescript-eslint/no-misused-promises -- BaseComponent's chaining then() duck-types as thenable; this is a plain truthiness check, not a Promise
-			if (newTagPicker) newTagPicker.setValue(c);
-		});
-
-		addSetting.addColorPicker((picker) => {
-			newTagPicker = picker;
-			picker.setValue(newTagColor).onChange((value) => { newTagColor = value; });
-		});
+		this.addHuePicker(addSetting.controlEl, newTagHue, (picked) => { newTagHue = picked; });
 
 		addSetting.then((setting) => {
 			new IconField(this.app, setting.controlEl, {
@@ -432,7 +414,7 @@ export class LinearCalendarSettingTab extends PluginSettingTab {
 				const tagName = newTagInput?.value?.trim();
 				if (!tagName) return;
 				const fullTag = tagName.startsWith("linear-calendar/") ? tagName : `linear-calendar/${tagName}`;
-				colorMap[fullTag] = newTagColor;
+				colorMap[fullTag] = newTagHue;
 				if (newIconValue) iconMap[fullTag] = newIconValue;
 				await this.plugin.saveSettings();
 				this.refresh();
@@ -440,19 +422,30 @@ export class LinearCalendarSettingTab extends PluginSettingTab {
 		);
 	}
 
-	private addSwatches(
-		parentEl: HTMLElement,
-		activeColor: string,
-		onSelect: (color: string) => void,
-	): void {
-		const wrap = parentEl.createDiv({ cls: "lc-color-swatches" });
-		for (const color of COLOR_PALETTE) {
-			const swatch = wrap.createDiv({ cls: "lc-color-swatch" });
-			swatch.style.backgroundColor = color;
-			if (color.toLowerCase() === activeColor.toLowerCase()) {
-				swatch.addClass("is-active");
-			}
-			swatch.addEventListener("click", () => onSelect(color));
-		}
+	/**
+	 * The hue picker: one swatch button per contract hue, named by its hue, the chosen one
+	 * pressed. The settings tab sits outside every root, so the row carries `lk-root` to
+	 * read the hues from the contract.
+	 */
+	private addHuePicker(parentEl: HTMLElement, active: Hue, onSelect: (hue: Hue) => void): void {
+		const wrap = parentEl.createDiv({ cls: "lc-hue-swatches lk-root", attr: { role: "group", "aria-label": "Hue" } });
+		const swatches = HUE_ORDER.map((hue) => {
+			const swatch = wrap.createEl("button", {
+				cls: "lc-hue-swatch",
+				attr: { type: "button", "aria-label": hue, "aria-pressed": String(hue === active) },
+			});
+			swatch.style.setProperty("--lc-hue", hueColour(hue));
+			setTooltip(swatch, hue);
+			swatch.addEventListener("click", () => {
+				for (const s of swatches) s.setAttribute("aria-pressed", String(s === swatch));
+				onSelect(hue);
+			});
+			return swatch;
+		});
 	}
+}
+
+/** A tag's hue as a dot before its name (with `lk-root`: the settings tab has no root). */
+function addHueDot(parentEl: HTMLElement, hue: Hue): void {
+	parentEl.createSpan({ cls: "lc-settings-dot lk-root" }).style.setProperty("--lc-hue", hueColour(hue));
 }

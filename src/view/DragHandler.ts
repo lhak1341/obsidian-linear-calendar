@@ -14,7 +14,8 @@ export interface DragScene {
 
 interface DragContext {
 	barEl: HTMLElement;
-	barColor: string;
+	/** The bar's `--lc-hue`, copied onto its ghosts. */
+	barHue: string;
 	barLabel: string;
 	filePath: string;
 	originalStart: Date;
@@ -102,7 +103,7 @@ export class DragHandler {
 
 		this.ctx = {
 			barEl,
-			barColor: barEl.style.backgroundColor,
+			barHue: barEl.style.getPropertyValue("--lc-hue"),
 			barLabel: segment.item.title,
 			filePath: segment.item.filePath,
 			// Unclamped span: dateStart/dateEnd are cut to the viewed year and would be written back.
@@ -142,7 +143,7 @@ export class DragHandler {
 
 	private updateVisuals(dayDelta: number): void {
 		if (!this.ctx) return;
-		const { barEl, barColor, barLabel, segMonth, scene } = this.ctx;
+		const { barEl, barHue, barLabel, segMonth, scene } = this.ctx;
 
 		const { newStart, newEnd } = this.newDatesFromDelta(dayDelta);
 		const { home, ghosts } = scene.layout.previewMove(segMonth, newStart, newEnd);
@@ -177,7 +178,7 @@ export class DragHandler {
 
 			ghost.style.gridColumn = gridColumn;
 			ghost.style.gridRow = gridRow;
-			ghost.style.backgroundColor = barColor;
+			ghost.style.setProperty("--lc-hue", barHue);
 			(ghost.firstChild as HTMLElement).textContent = barLabel;
 
 			// Move ghost to correct container if needed
