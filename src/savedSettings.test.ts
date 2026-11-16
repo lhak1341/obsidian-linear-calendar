@@ -32,13 +32,13 @@ describe("settingsFromSaved", () => {
 		expect([settings.fontHeading, settings.fontBody, settings.fontMono]).toEqual(["default", "default", "default"]);
 	});
 
-	it("keeps saved tag icons and hue names", () => {
+	it("keeps saved tag icons, hue names and grey", () => {
 		const settings = settingsFromSaved({
 			iconMap: { travel: "plane", health: "flask-conical" },
-			colorMap: { travel: "yellow", health: "red" },
+			colorMap: { travel: "yellow", health: "red", mori: "grey" },
 		});
 		expect(settings.iconMap).toEqual({ travel: "plane", health: "flask-conical" });
-		expect(settings.colorMap).toEqual({ travel: "yellow", health: "red" });
+		expect(settings.colorMap).toEqual({ travel: "yellow", health: "red", mori: "grey" });
 	});
 
 	it("fills a partly saved column mapping from the defaults", () => {
@@ -63,11 +63,11 @@ function store(saved: unknown) {
 }
 
 describe("loadSettingsFrom", () => {
-	it("maps saved hex colours to the nearest hue and writes them back once", async () => {
-		// Expected hues: the @lhak/style nearestHue cases for the old Google palette.
+	it("maps saved hex colours to the nearest hue, greys to grey, and writes them back once", async () => {
+		// Expected hues: the @lhak/style nearestHue cases for the old Google palette; Graphite is grey.
 		const plugin = store({ colorMap: { travel: "#F6BF26", work: "#039BE5", pet: "#E67C73", mori: "#616161" } });
 		const settings = await loadSettingsFrom(plugin);
-		const migrated = { travel: "yellow", work: "blue", pet: "orange", mori: "cyan" };
+		const migrated = { travel: "yellow", work: "blue", pet: "orange", mori: "grey" };
 		expect(settings.colorMap).toEqual(migrated);
 		expect(plugin.saveData).toHaveBeenCalledTimes(1);
 		expect(plugin.saveData.mock.calls[0]?.[0]).toMatchObject({ colorMap: migrated });

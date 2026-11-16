@@ -7,7 +7,8 @@
 ## Bar/chip colors
 
 - A tag's colour is a hue name (`colorMap`, `buildTagColorMap`). JS sets only `--lc-hue` inline,
-  to `hueColour(hue)` = `var(--lk-<hue>)`, on the bar, its drag ghosts, the chip dot and the
+  to `hueColour(hue)` = `var(--lk-<hue>)` (grey: `var(--lc-grey)`, defined on `.lk-root` in
+  `styles.src.css`), on the bar, its drag ghosts, the chip dot and the
   tooltip dot; `styles.src.css` paints from it, so flavor and mode changes need no re-render.
   A bar's text colour is CSS too (relative `oklch`, black or white by the hue's lightness, cut at the APCA split, 0.73).
   `src/styles.test.ts` fails on any inline `style.backgroundColor`/`style.color` in `src/`.

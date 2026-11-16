@@ -378,6 +378,22 @@
 	display: contents;
 }
 
+/* Grey, the one tag colour the contract has no hue for: the theme's muted text neutral, so
+   Capritarius gives a true grey (chroma 0) and Primary a warm one (its neutrals sit near
+   chroma 0.05, hue 75). Text roles flip lightness with the mode (text-muted is L 0.45-0.47 in
+   light, 0.77-0.82 in dark) while the hues stay at L 0.55-0.81 in all four flavor x mode
+   sets, so grey keeps the neutral's chroma and hue at the hues' lightness, 0.65 (white bar
+   text). Without relative colour support it is text-muted itself. */
+.lk-root {
+	--lc-grey: var(--lk-text-muted);
+}
+
+@supports (color: oklch(from red l c h)) {
+	.lk-root {
+		--lc-grey: oklch(from var(--lk-text-muted) 0.65 c h);
+	}
+}
+
 /* Solid hue fill. The text is black or white by the hue's OKLCH lightness, at the APCA split
    (perceptual contrast; WCAG 2 luminance under-rates white on saturated mid-tones such as
    Capritarius light red and green): over the 32 flavor x mode hues, APCA prefers white up to
@@ -603,66 +619,166 @@ body.lc-drag-cursor-resize {
 }
 
 /* ---- Settings ---- */
-.lc-settings-dot {
-	display: inline-block;
-	width: 10px;
-	height: 10px;
-	border-radius: 50%;
-	margin-right: 6px;
-	vertical-align: middle;
-	background: var(--lc-hue);
-}
+/* The settings tab sits outside every root, so these rules read Obsidian's variables; the chips,
+   hue swatches and tag popover carry `lk-root` themselves to read the hues. */
 
-.lc-hue-swatches {
+/* Tag chips: each tag drawn as its bar, filled with a chosen hue, outlined in its automatic one.
+   `button.` ties Obsidian's `button:not(.clickable-icon)` (0,1,1) and wins by load order, so its
+   fill, padding and shadow never reach a chip or a swatch. */
+.lc-tag-chips {
 	display: flex;
-	gap: 4px;
 	flex-wrap: wrap;
-	flex-shrink: 0;
-	margin-right: 8px;
+	gap: 8px;
+	padding: var(--size-4-4);
 }
 
-/* "Add tag hue" packs a text input, 8 hue swatches, an icon input and a
-   button into one row — wider than the control column at
-   typical panel widths. Obsidian's default `justify-content: flex-end` +
-   `flex-wrap: nowrap` + `overflow: visible` lets the overflow spill left
-   past the control box, over the name/description text. Wrap onto a second
-   line instead, packed from the left, so it stays inside the row. */
-.lc-add-tag-color .setting-item-control {
-	flex-wrap: wrap;
-	justify-content: flex-start;
-	row-gap: 8px;
+button.lc-tag-chip,
+button.lc-tag-chip-add {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	height: 28px;
+	padding: 0 12px;
+	border: none;
+	border-radius: var(--radius-s);
+	font-size: var(--font-ui-small);
+	font-weight: var(--font-medium);
+	cursor: pointer;
 }
 
-/* Hue swatches are buttons: `button.` ties Obsidian's `button:not(.clickable-icon)` (0,1,1)
-   and wins by load order, so its fill, padding and shadow never reach a swatch. */
+button.lc-tag-chip {
+	background: var(--lc-hue, transparent);
+	box-shadow: none;
+	color: var(--lk-text);
+	color: oklch(from var(--lc-hue) clamp(0, (0.73 - l) * 1000, 1) 0 0);
+}
+
+button.lc-tag-chip:hover {
+	background: var(--lc-hue, transparent);
+	box-shadow: none;
+	filter: brightness(1.08);
+}
+
+button.lc-tag-chip.is-auto,
+button.lc-tag-chip.is-auto:hover {
+	background: transparent;
+	box-shadow: inset 0 0 0 1.5px var(--lc-hue, var(--background-modifier-border));
+	color: var(--text-muted);
+	filter: none;
+}
+
+button.lc-tag-chip-add {
+	background: transparent;
+	box-shadow: inset 0 0 0 1px var(--background-modifier-border);
+	color: var(--text-muted);
+}
+
+button.lc-tag-chip:focus-visible,
+button.lc-tag-chip-add:focus-visible {
+	outline: 2px solid var(--background-modifier-border-focus);
+	outline-offset: 2px;
+}
+
+.lc-tag-chip-icon {
+	display: inline-flex;
+}
+
+.lc-tag-chip-icon svg {
+	width: 14px;
+	height: 14px;
+}
+
+/* The tag editor: Obsidian's menu chrome, placed under its chip by TagPopover. */
+.lc-tag-popover {
+	position: fixed;
+	left: var(--lc-popover-left);
+	top: var(--lc-popover-top);
+	z-index: var(--layer-menu);
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	box-sizing: border-box;
+	width: 288px;
+	padding: 12px;
+}
+
+.lc-tag-popover-title {
+	font-size: var(--font-ui-small);
+	font-weight: var(--font-semibold);
+}
+
+.lc-tag-popover input[type="text"],
+.lc-tag-popover .lc-icon-input-wrap,
+.lc-tag-popover .lc-icon-input {
+	width: 100%;
+}
+
+.lc-hue-row {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
 button.lc-hue-swatch {
 	box-sizing: border-box;
-	width: 18px;
-	height: 18px;
+	width: 20px;
+	height: 20px;
 	min-width: 0;
 	padding: 0;
-	border: 2px solid transparent;
+	border: none;
 	border-radius: 50%;
 	background: var(--lc-hue);
 	box-shadow: none;
 	cursor: pointer;
-	transition: border-color 0.1s ease, transform 0.1s ease;
 }
 
 button.lc-hue-swatch:hover {
 	background: var(--lc-hue);
 	box-shadow: none;
-	transform: scale(1.15);
+	transform: scale(1.12);
 }
 
-button.lc-hue-swatch:focus-visible {
-	outline: 2px solid var(--lk-focus-ring);
-	outline-offset: 1px;
-	box-shadow: none;
+button.lc-hue-auto {
+	height: 20px;
+	padding: 0 8px;
+	border-radius: 10px;
+	background: transparent;
+	box-shadow: inset 0 0 0 1px var(--background-modifier-border);
+	color: var(--text-muted);
+	font-size: var(--font-ui-smaller);
 }
 
+/* The chosen hue (or Auto) is ringed, with a gap of the popover's own surface. */
 button.lc-hue-swatch[aria-pressed="true"] {
-	border-color: var(--lk-text);
+	box-shadow: 0 0 0 2px var(--background-primary), 0 0 0 4px var(--lc-hue);
+}
+
+button.lc-hue-auto[aria-pressed="true"] {
+	box-shadow: 0 0 0 2px var(--background-primary), 0 0 0 4px var(--text-muted);
+	color: var(--text-normal);
+}
+
+button.lc-hue-swatch:focus-visible,
+button.lc-hue-auto:focus-visible {
+	outline: 2px solid var(--background-modifier-border-focus);
+	outline-offset: 3px;
+}
+
+.lc-setting-warning {
+	color: var(--text-warning);
+}
+
+.lc-setting-warning:empty {
+	display: none;
+}
+
+.lc-format-preview {
+	color: var(--text-normal);
+	font-family: var(--font-monospace);
+}
+
+.lc-path-input {
+	width: 240px;
 }
 
 .lc-icon-input-wrap {

@@ -46,6 +46,15 @@
 
 ## Settings modal
 
+- Section order is by use: Tag hues, Appearance, Daily notes, New event, Frontmatter
+  properties. Tag hues is a chip per tag (`utils/tagChips.ts`, tested: this year's categories,
+  then tags with only settings). A chip opens a `TagPopover` (body-mounted, `lk-root`, closes on
+  Escape or an outside press except inside a `.suggestion-container`, and blurs its focused field
+  first so the icon field's `change` commit still fires). Auto deletes the `colorMap` entry and
+  keeps the icon; Remove (both maps) shows only for a tag no note uses (`readVaultNames`, one
+  metadata-cache pass per render, which also feeds the folder/file/property `ListSuggest`s and
+  their "no note has…" warnings). Not unit-tested beyond `tagChips`; verify live.
+
 - Chaining multiple controls onto one `Setting` (e.g. a mode dropdown + number + unit on
   one row) needs a scoped `.setting-item-control > * { width: auto !important }`
   override — the modal's default per-field `width: 100%` makes siblings fight for the
@@ -55,10 +64,16 @@
   tested): defaults filled, nested maps copied, font keys read by `@lhak/style`'s
   `parseFontRoleSettings` (the old `"plugin"` font choice reads as `"default"`). The font rows
   are the shared `addFontRoleSetting`.
-- `colorMap` stores hue names. A saved hex value reads as `nearestHue` (from `@lhak/style`), an
-  unmappable one is dropped, and `loadSettingsFrom` saves once when that changed anything; a
-  hue name maps to itself, so later loads save nothing. The settings hue picker offers only the
-  8 hues (`HUE_ORDER`, `constants.ts`). The daily-note highlight colour is still a free hex.
+- `colorMap` stores `TagHue`s: the 8 contract hue names or `"grey"`. A saved hex value reads
+  through `tagHueFromSaved` (`utils/colorUtils.ts`): grey below OKLab chroma 0.03, else
+  `nearestHue` (from `@lhak/style`, which knows no grey). An unmappable value is dropped, and
+  `loadSettingsFrom` saves once when that changed anything; a hue name maps to itself, so
+  later loads save nothing. The settings hue picker offers the 8 hues plus grey (`TAG_HUES`,
+  `constants.ts`); automatic assignment uses only the 8 (`HUE_ORDER`). Grey is not a contract
+  hue: `--lc-grey` is the theme's `--lk-text-muted` with its lightness fixed at 0.65, in line
+  with the hues. Text roles flip lightness with the mode and hues do not, so text-muted itself
+  would be darker than every hue in light mode and brighter than most in dark. The neutral's own
+  chroma and hue are kept, so the grey is neutral in Capritarius and warm in Primary. The daily-note highlight colour is still a free hex.
 - `settings.ts` mutates `plugin.settings` in place, then `saveSettings()` saves and calls `SettingsChanges.notify()`. Every host (`LinearCalendarView`, each `RollingStrip`) subscribes via `onChange` and repaints fully; hosts read settings through a `getSettings` getter, never a captured object. A new host must subscribe, or it goes stale after a settings save. Not unit-tested (a subscriber set); verify live via `obsidian eval`: mount a strip with an `onRangeChange` counter, toggle a setting and `await plugin.saveSettings()`, and the count rises by one; after `destroy()` it no longer rises. Restore the setting afterwards. Run 2026-10-21 in `lhakZettel`: passed (render count only, DOM change not inspected).
 
 ## Daily notes

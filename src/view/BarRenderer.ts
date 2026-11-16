@@ -1,8 +1,7 @@
 import { type App, Menu, setIcon } from "obsidian";
-import type { CalendarItem } from "../types";
+import type { CalendarItem, TagHue } from "../types";
 import type { CalendarInteractions } from "./calendarInteractions";
 import { resolveLucideIconId } from "../lucide-icons";
-import type { Hue } from "@lhak/style";
 import { HUE_ORDER, hueColour } from "../constants";
 import type { MonthRowRef } from "./GridRenderer";
 import { gridArea, type BarLayout, type MonthSegment } from "../utils/barLayout";
@@ -13,7 +12,7 @@ import { DragHandler } from "./DragHandler";
 /** Data a bar carries for consumers (e.g. Tooltip) that need it without touching the DOM. */
 export interface BarInfo {
 	item: CalendarItem;
-	hue: Hue;
+	hue: TagHue;
 }
 
 export class BarRenderer {
@@ -34,7 +33,7 @@ export class BarRenderer {
 	render(
 		monthRows: MonthRowRef[],
 		layout: BarLayout,
-		tagColorMap: Map<string, Hue>,
+		tagColorMap: Map<string, TagHue>,
 		tagIconMap: Map<string, string>,
 	): void {
 		const isVertical = monthRows[0]?.layout === "vertical";
@@ -88,7 +87,7 @@ export class BarRenderer {
 	private decorateBar(
 		barEl: HTMLElement,
 		segment: MonthSegment,
-		tagColorMap: Map<string, Hue>,
+		tagColorMap: Map<string, TagHue>,
 		tagIconMap: Map<string, string>,
 	): void {
 		const tag = categoryOf(segment.item);

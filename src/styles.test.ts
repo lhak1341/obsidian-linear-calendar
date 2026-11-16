@@ -89,11 +89,26 @@ describe("built styles.css", () => {
 		expect(value(ruleBody(css, ".tooltip-tag-dot"), "background")).toBe("var(--lc-hue)");
 	});
 
-	it("draws the hue picker's swatches in their hue, the chosen one ringed", async () => {
+	it("draws grey as the theme's muted neutral at the hues' lightness, under every root", async () => {
+		const css = await buildStyles();
+		expect(css).toMatch(/\.lk-root\s*\{\s*--lc-grey: var\(--lk-text-muted\);/);
+		expect(css).toMatch(/@supports \(color: oklch\(from red l c h\)\)\s*\{\s*\.lk-root\s*\{\s*--lc-grey: oklch\(from var\(--lk-text-muted\) 0\.65 c h\);/);
+	});
+
+	it("draws the hue picker's swatches in their hue, the chosen one ringed in it", async () => {
 		const css = await buildStyles();
 		expect(value(ruleBody(css, "button.lc-hue-swatch"), "background")).toBe("var(--lc-hue)");
-		expect(value(ruleBody(css, "button.lc-hue-swatch[aria-pressed=true]"), "border-color")).toBe("var(--lk-text)");
-		expect(css).not.toMatch(/lc-color-swatch/);
+		expect(value(ruleBody(css, "button.lc-hue-swatch[aria-pressed=true]"), "box-shadow")).toBe("0 0 0 2px var(--background-primary), 0 0 0 4px var(--lc-hue)");
+		expect(css).not.toMatch(/lc-color-swatch|lc-hue-swatches|lc-settings-dot/);
+	});
+
+	it("draws a settings tag chip as its bar: filled when its hue is chosen, outlined when automatic", async () => {
+		const css = await buildStyles();
+		// The fill rule, not the layout rule button.lc-tag-chip shares with the add chip.
+		const chip = /\}\s*button\.lc-tag-chip\s*\{([^}]*)\}/.exec(css)?.[1] ?? "";
+		expect(value(chip, "background")).toBe("var(--lc-hue, transparent)");
+		expect(chip).toContain("color: oklch(from var(--lc-hue) clamp(0, (0.73 - l) * 1000, 1) 0 0);");
+		expect(value(ruleBody(css, "button.lc-tag-chip.is-auto"), "box-shadow")).toBe("inset 0 0 0 1.5px var(--lc-hue, var(--background-modifier-border))");
 	});
 
 	it("styles the shared icon picker's suggestion rows", async () => {

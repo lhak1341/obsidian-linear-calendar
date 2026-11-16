@@ -44,11 +44,17 @@ export interface ColumnMapping {
 
 export type DailyNoteStyle = "tint" | "border-top";
 
+/**
+ * A tag's colour: one of the 8 @lhak/style contract hues, or `"grey"`, the theme's neutral
+ * (`--lk-text-muted`), which the contract has no hue for. Grey is chosen, never assigned.
+ */
+export type TagHue = Hue | "grey";
+
 /** Font keys (`fontHeading`, `fontHeadingCustom`, …) come from the shared @lhak/style font-role helper. */
 export interface PluginSettings extends FontRoleSettings {
 	defaultMapping: ColumnMapping;
-	/** Tag → hue name (one of the 8 contract hues); hues repeat past 8 tags. */
-	colorMap: Record<string, Hue>;
+	/** Tag → hue name (one of the 8 contract hues, or grey); automatic hues repeat past 8 tags. */
+	colorMap: Record<string, TagHue>;
 	iconMap: Record<string, string>;
 	alignMode: AlignMode;
 	dailyNoteColor: string | null; // null = use accent

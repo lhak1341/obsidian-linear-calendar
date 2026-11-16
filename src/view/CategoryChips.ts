@@ -1,6 +1,5 @@
-import type { Hue } from "@lhak/style";
 import { hueColour } from "../constants";
-import type { CalendarItem } from "../types";
+import type { CalendarItem, TagHue } from "../types";
 import { categoryLabel, countByCategory } from "../utils/category";
 import type { Tooltip } from "./Tooltip";
 
@@ -21,7 +20,7 @@ export class CategoryChips {
 	/** Rebuild the chips for the items in view; a no-op when nothing the chips show has changed. */
 	update(
 		itemsInView: CalendarItem[],
-		tagColorMap: Map<string, Hue>,
+		tagColorMap: Map<string, TagHue>,
 		hiddenCategories: Set<string>,
 	): void {
 		const categories = countByCategory(itemsInView);

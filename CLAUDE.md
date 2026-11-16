@@ -26,7 +26,9 @@ stylelint on it (the package's adoption check), and `src/styles.test.ts` pins th
 The full view's `contentEl` carries `lk-root`; a rolling strip reads its host's root and gets
 the `lc-embedded` class, which keys the strip layout (it used to live in the dashboard). The
 settings tab and modals sit outside every root, so their rules keep Obsidian's variables; the one
-exception is the tag-hue dots and picker, which carry `lk-root` themselves to read the hues.
+exception is the settings tag chips and their editor popover, which carry `lk-root` themselves to read the hues.
+A new colour must work in all 4 flavor × mode sets: text roles (`--lk-text-*`) flip lightness with the mode while hues stay
+at L 0.55–0.81, and Capritarius neutrals are chroma 0 where Primary's are warm. Derive from a role with relative `oklch` (`--lc-grey`), never use one raw.
 
 Agent skills: issue tracker → `docs/agents/issue-tracker.md`; domain docs →
 `docs/agents/domain.md`; architecture/AI-readiness reports save to this repo's `temp/`,

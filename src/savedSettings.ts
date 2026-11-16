@@ -1,16 +1,16 @@
-import { nearestHue, type Hue } from "@lhak/style";
 import { parseFontRoleSettings } from "@lhak/style/obsidian-helpers/font-roles";
 import { DEFAULT_SETTINGS } from "./constants";
-import type { PluginSettings } from "./types";
+import type { PluginSettings, TagHue } from "./types";
+import { tagHueFromSaved } from "./utils/colorUtils";
 
 /**
  * The plugin's settings from its saved data (`loadData()`), filled from the defaults.
  * Font keys go through the shared font-role helper, which reads LCAL's old `"plugin"`
  * choice (and anything unknown) as `"default"`; both meant "follow the theme".
- * Tag colours are hue names: a saved hex colour (the old Google palette or the free colour
- * picker) reads as its `nearestHue`, and one no hue can stand for is dropped, so the tag
- * takes an automatic hue. Nested maps are fresh copies, so editing them never reaches
- * `DEFAULT_SETTINGS`.
+ * Tag colours are hue names or grey: a saved hex colour (the old Google palette or the free
+ * colour picker) reads as grey when near-neutral, else as its `nearestHue`, and one no hue can
+ * stand for is dropped, so the tag takes an automatic hue. Nested maps are fresh copies, so
+ * editing them never reaches `DEFAULT_SETTINGS`.
  */
 export function settingsFromSaved(saved: unknown): PluginSettings {
 	const data = (typeof saved === "object" && saved !== null ? saved : {}) as Partial<PluginSettings>;
@@ -41,10 +41,10 @@ export async function loadSettingsFrom(store: SavedDataStore): Promise<PluginSet
 	return settings;
 }
 
-function huesFromSaved(saved: Record<string, unknown> | undefined): Record<string, Hue> {
-	const hues: Record<string, Hue> = {};
+function huesFromSaved(saved: Record<string, unknown> | undefined): Record<string, TagHue> {
+	const hues: Record<string, TagHue> = {};
 	for (const [tag, colour] of Object.entries(saved ?? {})) {
-		const hue = typeof colour === "string" ? nearestHue(colour) : undefined;
+		const hue = tagHueFromSaved(colour);
 		if (hue) hues[tag] = hue;
 	}
 	return hues;
@@ -55,7 +55,7 @@ function savedColorMap(saved: unknown): Record<string, unknown> {
 	return typeof colorMap === "object" && colorMap !== null ? (colorMap as Record<string, unknown>) : {};
 }
 
-function sameColours(saved: Record<string, unknown>, hues: Record<string, Hue>): boolean {
+function sameColours(saved: Record<string, unknown>, hues: Record<string, TagHue>): boolean {
 	const tags = Object.keys(saved);
 	return tags.length === Object.keys(hues).length && tags.every((tag) => saved[tag] === hues[tag]);
 }

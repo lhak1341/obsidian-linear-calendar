@@ -1,6 +1,6 @@
 import { DEFAULT_FONT_ROLE_SETTINGS } from "@lhak/style/obsidian-helpers/font-roles";
 import type { Hue } from "@lhak/style";
-import type { ColumnMapping, PluginSettings } from "./types";
+import type { ColumnMapping, PluginSettings, TagHue } from "./types";
 
 export const VIEW_TYPE_LINEAR_CALENDAR = "linear-calendar-view";
 
@@ -39,9 +39,16 @@ export const HUE_ORDER = ["blue", "orange", "green", "purple", "cyan", "pink", "
 const _everyHue: Exclude<Hue, (typeof HUE_ORDER)[number]> extends never ? true : never = true;
 void _everyHue;
 
-/** The CSS colour of a hue, read from the contract (resolves under `.lk-root`). */
-export function hueColour(hue: Hue): string {
-	return `var(--lk-${hue})`;
+/** The picker's choices: the 8 hues, then grey. Only HUE_ORDER is assigned automatically. */
+export const TAG_HUES = [...HUE_ORDER, "grey"] as const satisfies readonly TagHue[];
+
+/**
+ * The CSS colour of a tag hue, read from the contract (resolves under `.lk-root`). Grey is
+ * `--lc-grey` (`styles.src.css`): the theme's muted neutral at the hues' lightness, so it stays
+ * level with them in light and dark, neutral in Capritarius and warm in Primary.
+ */
+export function hueColour(hue: TagHue): string {
+	return hue === "grey" ? "var(--lc-grey)" : `var(--lk-${hue})`;
 }
 
 export const MAX_WATERFALL_ROWS = 8;

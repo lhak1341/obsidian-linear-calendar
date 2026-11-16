@@ -1,6 +1,5 @@
 import { Plugin, WorkspaceLeaf } from "obsidian";
-import type { Hue } from "@lhak/style";
-import type { CalendarItem, PluginSettings } from "./types";
+import type { CalendarItem, PluginSettings, TagHue } from "./types";
 import { DEFAULT_SETTINGS, VIEW_TYPE_LINEAR_CALENDAR } from "./constants";
 import { LinearCalendarView } from "./view/LinearCalendarView";
 import { LinearCalendarSettingTab } from "./settings";
@@ -72,7 +71,7 @@ export default class LinearCalendarPlugin extends Plugin {
 	}
 
 	/** Public API for other plugins — returns current-year items + each tag's resolved hue name. */
-	getCalendarData(year: number): { items: CalendarItem[]; colorMap: Map<string, Hue> } {
+	getCalendarData(year: number): { items: CalendarItem[]; colorMap: Map<string, TagHue> } {
 		const items = this.scanner.scan(this.settings.defaultMapping, year);
 		const colorMap = buildTagColorMap(items, this.settings.colorMap);
 		return { items, colorMap };

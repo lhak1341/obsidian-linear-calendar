@@ -11,7 +11,7 @@ An [Obsidian](https://obsidian.md) plugin that renders a horizontal, year-at-a-g
   Drag a bar to a new date, or resize its edges to change duration — writes the new dates back to the note's frontmatter. For notes created via the Create event command, the filename's date prefix is renamed to match.
 
 - **Tag-based color and icon coding.**
-  Notes are grouped by `linear-calendar/*` subtags. Each tag takes one of the theme's 8 hues, so colours follow your theme and light or dark mode. Tags take the hues in order, or pin a hue and a Lucide icon per tag from the settings tab. Hues repeat past 8 tags, and the icon and name tell those apart. Colours saved by an older version move to the nearest hue the first time this one loads.
+  Notes are grouped by `linear-calendar/*` subtags. Each tag takes one of the theme's 8 hues, or grey (the theme's neutral), so colours follow your theme and light or dark mode. Tags take the hues in order (Auto), or click a tag in the settings tab to choose its hue and a Lucide icon. Hues repeat past 8 tags, and the icon and name tell those apart. Colours saved by an older version move to the nearest hue (greys to grey) the first time this one loads.
 
 - **Hover tooltips.**
   Shows title, date range, and an optional description property on hover.
