@@ -7,6 +7,8 @@ on:
 
 permissions:
   contents: write
+  id-token: write
+  attestations: write
 
 jobs:
   build:
@@ -28,6 +30,15 @@ jobs:
 
       - name: Build
         run: bun run build
+
+      # Lets anyone check a downloaded asset against this repository with
+      # `gh attestation verify <file> --repo lhak1341/obsidian-linear-calendar`.
+      - uses: actions/attest-build-provenance@v4
+        with:
+          subject-path: |
+            main.js
+            manifest.json
+            styles.css
 
       - name: Create release
         env:

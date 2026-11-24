@@ -1,6 +1,6 @@
 {
 	"name": "obsidian-linear-calendar",
-	"version": "0.2.0",
+	"version": "0.3.0",
 	"description": "A horizontal year-at-a-glance timeline view for Obsidian.",
 	"main": "main.js",
 	"scripts": {
@@ -19,18 +19,21 @@
 		"@types/node": "^26.1.0",
 		"@typescript-eslint/parser": "^8.62.1",
 		"@vitest/coverage-v8": "4.1.11",
-		"builtin-modules": "^5.3.0",
 		"esbuild": "^0.28.1",
 		"eslint": "^10.6.0",
 		"eslint-plugin-obsidianmd": "^0.4.1",
 		"lucide-static": "1.33.0",
-		"moment": "2.29.4",
+		"moment": "2.31.0",
 		"obsidian": "1.13.1",
 		"stylelint": "^18",
 		"typescript": "6.0.3",
-		"vitest": "4.1.11"
+		"vitest": "4.1.12"
 	},
 	"dependencies": {
 		"@lhak/style": "file:./vendor/lhak-style"
+	},
+	"overrides": {
+		"moment": "^2.31.0",
+		"minimatch": "^11.0.1"
 	}
 }
