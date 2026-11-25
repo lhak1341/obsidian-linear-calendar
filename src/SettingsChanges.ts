@@ -1,5 +1,5 @@
 /**
- * Settings-save notifications for every calendar host (the full view and each mounted month
+ * Settings-save notifications for every calendar host (the full view and each mounted rolling
  * strip). Settings are mutated in place and saved through `LinearCalendarPlugin.saveSettings`,
  * which calls `notify()`; hosts repaint from `onChange`. Not debounced: saves are user-paced.
  */

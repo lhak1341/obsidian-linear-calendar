@@ -5,7 +5,7 @@ import type { DailyNotes } from "../DailyNotes";
 import type { EventNotes } from "../EventNotes";
 import type { SettingsChanges } from "../SettingsChanges";
 import { toggleCategory } from "../utils/category";
-import { dayAt, windowEnd, type DayWindow } from "../utils/dayWindow";
+import { dayAt, windowEnd, type DayWindow } from "../utils/viewRange";
 import { CalendarRenderer, RenderConfig } from "./CalendarRenderer";
 import { createInteractions } from "./calendarInteractions";
 
@@ -131,12 +131,8 @@ export class RollingStrip implements RollingStripHandle {
 		this.renderedDay = now.toDateString();
 		const window: DayWindow = { start: dayAt(now, this.pageOffset), days: WINDOW_DAYS };
 		const config: RenderConfig = {
-			year: window.start.getFullYear(),
-			months: [],
-			window,
+			range: { kind: "window", ...window },
 			hiddenCategories: this.hiddenCategories,
-			layout: "horizontal",
-			alignMode: "date",
 			rowHeight: 0,
 		};
 		this.renderer.render(config);

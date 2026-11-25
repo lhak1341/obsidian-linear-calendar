@@ -197,7 +197,7 @@ export class LinearCalendarView extends ItemView {
 		this.rowSlider = slider;
 		this.registerDomEvent(slider, "input", () => {
 			this.rowHeight = Number((slider).value);
-			this.calendarRenderer.updateRowHeight(this.layout, this.rowHeight);
+			this.calendarRenderer.updateRowHeight(this.rowHeight);
 		});
 
 		this.categoriesContainer = toolbar.createDiv({ cls: "lc-categories" });
@@ -241,11 +241,8 @@ export class LinearCalendarView extends ItemView {
 	private renderCalendar(): void {
 		this.syncChrome();
 		const config: RenderConfig = {
-			year: this.currentYear,
-			months: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+			range: { kind: "year", year: this.currentYear, layout: this.layout, alignMode: this.getSettings().alignMode },
 			hiddenCategories: this.hiddenCategories,
-			layout: this.layout,
-			alignMode: this.getSettings().alignMode,
 			rowHeight: this.rowHeight,
 		};
 		this.calendarRenderer.render(config);

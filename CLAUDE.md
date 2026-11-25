@@ -30,6 +30,8 @@ exception is the settings tag chips and their editor popover, which carry `lk-ro
 A new colour must work in all 4 flavor × mode sets: text roles (`--lk-text-*`) flip lightness with the mode while hues stay
 at L 0.55–0.81, and Capritarius neutrals are chroma 0 where Primary's are warm. Derive from a role with relative `oklch` (`--lc-grey`), never use one raw.
 
+`GLOSSARY.md`, `docs/adr/` and every `src/**/CLAUDE.md` name code symbols, and nothing checks them: grep all of them for a symbol you rename or delete (`mountMonthStrip` outlived its module's removal in 68da6f5 by a release, in 4 docs).
+
 Agent skills: issue tracker → `docs/agents/issue-tracker.md`; domain docs →
 `docs/agents/domain.md`; architecture/AI-readiness reports save to this repo's `temp/`,
 not the skill's OS-tmp default.

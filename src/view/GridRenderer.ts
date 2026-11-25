@@ -1,9 +1,8 @@
 import { debounce } from "obsidian";
 import type { TFile } from "obsidian";
-import type { AlignMode, DailyNoteStyle } from "../types";
+import type { DailyNoteStyle } from "../types";
 import { MAX_WATERFALL_COLS_VERT } from "../constants";
-import { daysInMonth } from "../utils/dateUtils";
-import { WINDOW_ROW, windowColumn, windowDays, type DayWindow } from "../utils/dayWindow";
+import type { RangeCell, RangeRow, ResolvedRange } from "../utils/viewRange";
 
 function computeTint(color: string | null, hover: boolean): string {
 	const pct = hover ? 22 : 12;
@@ -18,24 +17,18 @@ function computeSolidColor(color: string | null): string {
 	return color ?? "var(--lk-accent)";
 }
 
-const MONTH_NAMES = [
-	"Jan", "Feb", "Mar", "Apr", "May", "Jun",
-	"Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
-];
-
 const WEEKDAY_ABBR = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
 const WEEKDAY_KANJI = ["日", "月", "火", "水", "木", "金", "土"];
 
 
-export interface MonthRowRef {
-	month: number;
+/** A rendered row of the range: where its bars go and how their spans map onto its grid. */
+export interface RowRef {
+	/** Index into the range's rows; matches `DaySpan.row`. */
+	row: number;
 	barsContainer: HTMLElement;
-	daysInMonth: number;
 	weekdayOffset: number;
 	totalCols: number;
 	layout: "horizontal" | "vertical";
-	/** Set on a day window's row: the 0-based column of a date, null when outside. A month row derives it from the day. */
-	columnOf?: (date: Date) => number | null;
 }
 
 export interface GridRenderCallbacks {
@@ -45,12 +38,7 @@ export interface GridRenderCallbacks {
 }
 
 export interface GridRenderOptions {
-	year: number;
-	months: number[];
-	/** When set, one row of these days replaces `months`. */
-	window?: DayWindow;
-	layout: "horizontal" | "vertical";
-	alignMode: AlignMode;
+	range: ResolvedRange;
 	/** The day's daily note, if it has one. */
 	dailyNoteAt: (year: number, month: number, day: number) => TFile | undefined;
 	dailyNoteColor: string | null;
@@ -59,32 +47,27 @@ export interface GridRenderOptions {
 	callbacks: GridRenderCallbacks;
 }
 
+/** Draws the range's rows as day cells. Which days a row holds, and where, is the range's business. */
 export class GridRenderer {
 	private containerEl: HTMLElement;
-	private monthRows: MonthRowRef[] = [];
+	private rowRefs: RowRef[] = [];
 	private onDayClick?: (year: number, month: number, day: number) => void;
 	private onDayDblClick?: (year: number, month: number, day: number) => void;
 	private onDayContextMenu?: (year: number, month: number, day: number, event: MouseEvent) => void;
 
 	// Render-pass-constant state, set once per render() call and read by every private method below.
-	private year!: number;
-	private alignMode!: AlignMode;
 	private dailyNoteAt!: (year: number, month: number, day: number) => TFile | undefined;
 	private dailyNoteColor!: string | null;
 	private dailyNoteStyle!: DailyNoteStyle;
 	private japaneseWeekdayLabels!: boolean;
-	private totalCols = 0;
-	private colTemplate = "";
 
 	constructor(parentEl: HTMLElement) {
 		this.containerEl = parentEl.createDiv({ cls: "linear-calendar-grid" });
 	}
 
-	render(options: GridRenderOptions): MonthRowRef[] {
-		const { year, months, layout, alignMode, dailyNoteAt, dailyNoteColor, dailyNoteStyle, japaneseWeekdayLabels, callbacks } = options;
+	render(options: GridRenderOptions): RowRef[] {
+		const { range, dailyNoteAt, dailyNoteColor, dailyNoteStyle, japaneseWeekdayLabels, callbacks } = options;
 
-		this.year = year;
-		this.alignMode = alignMode;
 		this.dailyNoteAt = dailyNoteAt;
 		this.dailyNoteColor = dailyNoteColor;
 		this.dailyNoteStyle = dailyNoteStyle;
@@ -94,20 +77,12 @@ export class GridRenderer {
 		this.onDayDblClick = callbacks.onDayDblClick;
 		this.onDayContextMenu = callbacks.onDayContextMenu;
 
-		if (options.window) {
-			this.monthRows = [this.renderWindow(options.window)];
-		} else if (months.length === 1) {
-			this.monthRows = [this.renderSingleMonth(months[0])];
-		} else if (layout === "vertical") {
-			this.monthRows = this.renderVerticalGrid();
-		} else {
-			this.monthRows = this.renderFullYear();
-		}
-
-		return this.monthRows;
+		this.rowRefs = range.layout === "vertical" ? this.renderVertical(range.rows) : this.renderHorizontal(range.rows);
+		return this.rowRefs;
 	}
 
-	private renderFullYear(): MonthRowRef[] {
+	/** One `.lc-month-row` per range row, days along the columns. */
+	private renderHorizontal(rows: RangeRow[]): RowRef[] {
 		this.containerEl.empty();
 		this.containerEl.removeClass("lc-vert-grid");
 		this.containerEl.addClass("linear-calendar-grid");
@@ -115,175 +90,67 @@ export class GridRenderer {
 		this.containerEl.style.removeProperty("grid-template-rows");
 		this.containerEl.style.removeProperty("min-width");
 
-		this.totalCols = this.computeAlignedSize();
-		this.colTemplate = `repeat(${this.totalCols}, 1fr)`;
+		return rows.map((range, row) => {
+			const rowEl = this.containerEl.createDiv({ cls: "lc-month-row" });
+			rowEl.createDiv({ cls: "lc-month-label", text: range.label });
 
-		const rows: MonthRowRef[] = [];
-		for (let m = 0; m < 12; m++) {
-			const days = daysInMonth(this.year, m);
-			rows.push(this.renderMonthRow(m, days));
-		}
+			const daysGrid = rowEl.createDiv({ cls: "lc-days-grid" });
+			daysGrid.style.gridTemplateColumns = `repeat(${range.columns}, 1fr)`;
 
-		return rows;
+			for (const cell of range.cells) {
+				const cellEl = daysGrid.createDiv({ cls: "lc-day-cell" });
+				cellEl.style.gridColumn = `${cell.column + 1}`;
+				this.populateDayCell(cellEl, cell);
+				if (cell.monthStart) {
+					cellEl.addClass("lc-day-month-start");
+					cellEl.querySelector(".lc-day-num")?.setText(`${cell.month + 1}/1`);
+				}
+			}
+			for (const column of range.emptyColumns) {
+				const cellEl = daysGrid.createDiv({ cls: "lc-day-cell" });
+				cellEl.style.gridColumn = `${column + 1}`;
+				cellEl.addClass("lc-day-empty");
+			}
+
+			const barsContainer = daysGrid.createDiv({ cls: "lc-bars-container" });
+			return { row, barsContainer, weekdayOffset: range.weekdayOffset, totalCols: range.columns, layout: "horizontal" };
+		});
 	}
 
-	private renderVerticalGrid(): MonthRowRef[] {
+	/** One column per range row (a year's months), days down the grid rows. */
+	private renderVertical(rows: RangeRow[]): RowRef[] {
 		this.containerEl.empty();
 
 		this.containerEl.removeClass("linear-calendar-grid");
 		this.containerEl.addClass("lc-vert-grid");
 		this.containerEl.style.removeProperty("min-width");
 
-		const totalRows = this.computeAlignedSize();
-		const rows: MonthRowRef[] = [];
-
 		// Month headers (row 1)
-		for (let m = 0; m < 12; m++) {
+		rows.forEach((range, row) => {
 			const header = this.containerEl.createDiv({ cls: "lc-vert-month-header" });
-			header.textContent = MONTH_NAMES[m];
-			header.style.gridColumn = `${m + 1}`;
-		}
+			header.textContent = range.label;
+			header.style.gridColumn = `${row + 1}`;
+		});
 
 		// Per-month containers — each holds day cells (col 1) + bars (cols 2+)
-		for (let m = 0; m < 12; m++) {
-			const days = daysInMonth(this.year, m);
-			const firstDow = new Date(this.year, m, 1).getDay();
-			const weekdayOffset = this.alignMode === "weekday" ? firstDow : 0;
-
+		return rows.map((range, row) => {
 			const monthCol = this.containerEl.createDiv({ cls: "lc-vert-month-col" });
-			monthCol.style.gridColumn = `${m + 1}`;
-			monthCol.style.gridTemplateRows = `repeat(${totalRows}, var(--lc-vert-row-h, 20px))`;
+			monthCol.style.gridColumn = `${row + 1}`;
+			monthCol.style.gridTemplateRows = `repeat(${range.columns}, var(--lc-vert-row-h, 20px))`;
 			monthCol.style.gridTemplateColumns = `22px repeat(${MAX_WATERFALL_COLS_VERT}, 16px)`;
 
-			for (let d = 1; d <= days; d++) {
+			for (const cell of range.cells) {
 				const cellEl = monthCol.createDiv({ cls: "lc-vert-day-cell" });
-				cellEl.style.gridRow = `${weekdayOffset + d}`;
-				cellEl.dataset.day = String(d);
-				this.populateDayCell(cellEl, this.year, m, d, firstDow);
+				cellEl.style.gridRow = `${cell.column + 1}`;
+				cellEl.dataset.day = String(cell.day);
+				this.populateDayCell(cellEl, cell);
 			}
 
-			rows.push({
-				month: m,
-				barsContainer: monthCol,
-				daysInMonth: days,
-				weekdayOffset,
-				totalCols: MAX_WATERFALL_COLS_VERT,
-				layout: "vertical",
-			});
-		}
-
-		return rows;
-	}
-
-	private renderSingleMonth(month: number): MonthRowRef {
-		this.containerEl.empty();
-		this.containerEl.removeClass("lc-vert-grid");
-		this.containerEl.addClass("linear-calendar-grid");
-		this.containerEl.style.removeProperty("grid-template-columns");
-		this.containerEl.style.removeProperty("grid-template-rows");
-		this.containerEl.style.removeProperty("min-width");
-
-		const days = daysInMonth(this.year, month);
-		const firstDow = new Date(this.year, month, 1).getDay();
-		this.totalCols = this.alignMode === "weekday" ? firstDow + days : days;
-		this.colTemplate = `repeat(${this.totalCols}, 1fr)`;
-
-		return this.renderMonthRow(month, days);
-	}
-
-	private renderWindow(window: DayWindow): MonthRowRef {
-		this.containerEl.empty();
-		this.containerEl.removeClass("lc-vert-grid");
-		this.containerEl.addClass("linear-calendar-grid");
-		this.containerEl.style.removeProperty("grid-template-columns");
-		this.containerEl.style.removeProperty("grid-template-rows");
-		this.containerEl.style.removeProperty("min-width");
-
-		this.totalCols = window.days;
-		this.colTemplate = `repeat(${this.totalCols}, 1fr)`;
-
-		const row = this.containerEl.createDiv({ cls: "lc-month-row" });
-		row.createDiv({ cls: "lc-month-label", text: MONTH_NAMES[window.start.getMonth()] });
-		const daysGrid = row.createDiv({ cls: "lc-days-grid" });
-		daysGrid.style.gridTemplateColumns = this.colTemplate;
-
-		windowDays(window).forEach(({ year, month, day }, column) => {
-			const cellEl = daysGrid.createDiv({ cls: "lc-day-cell" });
-			cellEl.style.gridColumn = `${column + 1}`;
-			this.populateDayCell(cellEl, year, month, day, new Date(year, month, 1).getDay());
-			if (day === 1 && column > 0) {
-				cellEl.addClass("lc-day-month-start");
-				cellEl.querySelector(".lc-day-num")?.setText(`${month + 1}/1`);
-			}
+			return { row, barsContainer: monthCol, weekdayOffset: range.weekdayOffset, totalCols: MAX_WATERFALL_COLS_VERT, layout: "vertical" };
 		});
-
-		return {
-			month: WINDOW_ROW,
-			barsContainer: daysGrid.createDiv({ cls: "lc-bars-container" }),
-			daysInMonth: window.days,
-			weekdayOffset: 0,
-			totalCols: window.days,
-			layout: "horizontal",
-			columnOf: (date) => windowColumn(window, date),
-		};
 	}
 
-	private renderMonthRow(month: number, daysInMonth: number): MonthRowRef {
-		const row = this.containerEl.createDiv({ cls: "lc-month-row" });
-
-		row.createDiv({
-			cls: "lc-month-label",
-			text: MONTH_NAMES[month],
-		});
-
-		const daysGrid = row.createDiv({ cls: "lc-days-grid" });
-		daysGrid.style.gridTemplateColumns = this.colTemplate;
-
-		// Compute first-of-month DOW once; derive per-day DOW by modular arithmetic.
-		const firstDow = new Date(this.year, month, 1).getDay();
-		const weekdayOffset = this.alignMode === "weekday" ? firstDow : 0;
-
-		if (this.alignMode === "date") {
-			for (let d = 1; d <= this.totalCols; d++) {
-				const cellEl = daysGrid.createDiv({ cls: "lc-day-cell" });
-				cellEl.style.gridColumn = `${d}`;
-				if (d > daysInMonth) { cellEl.addClass("lc-day-empty"); continue; }
-				this.populateDayCell(cellEl, this.year, month, d, firstDow);
-			}
-		} else {
-			for (let d = 1; d <= daysInMonth; d++) {
-				const cellEl = daysGrid.createDiv({ cls: "lc-day-cell" });
-				cellEl.style.gridColumn = `${weekdayOffset + d}`;
-				this.populateDayCell(cellEl, this.year, month, d, firstDow);
-			}
-		}
-
-		const barsContainer = daysGrid.createDiv({
-			cls: "lc-bars-container",
-		});
-
-		return { month, barsContainer, daysInMonth, weekdayOffset, totalCols: this.totalCols, layout: "horizontal" };
-	}
-
-	private computeAlignedSize(): number {
-		if (this.alignMode !== "weekday") return 31;
-		let max = 31;
-		for (let m = 0; m < 12; m++) {
-			const offset = new Date(this.year, m, 1).getDay();
-			const days = daysInMonth(this.year, m);
-			max = Math.max(max, offset + days);
-		}
-		return max;
-	}
-
-	private populateDayCell(
-		cellEl: HTMLElement,
-		year: number,
-		month: number,
-		day: number,
-		firstDow: number,
-	): void {
-		const dow = (firstDow + day - 1) % 7;
+	private populateDayCell(cellEl: HTMLElement, { year, month, day, weekday: dow }: RangeCell): void {
 		if (dow === 0 || dow === 6) cellEl.addClass("lc-day-weekend");
 
 		const hasDailyNote = this.dailyNoteAt(year, month, day) !== undefined;
@@ -341,7 +208,7 @@ export class GridRenderer {
 		return this.containerEl;
 	}
 
-	getMonthRows(): MonthRowRef[] {
-		return this.monthRows;
+	getRowRefs(): RowRef[] {
+		return this.rowRefs;
 	}
 }

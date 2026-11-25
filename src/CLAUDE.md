@@ -78,7 +78,7 @@
 
 ## Daily notes
 
-- `DailyNotes` (`DailyNotes.ts`) is the only place the daily-note filename format, folder and `YYYY-MM-DD` key are known: hosts call `get(year, month, day)` (0-based month) and `create(...)`, never build a key. The plugin owns one instance (built in `onload`) and passes it to the view and every month strip.
+- `DailyNotes` (`DailyNotes.ts`) is the only place the daily-note filename format, folder and `YYYY-MM-DD` key are known: hosts call `get(year, month, day)` (0-based month) and `create(...)`, never build a key. The plugin owns one instance (built in `onload`) and passes it to the view and every rolling strip.
 - Folder and format come from another plugin's settings, which fire no event, so `get` compares a `folder|format` signature with the one the index was built from and rebuilds on a mismatch. Vault events drop the index only for markdown files under the folder (or a folder holding it); `onChange` notifies debounced (300ms).
 
 ## Note creation

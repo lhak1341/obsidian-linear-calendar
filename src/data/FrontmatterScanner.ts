@@ -94,7 +94,13 @@ export class FrontmatterScanner implements DataSource {
 		for (const entry of this.cache.values()) rawItems.push(...entry.items);
 		const items = expandForYear(rawItems, year);
 
-		items.sort((a, b) => a.dateStart.getTime() - b.dateStart.getTime());
+		// Ties break on path, then kind: the cache's insertion order shifts with every edit and reload,
+		// and packing keeps input order, so without this two same-day bars could swap lanes.
+		items.sort((a, b) =>
+			a.dateStart.getTime() - b.dateStart.getTime() ||
+			compareText(a.filePath, b.filePath) ||
+			compareText(a.kind, b.kind),
+		);
 		this.sortedItems = items;
 		this.sortedYear = year;
 		return items;
@@ -112,4 +118,9 @@ export class FrontmatterScanner implements DataSource {
 		if (reminderItem) items.push(reminderItem);
 		return items;
 	}
+}
+
+/** Code-unit order, so the result is the same whatever the locale. */
+function compareText(a: string, b: string): number {
+	return a < b ? -1 : a > b ? 1 : 0;
 }

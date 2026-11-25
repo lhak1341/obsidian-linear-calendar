@@ -1,14 +1,12 @@
 import { App } from "obsidian";
-import type { CalendarItem, PluginSettings, AlignMode, TagHue } from "../types";
+import type { PluginSettings } from "../types";
 import type { DataSource } from "../data/DataSource";
 import type { DailyNotes } from "../DailyNotes";
 import { buildTagColorMap } from "../utils/colorUtils";
-import { itemsInMonths, visibleItems } from "../utils/category";
-import { layoutBars } from "../utils/barLayout";
-import { itemsInWindow, layoutWindow, type DayWindow } from "../utils/dayWindow";
-import { MAX_WATERFALL_COLS_VERT, MAX_WATERFALL_ROWS } from "../constants";
+import { visibleItems } from "../utils/category";
+import { resolveRange, type ResolvedRange, type ViewRange } from "../utils/viewRange";
 import { GridRenderer } from "./GridRenderer";
-import type { MonthRowRef } from "./GridRenderer";
+import type { RowRef } from "./GridRenderer";
 import { BarRenderer } from "./BarRenderer";
 import type { CalendarInteractions } from "./calendarInteractions";
 import { NowIndicator } from "./NowIndicator";
@@ -16,13 +14,9 @@ import { Tooltip } from "./Tooltip";
 import { CategoryChips } from "./CategoryChips";
 
 export interface RenderConfig {
-	year: number;
-	months: number[];
-	/** When set, the strip shows these days instead of `months`; `year` and `months` are then ignored. */
-	window?: DayWindow;
+	range: ViewRange;
 	hiddenCategories: Set<string>;
-	layout: "horizontal" | "vertical";
-	alignMode: AlignMode;
+	/** Density slider value; see `updateRowHeight`. */
 	rowHeight: number;
 }
 
@@ -38,7 +32,7 @@ export class CalendarRenderer {
 	private nowIndicator: NowIndicator;
 	private tooltip: Tooltip;
 	private categoryChips: CategoryChips | null;
-	private current: RenderConfig | null = null;
+	private current: { range: ResolvedRange; hiddenCategories: Set<string> } | null = null;
 
 	constructor(
 		private app: App,
@@ -58,12 +52,12 @@ export class CalendarRenderer {
 	}
 
 	render(config: RenderConfig): void {
-		this.current = config;
-		const { year, months, window, layout, alignMode, rowHeight } = config;
+		const range = resolveRange(config.range);
+		this.current = { range, hiddenCategories: config.hiddenCategories };
 		const { dailyNoteColor, dailyNoteStyle, japaneseWeekdayLabels } = this.getSettings();
 
-		const monthRows = this.gridRenderer.render({
-			year, months, window, layout, alignMode,
+		const rowRefs = this.gridRenderer.render({
+			range,
 			dailyNoteAt: (y, m, d) => this.dailyNotes.get(y, m, d), dailyNoteColor, dailyNoteStyle, japaneseWeekdayLabels,
 			callbacks: {
 				onDayClick: (y, m, d) => {
@@ -75,54 +69,53 @@ export class CalendarRenderer {
 			},
 		});
 
-		this.updateRowHeight(layout, rowHeight);
+		this.updateRowHeight(config.rowHeight);
 
-		this.renderVisibleBars(config, monthRows);
+		this.renderVisibleBars(rowRefs);
 
-		// NowIndicator manages its own interval lifecycle; only restarts on year change.
-		// A window can start in another year and still hold today, so it never turns the indicator off.
-		this.nowIndicator.render(monthRows, window ? new Date().getFullYear() : year);
+		this.nowIndicator.render(rowRefs, range);
 
 		this.tooltip.attach(this.gridRenderer.getContainer(), this.barRenderer.getBarInfo.bind(this.barRenderer));
 	}
 
 	/** Rebuild only bars and category chips using the config from the last render(); preserves the day-cell grid DOM. */
 	renderBars(): void {
-		const config = this.current;
-		const monthRows = this.gridRenderer.getMonthRows();
-		if (!config || monthRows.length === 0) return;
+		const rowRefs = this.gridRenderer.getRowRefs();
+		if (!this.current || rowRefs.length === 0) return;
 
-		for (const rowRef of monthRows) {
+		for (const rowRef of rowRefs) {
 			// Vertical layout reuses the month column (day cells included) as barsContainer — remove bars only.
 			rowRef.barsContainer.querySelectorAll(":scope > .calendar-bar").forEach((el) => el.remove());
 		}
 
-		this.renderVisibleBars(config, monthRows);
+		this.renderVisibleBars(rowRefs);
 	}
 
-	/** Compute visible items, refresh category chips, and (re)paint bars into monthRows — shared tail of render() and renderBars(). */
-	private renderVisibleBars(config: RenderConfig, monthRows: MonthRowRef[]): void {
-		const { year, months, window, layout, hiddenCategories } = config;
-		const { colorMap, iconMap } = this.getSettings();
+	/**
+	 * Scan the range's items, refresh category chips (they count everything the range covers),
+	 * and (re)paint the visible bars into rowRefs — shared tail of render() and renderBars().
+	 */
+	private renderVisibleBars(rowRefs: RowRef[]): void {
+		if (!this.current) return;
+		const { range, hiddenCategories } = this.current;
+		const { colorMap, iconMap, defaultMapping } = this.getSettings();
 
-		const { allItems, items, tagColorMap } = this.computeVisibleItems(config, colorMap);
-		// A window's scan is already limited to what it shows.
-		this.categoryChips?.update(window ? allItems : itemsInMonths(allItems, year, months), tagColorMap, hiddenCategories);
+		const allItems = range.items((year) => this.source.scan(defaultMapping, year));
+		const tagColorMap = buildTagColorMap(allItems, colorMap);
+		this.categoryChips?.update(allItems, tagColorMap, hiddenCategories);
 
-		const barLayout = window
-			? layoutWindow(items, window, MAX_WATERFALL_ROWS)
-			: layoutBars(items, year, layout === "vertical" ? MAX_WATERFALL_COLS_VERT : MAX_WATERFALL_ROWS);
+		const barLayout = range.layoutBars(visibleItems(allItems, hiddenCategories));
 		const tagIconMap = new Map(Object.entries(iconMap));
-		this.barRenderer.render(monthRows, barLayout, tagColorMap, tagIconMap);
+		this.barRenderer.render(rowRefs, barLayout, tagColorMap, tagIconMap);
 	}
 
 	/**
 	 * Applies a row height by setting one CSS variable, with no rebuild. The density slider
 	 * calls this on every input event, so folding it into render() would rebuild every day cell per tick.
 	 */
-	updateRowHeight(layout: "horizontal" | "vertical", rowHeight: number): void {
+	updateRowHeight(rowHeight: number): void {
 		const grid = this.gridRenderer.getContainer();
-		if (layout === "vertical") {
+		if (this.current?.range.layout === "vertical") {
 			grid.style.setProperty("--lc-vert-row-h", `${20 + rowHeight * 0.4}px`);
 		} else {
 			grid.style.setProperty("--lc-row-min", `${rowHeight * 3}px`);
@@ -133,19 +126,5 @@ export class CalendarRenderer {
 		this.barRenderer.cleanup();
 		this.nowIndicator.cleanup();
 		this.tooltip.cleanup();
-	}
-
-	/** Scan, resolve tag colors, and filter out hidden categories — shared by render() and renderBars(). No DOM writes. */
-	private computeVisibleItems(
-		{ year, window, hiddenCategories }: RenderConfig,
-		colorMap: Record<string, TagHue>,
-	): { allItems: CalendarItem[]; items: CalendarItem[]; tagColorMap: Map<string, TagHue> } {
-		const scan = (y: number) => this.source.scan(this.getSettings().defaultMapping, y);
-		const allItems = window ? itemsInWindow(window, scan) : scan(year);
-		const tagColorMap = buildTagColorMap(allItems, colorMap);
-
-		const items = visibleItems(allItems, hiddenCategories);
-
-		return { allItems, items, tagColorMap };
 	}
 }

@@ -78,7 +78,7 @@ export default class LinearCalendarPlugin extends Plugin {
 	}
 
 	/**
-	 * Public API — mount a full single-month calendar strip into `container`,
+	 * Public API — mount a rolling calendar strip into `container`
 	 * of the next 30 days, starting today. Uses LC's own renderers so styles, bars,
 	 * tooltips, and the now-indicator all work exactly as in the full view.
 	 * `onRangeChange` fires after every render (mount, navigation, data change,

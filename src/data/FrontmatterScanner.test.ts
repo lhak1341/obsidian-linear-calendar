@@ -92,6 +92,18 @@ describe("scan", () => {
 
 		expect(next[0].dateStart.getMonth()).toBe(4);
 	});
+
+	it("orders same-day items by path, whatever order the cache met them in", () => {
+		const { scanner, notes, fileFor, emit } = setup();
+		notes.set("b.md", calendarNote());
+		notes.set("a.md", calendarNote());
+		expect(scanner.scan(mapping, 2026).map((i) => i.filePath)).toEqual(["a.md", "b.md"]);
+
+		// A change drops b's entry and the next scan re-adds it last; the order must not follow.
+		emit("changed", fileFor("b.md"));
+		notes.set("c.md", calendarNote({ datestart: "2026-02-01" }));
+		expect(scanner.scan(mapping, 2026).map((i) => i.filePath)).toEqual(["c.md", "a.md", "b.md"]);
+	});
 });
 
 describe("scan after a metadata change", () => {

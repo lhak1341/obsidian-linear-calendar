@@ -3,8 +3,8 @@ import type { CalendarItem, TagHue } from "../types";
 import type { CalendarInteractions } from "./calendarInteractions";
 import { resolveLucideIconId } from "../lucide-icons";
 import { HUE_ORDER, hueColour } from "../constants";
-import type { MonthRowRef } from "./GridRenderer";
-import { gridArea, type BarLayout, type MonthSegment } from "../utils/barLayout";
+import type { RowRef } from "./GridRenderer";
+import { gridArea, type BarLayout, type RowSegment } from "../utils/barLayout";
 import { categoryOf } from "../utils/category";
 import { canDrag } from "../utils/dragUtils";
 import { DragHandler } from "./DragHandler";
@@ -31,19 +31,19 @@ export class BarRenderer {
 	}
 
 	render(
-		monthRows: MonthRowRef[],
+		rowRefs: RowRef[],
 		layout: BarLayout,
 		tagColorMap: Map<string, TagHue>,
 		tagIconMap: Map<string, string>,
 	): void {
-		const isVertical = monthRows[0]?.layout === "vertical";
+		const isVertical = rowRefs[0]?.layout === "vertical";
 
 		this.dragHandler.cleanup();
-		const dragScene = { monthRows, layout };
+		const dragScene = { rowRefs, layout };
 
-		for (const rowRef of monthRows) {
-			for (const { segment, row } of layout.placementsFor(rowRef.month)) {
-				const barEl = this.createBarEl(rowRef, segment, row, isVertical);
+		for (const rowRef of rowRefs) {
+			for (const { segment, lane } of layout.placementsFor(rowRef.row)) {
+				const barEl = this.createBarEl(rowRef, segment, lane, isVertical);
 				this.decorateBar(barEl, segment, tagColorMap, tagIconMap);
 
 				barEl.addEventListener("click", (evt) => {
@@ -65,9 +65,9 @@ export class BarRenderer {
 	}
 
 	private createBarEl(
-		rowRef: MonthRowRef,
-		segment: MonthSegment,
-		row: number,
+		rowRef: RowRef,
+		segment: RowSegment,
+		lane: number,
 		isVertical: boolean,
 	): HTMLElement {
 		const isSingleDay = isVertical && segment.endDay === segment.startDay;
@@ -78,7 +78,7 @@ export class BarRenderer {
 			attr: { tabindex: "0" },
 		});
 
-		const area = gridArea(segment, row, rowRef.weekdayOffset, rowRef.layout);
+		const area = gridArea(segment, lane, rowRef.weekdayOffset, rowRef.layout);
 		barEl.style.gridColumn = area.gridColumn;
 		barEl.style.gridRow = area.gridRow;
 		return barEl;
@@ -86,7 +86,7 @@ export class BarRenderer {
 
 	private decorateBar(
 		barEl: HTMLElement,
-		segment: MonthSegment,
+		segment: RowSegment,
 		tagColorMap: Map<string, TagHue>,
 		tagIconMap: Map<string, string>,
 	): void {
