@@ -124,50 +124,15 @@ describe("locate", () => {
 	});
 });
 
-describe("items", () => {
-	it("year: hands back its own year's scan", () => {
-		const years: number[] = [];
-		const items = [event("a", new Date(2026, 3, 1))];
-		expect(resolveRange(year(2026)).items((y) => { years.push(y); return items; })).toBe(items);
-		expect(years).toEqual([2026]);
+describe("first and last", () => {
+	it("year: Jan 1 to Dec 31", () => {
+		const range = resolveRange(year(2026));
+		expect([range.first, range.last]).toEqual([new Date(2026, 0, 1), new Date(2026, 11, 31)]);
 	});
 
-	it("window: keeps only items touching it", () => {
-		const inside = event("in", new Date(2026, 10, 8));
-		const before = event("before", new Date(2026, 10, 5));
-		const after = event("after", new Date(2026, 11, 6));
-		const overlapping = event("over", new Date(2026, 10, 1), new Date(2026, 10, 6));
-		expect(resolveRange(win(nov6)).items(() => [inside, before, after, overlapping])).toEqual([inside, overlapping]);
-	});
-
-	it("window: asks for one year when it stays inside it", () => {
-		const years: number[] = [];
-		resolveRange(win(nov6)).items((y) => { years.push(y); return []; });
-		expect(years).toEqual([2026]);
-	});
-
-	it("window: asks for both years when it crosses New Year", () => {
-		const years: number[] = [];
-		resolveRange(win(dec20)).items((y) => { years.push(y); return []; });
-		expect(years).toEqual([2026, 2027]);
-	});
-
-	it("window: returns an event across New Year once, though each year's scan clamps its own copy", () => {
-		const fullStart = new Date(2026, 11, 30);
-		const fullEnd = new Date(2027, 0, 2);
-		const scan = (y: number) => [
-			y === 2026
-				? event("trip", fullStart, new Date(2026, 11, 31), { fullStart, fullEnd })
-				: event("trip", new Date(2027, 0, 1), fullEnd, { fullStart, fullEnd }),
-		];
-		expect(resolveRange(win(dec20)).items(scan)).toHaveLength(1);
-	});
-
-	it("window: keeps a note's two yearly recurrences apart", () => {
-		const first = new Date(2026, 11, 25);
-		const second = new Date(2027, 11, 25);
-		const scan = (y: number) => [event("birthday", y === 2026 ? first : second, undefined, { kind: "recurrence", originYear: 2000 } as Partial<CalendarItem>)];
-		expect(resolveRange(win({ start: new Date(2026, 11, 1), days: 400 })).items(scan)).toHaveLength(2);
+	it("window: its start to its last day, across New Year, at midnight", () => {
+		const range = resolveRange(win({ start: new Date(2026, 11, 20, 15, 30), days: 30 }));
+		expect([range.first, range.last]).toEqual([new Date(2026, 11, 20), new Date(2027, 0, 18)]);
 	});
 });
 
@@ -178,6 +143,11 @@ describe("layoutBars", () => {
 		const at = new Date(2026, 3, 10);
 		expect(resolveRange(year(2026)).layoutBars(stack(10, at)).placementsFor(3)).toHaveLength(MAX_WATERFALL_ROWS);
 		expect(resolveRange(year(2026, "date", "vertical")).layoutBars(stack(10, at)).placementsFor(3)).toHaveLength(MAX_WATERFALL_COLS_VERT);
+	});
+
+	it("year: clips a span begun last year to January's first day", () => {
+		const [placement] = resolveRange(year(2026)).layoutBars([event("a", new Date(2025, 11, 30), new Date(2026, 0, 3))]).placementsFor(0);
+		expect(placement?.segment).toMatchObject({ row: 0, startDay: 1, endDay: 3 });
 	});
 
 	it("window: places a bar by its column, using 1-based days", () => {
@@ -195,10 +165,8 @@ describe("layoutBars", () => {
 		expect(placement?.segment).toMatchObject({ startDay: 1, endDay: 30 });
 	});
 
-	it("window: measures an across-New-Year event by its full span, not its clamped copy", () => {
-		const fullStart = new Date(2026, 11, 30);
-		const fullEnd = new Date(2027, 0, 2);
-		const item = event("trip", fullStart, new Date(2026, 11, 31), { fullStart, fullEnd });
+	it("window: places an across-New-Year event across it", () => {
+		const item = event("trip", new Date(2026, 11, 30), new Date(2027, 0, 2));
 		const [placement] = resolveRange(win(dec20)).layoutBars([item]).placementsFor(0);
 		expect(placement?.segment).toMatchObject({ startDay: 11, endDay: 14 });
 	});

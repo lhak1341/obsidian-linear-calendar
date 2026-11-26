@@ -75,6 +75,11 @@ export function carryDateForward(anchor: Date, target: Date, newAnchor: Date): D
 	return new Date(newAnchor.getFullYear(), newAnchor.getMonth(), newAnchor.getDate() + dayDelta);
 }
 
+/** The date's calendar day as a whole number (days since the epoch, local date); time of day and DST never shift it. */
+export function dayNumber(d: Date): number {
+	return Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 86_400_000;
+}
+
 export function formatDateRange(start: Date, end: Date): string {
 	const fmt = (d: Date) =>
 		`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;

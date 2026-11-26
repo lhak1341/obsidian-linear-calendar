@@ -1,6 +1,6 @@
 # Reminder feature — spec
 
-Status: drafted via wayfinder grilling session, 2026-08-21. Not yet built.
+Status: drafted via wayfinder grilling session, 2026-08-21. Built in `6325cdf` (ghost bars) and `3d04e3f` (modal date field). Kept as the design record and not maintained: the code, `src/data/CLAUDE.md` and `GLOSSARY.md` describe reminders now, and names or line numbers below may be stale.
 
 ## Motivation
 

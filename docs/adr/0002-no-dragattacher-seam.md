@@ -11,3 +11,7 @@ The real testability move was extracting `assignRowsForMonth` to `src/utils/rowA
 ## Addendum: the pure side deepened
 
 `assignRowsForMonth` (`rowAssignment.ts`), `segmentByMonth.ts` and the ghost helpers in `dragUtils.ts` were merged into `src/utils/barLayout.ts` (`layoutBars`, `previewMove`, `gridArea`). It is the same move this ADR endorsed, taken further: bars and drag ghosts now share one splitter and one row cap. `DragHandler` is still constructed by `BarRenderer` and still owns all DOM; no seam was added.
+
+## Addendum: the drag session
+
+`dragUtils.ts` became `dragSession.ts`: a pure `DragSession` now makes every drag decision (click-or-drag threshold, pointer to day, whether a release writes), and `DragHandler` is its DOM adapter. The session is an internal seam of `DragHandler`, created there, never injected; there is still no `DragAttacher`, so this decision stands.

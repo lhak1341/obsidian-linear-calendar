@@ -9,6 +9,7 @@
 - `mountRollingStrip` is a one-line `new RollingStrip(...)`; the strip itself lives in `view/RollingStrip.ts` (a class implementing `RollingStripHandle`). `onRangeChange` fires after every full render (mount, paging, midnight, resize, a daily-note or settings change), not only on navigation; not after an item change or a category toggle, which repaint bars only and cannot move the window. The dashboard uses it only for a range label (`CalendarPanel.ts`).
 - Types used only internally by those two (e.g. `RenderConfig`) are **not** part of the
   coordinated surface.
+- `getCalendarData(year)` returns every item touching `year`, each with its own span (not cut to the year), so a note across New Year can appear twice (its tail and that year's copy).
 - The dashboard only calls `mountRollingStrip`, never `getCalendarData` — `CalendarItem`'s
   field shape (e.g. `kind`/`originYear`) is free to reshape without cross-repo
   coordination.

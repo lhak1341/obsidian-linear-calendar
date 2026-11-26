@@ -9,11 +9,9 @@ export type DropCommitFn = (filePath: string, oldStart: Date, newStart: Date, ne
 export interface CalendarItemBase {
 	filePath: string;
 	title: string;
+	/** The item's own span, never cut to what a view shows (a recurrence's is its projected span); layouts clip it per row. */
 	dateStart: Date;
 	dateEnd: Date;
-	/** The note's own span before `expandForYear` clamps `dateStart`/`dateEnd` to the viewed year. Drag and tooltip read these. */
-	fullStart?: Date;
-	fullEnd?: Date;
 	color?: string;
 	tags?: string[];
 	icon?: string;
@@ -29,7 +27,7 @@ export interface CalendarItemBase {
 export type CalendarItem = CalendarItemBase &
 	({ kind: "event" | "reminder" } | { kind: "recurrence"; originYear: number });
 
-/** What a note yields before `expandForYear` decides per-year kind. `anniversary` = repeats yearly. */
+/** What a note yields before `expandForSpan` decides per-year kind. `anniversary` = repeats yearly. */
 export type RawCalendarItem = CalendarItemBase & { kind: "event" | "reminder"; anniversary?: boolean };
 
 export interface ColumnMapping {

@@ -2,11 +2,11 @@
 
 ## Obsidian tag format (API gotcha)
 
-Dual-prefix tag gating (`frontmatter.tags` vs `cache.tags[].tag`) — see `utils/CLAUDE.md`. The gate check itself lives in `frontmatterMapper.ts`; `FrontmatterScanner.processFile` only extracts raw tags and delegates.
+Dual-prefix tag gating (`frontmatter.tags` vs `cache.tags[].tag`) — see `utils/CLAUDE.md`. The gate check itself lives in `utils/frontmatterMapper.ts`; `FrontmatterScanner.processFile` only extracts raw tags and delegates.
 
 ## Change detection (DataSource.onChange)
 
-- `FrontmatterScanner` owns it: it registers its own `metadataCache` "changed" and vault `delete`/`rename` listeners (via the `Component` passed to its constructor) and tells subscribers through `onChange(cb)`, debounced 300ms, no arguments. `CalendarRenderer` subscribes (not its hosts) and repaints bars by calling `scan` again. It is the only path by which a write reaches the calendar: no `EventNotes` caller repaints on completion.
+- `FrontmatterScanner` owns it: it registers its own `metadataCache` "changed" and vault `delete`/`rename` listeners (via the `Component` passed to its constructor) and tells subscribers through `onChange(cb)`, debounced 300ms, no arguments. `CalendarRenderer` subscribes (not its hosts) and repaints bars by calling `items` again. It is the only path by which a write reaches the calendar: no `EventNotes` caller repaints on completion.
 - It emits only for calendar notes: a "changed" file that is a known entry (so a note losing its gate tag still counts) or carries the gate tag now, and a delete or rename of a known entry. Vault `create` is not listened to — a new calendar note triggers "changed" once indexed.
 - The "changed" callback signature is `(file: TFile, data, oldData)` — always capture the `TFile` arg; `() => handler()` silently discards it and defeats file-level filtering.
 - Daily-note changes are not item change: `DailyNotes` (`src/DailyNotes.ts`) has its own `onChange`, which `CalendarRenderer` subscribes to as well (a full rebuild).
@@ -29,8 +29,12 @@ A click on a reminder ghost promotes (`BarRenderer`), so a double-click asks twi
 
 ## One note, multiple items
 
-`processFile()` can return more than one `CalendarItem` for a single note: the real item, plus a synthetic reminder ghost (`deriveReminderItem()` in `frontmatterMapper.ts`) when the note also has `remindProp` set. `CacheEntry.items` is an array for exactly this reason — don't assume 1:1 file-to-item.
+`processFile()` can return more than one `CalendarItem` for a single note: the real item, plus a synthetic reminder ghost (`deriveReminderItem()` in `utils/frontmatterMapper.ts`) when the note also has `remindProp` set. `CacheEntry.items` is an array for exactly this reason — don't assume 1:1 file-to-item.
 
 ## Cache lifecycle
 
-The scanner keys its cache on the mapping it was last given (`JSON.stringify(mapping)`), so a changed mapping empties it on the next `scan` — nothing calls an invalidate on settings save. Eviction on delete/rename is internal. `DataSource` is just `scan` + `onChange`.
+The scanner reads the mapping through the `getMapping` getter it is constructed with, and keys its cache on it (`JSON.stringify(mapping)`), so a changed mapping empties it on the next `items` call — nothing calls an invalidate on settings save. Eviction on delete/rename is internal. `DataSource` is just `items(first, last)` + `onChange`.
+
+## Items answer a day span
+
+`items(first, last)` returns every item touching those calendar days, each with its own span: nothing is clamped to a year. `expandForSpan` (`utils/calendarItems.ts`, tested) holds the anniversary rules: one copy per year whose copy touches the span, so a note across New Year shows its tail in January. Items sort by their own start, then path, then kind; the sorted result is cached for one `first|last` pair, so two hosts asking different spans re-sort on every alternation.

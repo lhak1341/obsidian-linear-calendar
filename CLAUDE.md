@@ -30,7 +30,7 @@ exception is the settings tag chips and their editor popover, which carry `lk-ro
 A new colour must work in all 4 flavor × mode sets: text roles (`--lk-text-*`) flip lightness with the mode while hues stay
 at L 0.55–0.81, and Capritarius neutrals are chroma 0 where Primary's are warm. Derive from a role with relative `oklch` (`--lc-grey`), never use one raw.
 
-`GLOSSARY.md`, `docs/adr/` and every `src/**/CLAUDE.md` describe code, and nothing checks them: grep all of them for a symbol you rename or delete, and for the old owner's name next to the duty's verb when a responsibility moves, since prose about a moved duty names no deleted symbol (`mountMonthStrip` outlived its module by a release in 4 docs; `data/CLAUDE.md` kept "both hosts subscribe" after subscriptions moved into `CalendarRenderer`).
+`GLOSSARY.md`, `docs/adr/` and every `src/**/CLAUDE.md` describe code. `src/docs.test.ts` fails on a backticked symbol or `.ts` path in `GLOSSARY.md` or a `src/**/CLAUDE.md` that the code no longer has (an external name goes on its allowlist). ADRs and prose are not checked: grep all of these docs for a symbol you rename or delete, and for the old owner's name next to the duty's verb when a responsibility moves, since prose about a moved duty names no deleted symbol (`mountMonthStrip` outlived its module by a release in 4 docs; `data/CLAUDE.md` kept "both hosts subscribe" after subscriptions moved into `CalendarRenderer`).
 
 Agent skills: issue tracker → `docs/agents/issue-tracker.md`; domain docs →
 `docs/agents/domain.md`; architecture/AI-readiness reports save to this repo's `temp/`,

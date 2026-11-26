@@ -6,7 +6,7 @@ import { HUE_ORDER, hueColour } from "../constants";
 import type { RowRef } from "./GridRenderer";
 import { gridArea, type BarLayout, type RowSegment } from "../utils/barLayout";
 import { categoryOf } from "../utils/category";
-import { canDrag } from "../utils/dragUtils";
+import { canDrag } from "../utils/dragSession";
 import { DragHandler } from "./DragHandler";
 
 /** Data a bar carries for consumers (e.g. Tooltip) that need it without touching the DOM. */

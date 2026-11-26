@@ -1,7 +1,7 @@
 import type { AlignMode, CalendarItem } from "../types";
 import { MAX_WATERFALL_COLS_VERT, MAX_WATERFALL_ROWS } from "../constants";
 import { layoutBars, packSegments, type BarLayout, type DaySpan, type GhostPlacement, type RowSegment } from "./barLayout";
-import { daysInMonth } from "./dateUtils";
+import { dayNumber, daysInMonth } from "./dateUtils";
 
 /** A run of consecutive calendar days, possibly crossing a month or year. */
 export interface DayWindow {
@@ -51,8 +51,9 @@ export interface RangePosition {
 export interface ResolvedRange {
 	readonly layout: "horizontal" | "vertical";
 	readonly rows: RangeRow[];
-	/** Items the range covers, from a source that answers one year at a time. Feeds bars and chip counts. */
-	items(scan: (year: number) => CalendarItem[]): CalendarItem[];
+	/** First and last day the range shows: what to ask the data source for (bars and chip counts). */
+	readonly first: Date;
+	readonly last: Date;
 	/** Bars packed into the range's rows; `DaySpan.row` is a row index. */
 	layoutBars(items: CalendarItem[]): BarLayout;
 	/** The cell holding `date`, or null when the range does not show it. Time of day is ignored. */
@@ -85,7 +86,8 @@ function resolveYear(year: number, layout: "horizontal" | "vertical", alignMode:
 	return {
 		layout,
 		rows,
-		items: (scan) => scan(year),
+		first: new Date(year, 0, 1),
+		last: new Date(year, 11, 31),
 		layoutBars: (items) => layoutBars(items, year, layout === "vertical" ? MAX_WATERFALL_COLS_VERT : MAX_WATERFALL_ROWS),
 		locate: (date) =>
 			date.getFullYear() === year
@@ -116,17 +118,14 @@ function resolveWindow(window: DayWindow): ResolvedRange {
 	return {
 		layout: "horizontal",
 		rows: [row],
-		items: (scan) => itemsInWindow(window, scan),
+		first: dayAt(window.start, 0),
+		last: windowEnd(window),
 		layoutBars: (items) => layoutWindow(items, window, MAX_WATERFALL_ROWS),
 		locate: (date) => {
 			const column = dayNumber(date) - dayNumber(window.start);
 			return column >= 0 && column < window.days ? { row: WINDOW_ROW, column } : null;
 		},
 	};
-}
-
-function dayNumber(d: Date): number {
-	return Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 86_400_000;
 }
 
 /** Calendar date `offset` days from `date`'s, at local midnight; DST never shifts the day. */
@@ -151,35 +150,11 @@ function spanInWindow(window: DayWindow, from: Date, to: Date): DaySpan | null {
 	};
 }
 
-const fullStart = (item: CalendarItem): Date => item.fullStart ?? item.dateStart;
-const fullEnd = (item: CalendarItem): Date => item.fullEnd ?? item.dateEnd;
-
-/**
- * A scan clamps items to its year, so an event across New Year comes back once per year: the two
- * are one item, told apart from two recurrences by their full start.
- */
-function itemsInWindow(window: DayWindow, scan: (year: number) => CalendarItem[]): CalendarItem[] {
-	const firstYear = window.start.getFullYear();
-	const lastYear = windowEnd(window).getFullYear();
-	const seen = new Set<string>();
-	const items: CalendarItem[] = [];
-	for (let year = firstYear; year <= lastYear; year++) {
-		for (const item of scan(year)) {
-			if (!spanInWindow(window, fullStart(item), fullEnd(item))) continue;
-			const key = `${item.filePath}\0${dayNumber(fullStart(item))}\0${item.kind}`;
-			if (seen.has(key)) continue;
-			seen.add(key);
-			items.push(item);
-		}
-	}
-	return items;
-}
-
 /** One row of columns, so a dragged bar has only its home slice and never a ghost. */
 function layoutWindow(items: CalendarItem[], window: DayWindow, maxLanes: number): BarLayout {
 	const segments: RowSegment[] = [];
 	for (const item of items) {
-		const span = spanInWindow(window, fullStart(item), fullEnd(item));
+		const span = spanInWindow(window, item.dateStart, item.dateEnd);
 		if (span) segments.push({ ...span, item });
 	}
 	const placements = packSegments(segments, maxLanes);

@@ -1,10 +1,7 @@
 import type { RowRef } from "./GridRenderer";
 import { gridArea, type BarLayout, type RowSegment } from "../utils/barLayout";
-import { newDatesFromDelta } from "../utils/dragUtils";
+import { startDragSession, type DragMode, type DragSession, type DragSpan } from "../utils/dragSession";
 import type { DropCommitFn } from "../types";
-
-/** Minimum pointer movement before an ambiguous mousedown (bar body) commits to a drag. */
-const DRAG_THRESHOLD_PX = 4;
 
 /** What one `BarRenderer.render` pass hands every bar it attaches: the rendered rows and the bar layout drags are previewed against. */
 export interface DragScene {
@@ -13,21 +10,26 @@ export interface DragScene {
 }
 
 interface DragContext {
+	session: DragSession;
 	barEl: HTMLElement;
 	/** The bar's `--lc-hue`, copied onto its ghosts. */
 	barHue: string;
 	barLabel: string;
 	filePath: string;
 	originalStart: Date;
-	originalEnd: Date;
 	/** The range row the dragged bar's own slice is in. */
 	homeRow: number;
 	scene: DragScene;
-	mode: "resize-start" | "resize-end" | "move";
+	mode: DragMode;
 	startX: number;
-	dayWidth: number;
+	startY: number;
 }
 
+/**
+ * The DOM side of a drag: listeners, cursor and dragging classes, the ghost pool, grid styling.
+ * It decides nothing: whether a press is a click, which day the pointer is on, and whether a
+ * release writes are the `DragSession`'s (`utils/dragSession.ts`, tested).
+ */
 export class DragHandler {
 	private ctx: DragContext | null = null;
 	/** Reusable ghost pool — update in place, hide extras */
@@ -35,7 +37,6 @@ export class DragHandler {
 	private activeGhostCount = 0;
 	private boundMouseMove: (e: MouseEvent) => void;
 	private boundMouseUp: (e: MouseEvent) => void;
-	private prevDayDelta: number | null = null;
 
 	constructor(private onDropCommit: DropCommitFn) {
 		this.boundMouseMove = this.onMouseMove.bind(this);
@@ -46,108 +47,70 @@ export class DragHandler {
 		const leftHandle = barEl.createDiv({ cls: "lc-drag-handle lc-drag-handle-left" });
 		const rightHandle = barEl.createDiv({ cls: "lc-drag-handle lc-drag-handle-right" });
 
-		const initDrag = (e: MouseEvent, mode: DragContext["mode"]) => {
+		const onHandle = (e: MouseEvent, mode: DragMode) => {
 			e.stopPropagation();
 			e.preventDefault();
-			this.startDrag(e, barEl, segment, scene, mode);
+			this.press(e, barEl, segment, scene, mode, true);
 		};
+		leftHandle.addEventListener("mousedown", (e) => onHandle(e, "resize-start"));
+		rightHandle.addEventListener("mousedown", (e) => onHandle(e, "resize-end"));
 
-		leftHandle.addEventListener("mousedown", (e) => initDrag(e, "resize-start"));
-		rightHandle.addEventListener("mousedown", (e) => initDrag(e, "resize-end"));
-
+		// A body press is ambiguous with a plain click (which opens the note, see BarRenderer's
+		// click listener): the session arms only once the pointer has really moved.
 		barEl.addEventListener("mousedown", (e) => {
 			if (e.button !== 0) return;
 			if ((e.target as HTMLElement).classList.contains("lc-drag-handle")) return;
-			this.watchForDragThreshold(e, (me) => {
-				e.preventDefault();
-				this.startDrag(e, barEl, segment, scene, "move");
-				this.onMouseMove(me);
-			});
+			this.press(e, barEl, segment, scene, "move", false);
 		});
 	}
 
-	/**
-	 * Bar-body mousedown is ambiguous with a plain click (which opens the note,
-	 * see BarRenderer's click listener) — wait for real pointer movement before
-	 * committing to a drag. Drag handles have no such ambiguity and call
-	 * startDrag() directly from attach().
-	 */
-	private watchForDragThreshold(e: MouseEvent, onExceeded: (me: MouseEvent) => void): void {
-		const sx = e.clientX;
-		const sy = e.clientY;
-		const onMove = (me: MouseEvent) => {
-			if (Math.abs(me.clientX - sx) > DRAG_THRESHOLD_PX || Math.abs(me.clientY - sy) > DRAG_THRESHOLD_PX) {
-				activeDocument.removeEventListener("mousemove", onMove);
-				activeDocument.removeEventListener("mouseup", onUp);
-				onExceeded(me);
-			}
-		};
-		const onUp = () => {
-			activeDocument.removeEventListener("mousemove", onMove);
-			activeDocument.removeEventListener("mouseup", onUp);
-		};
-		activeDocument.addEventListener("mousemove", onMove);
-		activeDocument.addEventListener("mouseup", onUp);
-	}
-
-	private startDrag(
-		e: MouseEvent,
-		barEl: HTMLElement,
-		segment: RowSegment,
-		scene: DragScene,
-		mode: DragContext["mode"],
-	): void {
+	private press(e: MouseEvent, barEl: HTMLElement, segment: RowSegment, scene: DragScene, mode: DragMode, armed: boolean): void {
 		const daysGrid = barEl.closest(".lc-days-grid");
 		if (!daysGrid) return;
 		const totalCols = scene.rowRefs.find((r) => r.row === segment.row)?.totalCols ?? 31;
-		const dayWidth = daysGrid.clientWidth / totalCols;
+		const { dateStart, dateEnd } = segment.item;
+		const session = startDragSession({ start: dateStart, end: dateEnd }, mode, daysGrid.clientWidth / totalCols, armed);
+		if (!session) return;
 
 		this.ctx = {
+			session,
 			barEl,
 			barHue: barEl.style.getPropertyValue("--lc-hue"),
 			barLabel: segment.item.title,
 			filePath: segment.item.filePath,
-			// Unclamped span: dateStart/dateEnd are cut to the viewed year and would be written back.
-			originalStart: new Date(segment.item.fullStart ?? segment.item.dateStart),
-			originalEnd: new Date(segment.item.fullEnd ?? segment.item.dateEnd),
+			originalStart: new Date(dateStart),
 			homeRow: segment.row,
 			scene,
 			mode,
 			startX: e.clientX,
-			dayWidth,
+			startY: e.clientY,
 		};
-		this.prevDayDelta = null;
-
-		barEl.addClass("lc-dragging");
-		activeDocument.body.addClass(mode === "move" ? "lc-drag-cursor-grabbing" : "lc-drag-cursor-resize");
+		if (session.armed) this.showDragging();
 
 		activeDocument.addEventListener("mousemove", this.boundMouseMove);
 		activeDocument.addEventListener("mouseup", this.boundMouseUp);
 	}
 
-	private newDatesFromDelta(dayDelta: number): { newStart: Date; newEnd: Date } {
-		const { originalStart, originalEnd, mode } = this.ctx!;
-		return newDatesFromDelta(originalStart, originalEnd, mode, dayDelta);
+	private showDragging(): void {
+		if (!this.ctx) return;
+		this.ctx.barEl.addClass("lc-dragging");
+		activeDocument.body.addClass(this.ctx.mode === "move" ? "lc-drag-cursor-grabbing" : "lc-drag-cursor-resize");
 	}
 
 	private onMouseMove(e: MouseEvent): void {
 		if (!this.ctx) return;
-
-		const dx = e.clientX - this.ctx.startX;
-		const dayDelta = Math.round(dx / this.ctx.dayWidth);
-
-		if (dayDelta === this.prevDayDelta) return;
-		this.prevDayDelta = dayDelta;
-
-		this.updateVisuals(dayDelta);
+		const { session } = this.ctx;
+		const wasArmed = session.armed;
+		const span = session.pointer(e.clientX - this.ctx.startX, e.clientY - this.ctx.startY);
+		if (!wasArmed && session.armed) this.showDragging();
+		if (span) this.updateVisuals(span);
 	}
 
-	private updateVisuals(dayDelta: number): void {
+	private updateVisuals(span: DragSpan): void {
 		if (!this.ctx) return;
 		const { barEl, barHue, barLabel, homeRow, scene } = this.ctx;
 
-		const { newStart, newEnd } = this.newDatesFromDelta(dayDelta);
-		const { home, ghosts } = scene.layout.previewMove(homeRow, newStart, newEnd);
+		const { home, ghosts } = scene.layout.previewMove(homeRow, span.start, span.end);
 
 		// Update real bar in its home row
 		const homeOffset = scene.rowRefs.find((r) => r.row === homeRow)?.weekdayOffset ?? 0;
@@ -210,26 +173,24 @@ export class DragHandler {
 		activeDocument.removeEventListener("mouseup", this.boundMouseUp);
 		activeDocument.body.removeClass("lc-drag-cursor-grabbing", "lc-drag-cursor-resize");
 
-		if (!this.ctx) return;
-
-		const dayDelta = this.prevDayDelta ?? 0;
-		const { newStart, newEnd } = this.newDatesFromDelta(dayDelta);
-		const { barEl, filePath, originalStart } = this.ctx;
-
-		this.clearGhosts();
-
-		barEl.removeClass("lc-hidden");
-		barEl.removeClass("lc-dragging");
-		barEl.dataset.justDragged = "true";
-		window.requestAnimationFrame(() => { delete barEl.dataset.justDragged; });
-
+		const ctx = this.ctx;
+		if (!ctx) return;
 		this.ctx = null;
-		this.prevDayDelta = null;
+		const commit = ctx.session.release();
 
-		if (dayDelta === 0) return;
+		// An unarmed press was a click: leave the bar alone so its click listener opens the note.
+		if (ctx.session.armed) {
+			const { barEl } = ctx;
+			this.clearGhosts();
+			barEl.removeClass("lc-hidden");
+			barEl.removeClass("lc-dragging");
+			barEl.dataset.justDragged = "true";
+			window.requestAnimationFrame(() => { delete barEl.dataset.justDragged; });
+		}
 
+		if (!commit) return;
 		// Delegate the write; the scanner's onChange repaints the moved bar.
-		await this.onDropCommit(filePath, originalStart, newStart, newEnd);
+		await this.onDropCommit(ctx.filePath, ctx.originalStart, commit.start, commit.end);
 	}
 
 	cleanup(): void {

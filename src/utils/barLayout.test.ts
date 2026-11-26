@@ -63,8 +63,8 @@ describe("splitByMonth", () => {
 			.toEqual([{ row: 0, startDay: 1, endDay: 1 }]);
 	});
 
-	it("keeps a Dec 31 start whose end was clamped below it", () => {
-		// expandForYear clamps dateEnd to Dec 31 00:00 even when dateStart carries a time of day
+	it("keeps a Dec 31 start whose end is earlier the same day", () => {
+		// Days are compared, not timestamps (the year clamp that once made such an end is gone)
 		expect(splitByMonth(new Date(2024, 11, 31, 12), new Date(2024, 11, 31), 2024))
 			.toEqual([{ row: 11, startDay: 31, endDay: 31 }]);
 	});

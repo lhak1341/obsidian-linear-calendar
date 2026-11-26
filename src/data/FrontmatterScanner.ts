@@ -1,7 +1,8 @@
 import { debounce, type App, type Component, type Debouncer, type TFile } from "obsidian";
 import type { CalendarItem, ColumnMapping, RawCalendarItem } from "../types";
 import type { DataSource } from "./DataSource";
-import { expandForYear } from "../utils/calendarItems";
+import { expandForSpan } from "../utils/calendarItems";
+import { dayNumber } from "../utils/dateUtils";
 import { mapFrontmatterToItem, deriveReminderItem, hasGateTag } from "../utils/frontmatterMapper";
 
 interface CacheEntry {
@@ -15,14 +16,18 @@ const CHANGE_DEBOUNCE_MS = 300;
 export class FrontmatterScanner implements DataSource {
 	private cache = new Map<string, CacheEntry>();
 	private sortedItems: CalendarItem[] | null = null;
-	private sortedYear: number | null = null;
+	/** The `first|last` day pair `sortedItems` answers. */
+	private sortedSpan: string | null = null;
 	/** The mapping the cache was built with; a different one makes every entry stale. */
 	private mappingSig: string | null = null;
 	private subscribers = new Set<() => void>();
 	private notifySubscribers: Debouncer<[], void>;
 
-	/** `owner` scopes the vault listeners and the pending notification to its unload. */
-	constructor(private app: App, owner: Component) {
+	/**
+	 * `owner` scopes the vault listeners and the pending notification to its unload. `getMapping`
+	 * is read on every `items` call, so a settings save needs no invalidation.
+	 */
+	constructor(private app: App, owner: Component, private getMapping: () => ColumnMapping) {
 		this.notifySubscribers = debounce(() => {
 			for (const cb of [...this.subscribers]) cb();
 		}, CHANGE_DEBOUNCE_MS, true);
@@ -65,7 +70,8 @@ export class FrontmatterScanner implements DataSource {
 		if (wasCalendarNote) this.notifySubscribers();
 	}
 
-	scan(mapping: ColumnMapping, year: number): CalendarItem[] {
+	items(first: Date, last: Date): CalendarItem[] {
+		const mapping = this.getMapping();
 		const sig = JSON.stringify(mapping);
 		if (sig !== this.mappingSig) {
 			this.mappingSig = sig;
@@ -85,14 +91,15 @@ export class FrontmatterScanner implements DataSource {
 			this.sortedItems = null; // invalidate sort cache on any data change
 		}
 
-		// Return cached sorted result when nothing changed and year matches.
-		if (this.sortedItems !== null && year === this.sortedYear) {
+		// Return cached sorted result when nothing changed and the span matches.
+		const span = `${dayNumber(first)}|${dayNumber(last)}`;
+		if (this.sortedItems !== null && span === this.sortedSpan) {
 			return this.sortedItems;
 		}
 
 		const rawItems: RawCalendarItem[] = [];
 		for (const entry of this.cache.values()) rawItems.push(...entry.items);
-		const items = expandForYear(rawItems, year);
+		const items = expandForSpan(rawItems, first, last);
 
 		// Ties break on path, then kind: the cache's insertion order shifts with every edit and reload,
 		// and packing keeps input order, so without this two same-day bars could swap lanes.
@@ -102,7 +109,7 @@ export class FrontmatterScanner implements DataSource {
 			compareText(a.kind, b.kind),
 		);
 		this.sortedItems = items;
-		this.sortedYear = year;
+		this.sortedSpan = span;
 		return items;
 	}
 

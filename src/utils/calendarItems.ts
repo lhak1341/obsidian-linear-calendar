@@ -1,43 +1,40 @@
 import type { CalendarItem, RawCalendarItem } from "../types";
-import { formatDateRange, projectAnniversaryDates } from "./dateUtils";
+import { dayNumber, formatDateRange, projectAnniversaryDates } from "./dateUtils";
 import { formatTagLabel } from "./tagUtils";
 
 /**
- * Turns the notes' raw items into the items shown for `year`: projects anniversary notes
- * from earlier years into `year` as `recurrence` items, drops anything outside the year,
- * and clamps spans to the year's edges. Origin-year anniversaries and reminder ghosts pass
- * through with their own kind.
+ * Turns the notes' raw items into the items touching the calendar days `first`..`last`
+ * (inclusive; time of day ignored), each with its own span, never cut to the requested one.
+ * An anniversary note yields one copy per year whose copy touches the span: its origin year
+ * as an `event`, later years as `recurrence`s with `originYear`. So a note across New
+ * Year shows its tail in January as well as its next start in December. Reminder ghosts and
+ * plain events pass through when they touch the span.
  */
-export function expandForYear(rawItems: RawCalendarItem[], year: number): CalendarItem[] {
-	const yearStart = new Date(year, 0, 1);
-	const yearEnd = new Date(year, 11, 31);
-	// Exclusive bound: a start at Dec 31 with a time-of-day is still inside the year.
-	const nextYearStart = new Date(year + 1, 0, 1);
+export function expandForSpan(rawItems: RawCalendarItem[], first: Date, last: Date): CalendarItem[] {
+	const from = dayNumber(first);
+	const to = dayNumber(last);
+	const touches = (start: Date, end: Date) => dayNumber(end) >= from && dayNumber(start) <= to;
 	const items: CalendarItem[] = [];
 
 	for (const raw of rawItems) {
 		const { anniversary, ...base } = raw;
-		let { dateStart, dateEnd } = raw;
-
-		const isProjected = raw.kind === "event" && anniversary === true && dateStart.getFullYear() < year;
-		if (isProjected) {
-			({ dateStart, dateEnd } = projectAnniversaryDates(dateStart, dateEnd, year));
+		if (raw.kind !== "event" || anniversary !== true) {
+			if (touches(raw.dateStart, raw.dateEnd)) items.push(base);
+			continue;
 		}
 
-		if (dateStart >= nextYearStart || dateEnd < yearStart) continue;
-
-		const clamped = {
-			...base,
-			fullStart: dateStart,
-			fullEnd: dateEnd,
-			dateStart: dateStart < yearStart ? yearStart : dateStart,
-			dateEnd: dateEnd > yearEnd ? yearEnd : dateEnd,
-		};
-		items.push(
-			isProjected
-				? { ...clamped, kind: "recurrence", originYear: raw.dateStart.getFullYear() }
-				: clamped,
-		);
+		const originYear = raw.dateStart.getFullYear();
+		// A copy started up to the note's own year spread earlier can still reach `first`; one more
+		// year covers a Feb 29 start projecting to Mar 1. Copies that miss the span are dropped below.
+		const spread = raw.dateEnd.getFullYear() - originYear + 1;
+		for (let year = Math.max(originYear, first.getFullYear() - spread); year <= last.getFullYear(); year++) {
+			if (year === originYear) {
+				if (touches(raw.dateStart, raw.dateEnd)) items.push(base);
+				continue;
+			}
+			const { dateStart, dateEnd } = projectAnniversaryDates(raw.dateStart, raw.dateEnd, year);
+			if (touches(dateStart, dateEnd)) items.push({ ...base, dateStart, dateEnd, kind: "recurrence", originYear });
+		}
 	}
 
 	return items;
@@ -54,7 +51,7 @@ const BIRTHDAY_TAG = "linear-calendar/birthday";
 /** What a bar's tooltip says about an item, as text; `Tooltip` only paints it. */
 export interface ItemDescription {
 	title: string;
-	/** The note's own span (not clamped to the viewed year), one date or `start → end`. */
+	/** The item's own span (whatever a view shows of it), one date or `start → end`. */
 	dates: string;
 	tagLabels: string[];
 	/** "Turns N" for a birthday recurrence; undefined otherwise (including a birthday in its origin year). */
@@ -66,7 +63,7 @@ export function describeItem(item: CalendarItem): ItemDescription {
 	const age = ageOn(item);
 	return {
 		title: item.title,
-		dates: formatDateRange(item.fullStart ?? item.dateStart, item.fullEnd ?? item.dateEnd),
+		dates: formatDateRange(item.dateStart, item.dateEnd),
 		tagLabels: (item.tags ?? []).map(formatTagLabel),
 		ageLabel: age !== undefined && item.tags?.includes(BIRTHDAY_TAG) ? `Turns ${age}` : undefined,
 		description: item.description,

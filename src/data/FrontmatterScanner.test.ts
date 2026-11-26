@@ -59,9 +59,11 @@ function setup() {
 	} as unknown as App;
 	const owner = { registerEvent: vi.fn(), register: (fn: () => void) => { cleanups.push(fn); } } as unknown as Component;
 
-	const scanner = new FrontmatterScanner(app, owner);
+	let currentMapping = mapping;
+	const scanner = new FrontmatterScanner(app, owner, () => currentMapping);
 	return {
 		scanner,
+		setMapping: (m: ColumnMapping) => { currentMapping = m; },
 		notes,
 		fileFor,
 		unload: () => cleanups.forEach((fn) => fn()),
@@ -69,53 +71,82 @@ function setup() {
 	};
 }
 
+/** Every item touching 2026, the year view's request. */
+const in2026 = (scanner: FrontmatterScanner) => scanner.items(new Date(2026, 0, 1), new Date(2026, 11, 31));
+
 const calendarNote = (extra: Fm = {}): FakeNote => ({ frontmatter: { tags: ["linear-calendar"], datestart: "2026-03-01", ...extra } });
 
 beforeEach(() => { vi.useFakeTimers(); });
 afterEach(() => { vi.useRealTimers(); });
 
-describe("scan", () => {
+describe("items", () => {
 	it("returns calendar notes and ignores the rest", () => {
 		const { scanner, notes } = setup();
 		notes.set("a.md", calendarNote());
 		notes.set("b.md", { frontmatter: { datestart: "2026-03-01" } });
 
-		expect(scanner.scan(mapping, 2026).map((i) => i.filePath)).toEqual(["a.md"]);
+		expect(in2026(scanner).map((i) => i.filePath)).toEqual(["a.md"]);
 	});
 
 	it("picks up a changed mapping without any invalidation call", () => {
-		const { scanner, notes } = setup();
+		const { scanner, notes, setMapping } = setup();
 		notes.set("a.md", calendarNote({ when: "2026-05-05" }));
-		expect(scanner.scan(mapping, 2026)[0].dateStart.getMonth()).toBe(2);
+		expect(in2026(scanner)[0].dateStart.getMonth()).toBe(2);
 
-		const next = scanner.scan({ ...mapping, startDateProp: "when" }, 2026);
+		setMapping({ ...mapping, startDateProp: "when" });
 
-		expect(next[0].dateStart.getMonth()).toBe(4);
+		expect(in2026(scanner)[0].dateStart.getMonth()).toBe(4);
 	});
 
 	it("orders same-day items by path, whatever order the cache met them in", () => {
 		const { scanner, notes, fileFor, emit } = setup();
 		notes.set("b.md", calendarNote());
 		notes.set("a.md", calendarNote());
-		expect(scanner.scan(mapping, 2026).map((i) => i.filePath)).toEqual(["a.md", "b.md"]);
+		expect(in2026(scanner).map((i) => i.filePath)).toEqual(["a.md", "b.md"]);
 
 		// A change drops b's entry and the next scan re-adds it last; the order must not follow.
 		emit("changed", fileFor("b.md"));
 		notes.set("c.md", calendarNote({ datestart: "2026-02-01" }));
-		expect(scanner.scan(mapping, 2026).map((i) => i.filePath)).toEqual(["c.md", "a.md", "b.md"]);
+		expect(in2026(scanner).map((i) => i.filePath)).toEqual(["c.md", "a.md", "b.md"]);
+	});
+
+	it("orders by the item's own start, so a span begun last year comes before one starting Jan 1", () => {
+		const { scanner, notes } = setup();
+		notes.set("a.md", calendarNote({ datestart: "2026-01-01" }));
+		notes.set("z.md", calendarNote({ datestart: "2025-12-30", dateend: "2026-01-03" }));
+		expect(in2026(scanner).map((i) => i.filePath)).toEqual(["z.md", "a.md"]);
+	});
+
+	it("answers a span across New Year in one call, each item with its own span", () => {
+		const { scanner, notes } = setup();
+		notes.set("trip.md", calendarNote({ datestart: "2026-12-30", dateend: "2027-01-02" }));
+		notes.set("jan.md", calendarNote({ datestart: "2027-01-10" }));
+		notes.set("out.md", calendarNote({ datestart: "2027-01-19" }));
+		const items = scanner.items(new Date(2026, 11, 20), new Date(2027, 0, 18));
+		expect(items.map((i) => [i.filePath, i.dateStart, i.dateEnd])).toEqual([
+			["trip.md", new Date(2026, 11, 30), new Date(2027, 0, 2)],
+			["jan.md", new Date(2027, 0, 10), new Date(2027, 0, 10)],
+		]);
+	});
+
+	it("answers a different span afresh, not from the last span's sorted result", () => {
+		const { scanner, notes } = setup();
+		notes.set("a.md", calendarNote({ datestart: "2027-03-01" }));
+		expect(in2026(scanner)).toEqual([]);
+		expect(scanner.items(new Date(2027, 0, 1), new Date(2027, 11, 31)).map((i) => i.filePath)).toEqual(["a.md"]);
 	});
 });
 
-describe("scan after a metadata change", () => {
+describe("items after a metadata change", () => {
 	it("re-reads a note whose frontmatter was parsed after an earlier scan cached it empty, mtime unchanged", () => {
 		const { scanner, notes, fileFor, emit } = setup();
 		notes.set("a.md", { frontmatter: {}, mtime: 5 });
-		expect(scanner.scan(mapping, 2026)).toEqual([]); // cached empty under mtime 5
+		expect(in2026(scanner)).toEqual([]); // cached empty under mtime 5
 
 		notes.set("a.md", { frontmatter: { tags: ["linear-calendar"], datestart: "2026-03-01" }, mtime: 5 });
 		emit("changed", fileFor("a.md"));
 
-		expect(scanner.scan(mapping, 2026).map((i) => i.filePath)).toEqual(["a.md"]);
+		expect(in2026(scanner).map((i) => i.filePath)).toEqual(["a.md"]);
 	});
 });
 
@@ -123,7 +154,7 @@ describe("onChange", () => {
 	it("fires once, after the quiet period, for a burst of edits to a known calendar note", () => {
 		const { scanner, notes, fileFor, emit } = setup();
 		notes.set("a.md", calendarNote());
-		scanner.scan(mapping, 2026);
+		in2026(scanner);
 		const cb = vi.fn();
 		scanner.onChange(cb);
 
@@ -140,7 +171,7 @@ describe("onChange", () => {
 	it("waits out a quiet period that restarts on every edit", () => {
 		const { scanner, notes, fileFor, emit } = setup();
 		notes.set("a.md", calendarNote());
-		scanner.scan(mapping, 2026);
+		in2026(scanner);
 		const cb = vi.fn();
 		scanner.onChange(cb);
 
@@ -157,7 +188,7 @@ describe("onChange", () => {
 	it("fires when a known calendar note loses its gate tag", () => {
 		const { scanner, notes, fileFor, emit } = setup();
 		notes.set("a.md", calendarNote());
-		scanner.scan(mapping, 2026);
+		in2026(scanner);
 		const cb = vi.fn();
 		scanner.onChange(cb);
 
@@ -166,14 +197,14 @@ describe("onChange", () => {
 		vi.advanceTimersByTime(300);
 
 		expect(cb).toHaveBeenCalledOnce();
-		expect(scanner.scan(mapping, 2026)).toEqual([]);
+		expect(in2026(scanner)).toEqual([]);
 	});
 
 	it("stays quiet for an edit to a note that is not a calendar note", () => {
 		const { scanner, notes, fileFor, emit } = setup();
 		notes.set("a.md", calendarNote());
 		notes.set("other.md", { frontmatter: { title: "x" } });
-		scanner.scan(mapping, 2026);
+		in2026(scanner);
 		const cb = vi.fn();
 		scanner.onChange(cb);
 
@@ -201,7 +232,7 @@ describe("onChange", () => {
 	it("evicts and fires when a known calendar note is deleted", () => {
 		const { scanner, notes, fileFor, emit } = setup();
 		notes.set("a.md", calendarNote());
-		scanner.scan(mapping, 2026);
+		in2026(scanner);
 		const cb = vi.fn();
 		scanner.onChange(cb);
 
@@ -210,13 +241,13 @@ describe("onChange", () => {
 		vi.advanceTimersByTime(300);
 
 		expect(cb).toHaveBeenCalledOnce();
-		expect(scanner.scan(mapping, 2026)).toEqual([]);
+		expect(in2026(scanner)).toEqual([]);
 	});
 
 	it("evicts and fires when a known calendar note is renamed away", () => {
 		const { scanner, notes, fileFor, emit } = setup();
 		notes.set("a.md", calendarNote());
-		scanner.scan(mapping, 2026);
+		in2026(scanner);
 		const cb = vi.fn();
 		scanner.onChange(cb);
 
@@ -226,13 +257,13 @@ describe("onChange", () => {
 		vi.advanceTimersByTime(300);
 
 		expect(cb).toHaveBeenCalledOnce();
-		expect(scanner.scan(mapping, 2026).map((i) => i.filePath)).toEqual(["b.md"]);
+		expect(in2026(scanner).map((i) => i.filePath)).toEqual(["b.md"]);
 	});
 
 	it("stays quiet when a file that was never a calendar note is deleted or renamed", () => {
 		const { scanner, notes, fileFor, emit } = setup();
 		notes.set("other.md", { frontmatter: {} });
-		scanner.scan(mapping, 2026);
+		in2026(scanner);
 		const cb = vi.fn();
 		scanner.onChange(cb);
 
@@ -246,7 +277,7 @@ describe("onChange", () => {
 	it("stops calling a subscriber after it unsubscribes", () => {
 		const { scanner, notes, fileFor, emit } = setup();
 		notes.set("a.md", calendarNote());
-		scanner.scan(mapping, 2026);
+		in2026(scanner);
 		const cb = vi.fn();
 		const unsubscribe = scanner.onChange(cb);
 
@@ -260,7 +291,7 @@ describe("onChange", () => {
 	it("drops a pending notification when the owner unloads", () => {
 		const { scanner, notes, fileFor, emit, unload } = setup();
 		notes.set("a.md", calendarNote());
-		scanner.scan(mapping, 2026);
+		in2026(scanner);
 		const cb = vi.fn();
 		scanner.onChange(cb);
 

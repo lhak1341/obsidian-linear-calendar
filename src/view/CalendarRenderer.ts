@@ -157,9 +157,9 @@ export class CalendarRenderer {
 		if (!this.current) return;
 		const range = this.current;
 		const { hiddenCategories } = this.host;
-		const { colorMap, iconMap, defaultMapping } = this.getSettings();
+		const { colorMap, iconMap } = this.getSettings();
 
-		const allItems = range.items((year) => this.source.scan(defaultMapping, year));
+		const allItems = this.source.items(range.first, range.last);
 		const tagColorMap = buildTagColorMap(allItems, colorMap);
 		this.categoryChips?.update(allItems, tagColorMap, hiddenCategories);
 

@@ -28,7 +28,7 @@ export default class LinearCalendarPlugin extends Plugin {
 	async onload(): Promise<void> {
 		registerLucideIcons();
 		await this.loadSettings();
-		this.scanner = new FrontmatterScanner(this.app, this);
+		this.scanner = new FrontmatterScanner(this.app, this, () => this.settings.defaultMapping);
 		this.eventNotes = new ObsidianEventNotes(this.app, () => this.settings);
 		this.dailyNotes = new DailyNotes(this.app, this);
 
@@ -64,9 +64,12 @@ export default class LinearCalendarPlugin extends Plugin {
 		this.settingsChanges.notify();
 	}
 
-	/** Public API for other plugins — returns current-year items + each tag's resolved hue name. */
+	/**
+	 * Public API for other plugins — the items touching `year` (each with its own span, not cut to
+	 * the year) + each tag's resolved hue name.
+	 */
 	getCalendarData(year: number): { items: CalendarItem[]; colorMap: Map<string, TagHue> } {
-		const items = this.scanner.scan(this.settings.defaultMapping, year);
+		const items = this.scanner.items(new Date(year, 0, 1), new Date(year, 11, 31));
 		const colorMap = buildTagColorMap(items, this.settings.colorMap);
 		return { items, colorMap };
 	}
