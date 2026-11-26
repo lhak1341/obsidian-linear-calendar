@@ -1,13 +1,5 @@
-import type { App } from "obsidian";
-import type { PluginSettings } from "../types";
-import type { DataSource } from "../data/DataSource";
-import type { DailyNotes } from "../DailyNotes";
-import type { EventNotes } from "../EventNotes";
-import type { SettingsChanges } from "../SettingsChanges";
-import { toggleCategory } from "../utils/category";
 import { dayAt, windowEnd, type DayWindow } from "../utils/viewRange";
-import { CalendarRenderer, RenderConfig } from "./CalendarRenderer";
-import { createInteractions } from "./calendarInteractions";
+import { CalendarRenderer, type CalendarDeps, type RenderConfig } from "./CalendarRenderer";
 
 /** Handle returned by {@link LinearCalendarPlugin.mountRollingStrip} for host-driven paging. */
 export interface RollingStripHandle {
@@ -20,15 +12,6 @@ export interface RollingStripHandle {
 	destroy(): void;
 }
 
-export interface RollingStripDeps {
-	app: App;
-	scanner: DataSource;
-	dailyNotes: DailyNotes;
-	eventNotes: EventNotes;
-	getSettings: () => PluginSettings;
-	settingsChanges: SettingsChanges;
-}
-
 const WINDOW_DAYS = 30;
 /** How often to look for midnight. A host can stay open for days, and nothing else repaints an idle strip. */
 const ROLLOVER_CHECK_MS = 60_000;
@@ -36,55 +19,39 @@ const ROLLOVER_CHECK_MS = 60_000;
 /**
  * Rolling 30-day calendar host for cross-plugin embeds (`obsidian-lhak-dashboard`). A sibling of
  * `LinearCalendarView`: it builds its own `CalendarRenderer` and owns its own resize policy (ADR-0001).
- * The window starts today and moves with the date; paging keeps its distance from today.
+ * The window starts today and moves with the date; paging keeps its distance from today. Data and
+ * settings repaints, and the category toggle, are the renderer's own.
  */
 export class RollingStrip implements RollingStripHandle {
 	private pageOffset = 0;
 	private renderedDay = "";
-	private hiddenCategories = new Set<string>();
+	private shown!: DayWindow;
 	private renderer: CalendarRenderer;
-	private unsubscribeItems: () => void;
-	private unsubscribeDailyNotes: () => void;
-	private unsubscribeSettings: () => void;
 	private resizeObserver: ResizeObserver;
 	private rolloverTimer: number;
 
-	/** `onRangeChange` fires after every render (mount, navigation, data, resize or midnight), not only on navigation. */
+	/**
+	 * `onRangeChange` fires after every full render (mount, paging, midnight, resize, a daily-note
+	 * or settings change), not after an item change or a category toggle: those repaint bars only
+	 * and cannot move the window.
+	 */
 	constructor(
-		deps: RollingStripDeps,
+		deps: CalendarDeps,
 		private container: HTMLElement,
 		categoriesEl: HTMLElement,
 		private onRangeChange?: (start: Date, end: Date) => void,
 	) {
 		// Embedded mode: styles.src.css lays the strip out to the host's width under this class.
 		container.addClass("lc-embedded");
-		const interactions = createInteractions({
-			app: deps.app,
-			eventNotes: deps.eventNotes,
-			getSettings: deps.getSettings,
-			rerender: () => this.render(),
-		});
-
-		this.renderer = new CalendarRenderer(
-			deps.app,
+		this.renderer = new CalendarRenderer(deps, {
 			container,
 			categoriesEl,
-			deps.scanner,
-			deps.dailyNotes,
-			deps.getSettings,
-			{
-				onCategoryToggle: (tag) => {
-					toggleCategory(this.hiddenCategories, tag);
-					this.render();
-				},
-				...interactions,
-			},
-		);
+			config: () => this.renderConfig(),
+			hiddenCategories: new Set<string>(),
+			afterRender: () => this.onRangeChange?.(this.shown.start, windowEnd(this.shown)),
+		});
 
 		this.render();
-		this.unsubscribeItems = deps.scanner.onChange(() => this.render());
-		this.unsubscribeDailyNotes = deps.dailyNotes.onChange(() => this.render());
-		this.unsubscribeSettings = deps.settingsChanges.onChange(() => this.render());
 
 		let lastWidth = container.offsetWidth;
 		this.resizeObserver = new ResizeObserver(() => {
@@ -118,24 +85,20 @@ export class RollingStrip implements RollingStripHandle {
 
 	destroy(): void {
 		window.clearInterval(this.rolloverTimer);
-		this.unsubscribeItems();
-		this.unsubscribeDailyNotes();
-		this.unsubscribeSettings();
 		this.renderer.cleanup();
 		this.resizeObserver.disconnect();
 		this.container.removeClass("lc-embedded");
 	}
 
 	private render(): void {
+		this.renderer.render();
+	}
+
+	/** Read by the renderer on every full render; records the window it drew for `afterRender` and the midnight check. */
+	private renderConfig(): RenderConfig {
 		const now = new Date();
 		this.renderedDay = now.toDateString();
-		const window: DayWindow = { start: dayAt(now, this.pageOffset), days: WINDOW_DAYS };
-		const config: RenderConfig = {
-			range: { kind: "window", ...window },
-			hiddenCategories: this.hiddenCategories,
-			rowHeight: 0,
-		};
-		this.renderer.render(config);
-		this.onRangeChange?.(window.start, windowEnd(window));
+		this.shown = { start: dayAt(now, this.pageOffset), days: WINDOW_DAYS };
+		return { range: { kind: "window", ...this.shown }, rowHeight: 0 };
 	}
 }

@@ -10,6 +10,7 @@ import { DailyNotes } from "./DailyNotes";
 import { SettingsChanges } from "./SettingsChanges";
 import { CreateEventModal } from "./CreateEventModal";
 import { RollingStrip } from "./view/RollingStrip";
+import type { CalendarDeps } from "./view/CalendarRenderer";
 import type { RollingStripHandle } from "./view/RollingStrip";
 import { buildTagColorMap } from "./utils/colorUtils";
 import { registerLucideIcons } from "./lucide-icons";
@@ -32,14 +33,7 @@ export default class LinearCalendarPlugin extends Plugin {
 		this.dailyNotes = new DailyNotes(this.app, this);
 
 		this.registerView(VIEW_TYPE_LINEAR_CALENDAR, (leaf: WorkspaceLeaf) => {
-			return new LinearCalendarView(
-				leaf,
-				() => this.settings,
-				this.scanner,
-				this.dailyNotes,
-				this.eventNotes,
-				this.settingsChanges,
-			);
+			return new LinearCalendarView(leaf, this.calendarDeps());
 		});
 
 		this.addCommand({
@@ -81,8 +75,9 @@ export default class LinearCalendarPlugin extends Plugin {
 	 * Public API — mount a rolling calendar strip into `container`
 	 * of the next 30 days, starting today. Uses LC's own renderers so styles, bars,
 	 * tooltips, and the now-indicator all work exactly as in the full view.
-	 * `onRangeChange` fires after every render (mount, navigation, data change,
-	 * resize) with the first and last day shown, so a host view can render its own range label.
+	 * `onRangeChange` fires after every full render (mount, paging, midnight, resize, a daily-note
+	 * or settings change; not an item change or category toggle, which repaint bars only) with the
+	 * first and last day shown, so a host view can render its own range label.
 	 * Returns a handle to page the window and to clean up when the host view closes.
 	 */
 	mountRollingStrip(
@@ -90,19 +85,19 @@ export default class LinearCalendarPlugin extends Plugin {
 		categoriesEl: HTMLElement,
 		onRangeChange?: (start: Date, end: Date) => void,
 	): RollingStripHandle {
-		return new RollingStrip(
-			{
-				app: this.app,
-				scanner: this.scanner,
-				dailyNotes: this.dailyNotes,
-				eventNotes: this.eventNotes,
-				getSettings: () => this.settings,
-				settingsChanges: this.settingsChanges,
-			},
-			container,
-			categoriesEl,
-			onRangeChange,
-		);
+		return new RollingStrip(this.calendarDeps(), container, categoriesEl, onRangeChange);
+	}
+
+	/** What every calendar host shares; built per host, after `onload` has made the collaborators. */
+	private calendarDeps(): CalendarDeps {
+		return {
+			app: this.app,
+			source: this.scanner,
+			dailyNotes: this.dailyNotes,
+			eventNotes: this.eventNotes,
+			getSettings: () => this.settings,
+			settingsChanges: this.settingsChanges,
+		};
 	}
 
 	private async activateView(): Promise<void> {

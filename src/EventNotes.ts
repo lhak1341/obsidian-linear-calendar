@@ -25,8 +25,10 @@ export interface CreateOptions extends EventFields {
 
 /**
  * Every write to an event note. Each verb resolves only once the metadata cache reflects
- * the write, so a caller that re-renders on completion sees fresh data. Verbs never throw:
- * a failure is logged, shown as a Notice, and resolves `false`.
+ * the write, so the next verb or reader on that note sees it (`promoteReminder` and the edit
+ * modal read the cache). Repainting is not a caller's job: the scanner's `onChange` brings
+ * every write to the calendar. Verbs never throw: a failure is logged, shown as a Notice,
+ * and resolves `false`.
  */
 export interface EventNotes {
 	/** Creates a note dated `date`. Omitted fields are left as the template (if any) set them. */
@@ -39,7 +41,9 @@ export interface EventNotes {
 	move(filePath: string, oldStart: Date, newStart: Date, newEnd: Date): Promise<boolean>;
 	/** Promotes a reminder ghost into a real note: duplicates the source note at `filePath` onto
 	 *  the reminder's date, carries the reminder forward by the same interval, and clears the
-	 *  source note's reminder field. Fails if the source note has no valid start/remind dates. */
+	 *  source note's reminder field. Fails if the source note has no valid start/remind dates.
+	 *  A call for a note whose promotion is still running returns that promotion (a double-click
+	 *  on a ghost makes one note). */
 	promoteReminder(filePath: string): Promise<boolean>;
 }
 
@@ -47,6 +51,9 @@ export interface EventNotes {
 const SETTLE_TIMEOUT_MS = 2000;
 
 export class ObsidianEventNotes implements EventNotes {
+	/** Running promotions by source path; an entry leaves when its promotion settles. */
+	private promotions = new Map<string, Promise<boolean>>();
+
 	constructor(
 		private app: App,
 		/** Read at call time — settings are mutable. */
@@ -136,7 +143,15 @@ export class ObsidianEventNotes implements EventNotes {
 		}
 	}
 
-	async promoteReminder(filePath: string): Promise<boolean> {
+	promoteReminder(filePath: string): Promise<boolean> {
+		const running = this.promotions.get(filePath);
+		if (running) return running;
+		const promotion = this.promote(filePath).finally(() => this.promotions.delete(filePath));
+		this.promotions.set(filePath, promotion);
+		return promotion;
+	}
+
+	private async promote(filePath: string): Promise<boolean> {
 		try {
 			const sourceFile = this.requireFile(filePath);
 			const settings = this.getSettings();

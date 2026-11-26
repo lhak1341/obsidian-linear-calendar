@@ -228,7 +228,7 @@ export class DragHandler {
 
 		if (dayDelta === 0) return;
 
-		// Delegate write to caller; EventNotes.move resolves once the metadata cache is fresh.
+		// Delegate the write; the scanner's onChange repaints the moved bar.
 		await this.onDropCommit(filePath, originalStart, newStart, newEnd);
 	}
 

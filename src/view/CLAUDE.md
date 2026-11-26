@@ -40,12 +40,15 @@
 - Rules for dashboard embeds only go under `.lc-embedded`, the class `RollingStrip` adds to
   the host's container (and removes on `destroy`). The host styles only its own wrappers.
 
+## Repaints: CalendarRenderer keeps itself fresh
+
+- `CalendarRenderer` subscribes to items, daily notes and settings in its constructor and unsubscribes in `cleanup()`. `subscribeRepaints` (`calendarRepaints.ts`, tested) maps each to a scope: an item change repaints bars and chips only (day cells never read items), a daily-note change or settings save rebuilds fully. A host never subscribes.
+- A host hands over a `CalendarHost`: a `config()` getter (range + row height) read on every full render, so a settings save picks up a new align mode; its `hiddenCategories` set; `afterRender` (full renders only: the view re-applies fonts there, the strip fires `onRangeChange`); day callbacks. It calls `render()` (no argument) after its own state changes.
+
 ## Category toggle re-render scope
 
-- `onCategoryToggle` must call `renderBarsOnly()`, not `renderCalendar()` — `populateDayCell()` never receives `hiddenCategories`, so the day cell DOM is invariant under category filter changes; only bars and chips need rebuilding.
+- `CalendarRenderer` owns the toggle: it flips the host's `hiddenCategories` set in place and repaints bars only, in both hosts. `populateDayCell()` never receives `hiddenCategories`, so the day cell DOM is invariant under category filter changes; only bars and chips need rebuilding. The view's `setState` refills that same set in place, never replaces it.
 - `CategoryChips`'s `lastSig` guards chip DOM rebuilds — include ALL visual chip properties (color, icon, etc.) in the sig or a change to that property will be silently skipped on re-render
-- `RollingStrip` does a full `render()` on toggle on purpose: `onRangeChange` is part of the dashboard contract and fires once per render, so switching it to `renderBars()` would silence it for toggles.
-
 ## Tracking a CSS grid column with a positioned overlay
 
 - Don't use `offsetLeft`/`offsetWidth` — values captured at render time go stale when CSS grid reflows on container resize
@@ -70,7 +73,7 @@
 
 ## Note-mutating callbacks
 
-`onDropCommit`/`onReminderClick`/`onEditNote`/`canEditNote` come from `createInteractions()` (`calendarInteractions.ts`), spread into `CalendarRenderer`'s callbacks by both `LinearCalendarView` and `mountRollingStrip`. They are required (`CalendarRendererCallbacks extends CalendarInteractions`) and `BarRenderer` takes the whole `CalendarInteractions`, so a host that forgets one fails to compile; only `onDayDblClick`/`onDayContextMenu`/`onCategoryToggle` are optional host extras. Add a new one there, not inline in a host; construction and resize policy stay per-host (ADR-0001).
+`onDropCommit`/`onReminderClick`/`onEditNote`/`canEditNote` come from `createInteractions()` (`calendarInteractions.ts`), which `CalendarRenderer` calls itself from its `CalendarDeps`; no host wires them. `BarRenderer` takes the whole `CalendarInteractions`; only `onDayDblClick`/`onDayContextMenu` are optional host extras (`CalendarHost`). None of them repaints on completion: the scanner's `onChange` brings every write to the calendar. `onReminderClick` resolves the promotion's result so `BarRenderer` can unmark a ghost whose promotion failed (see "Promoting a reminder twice" in `data/CLAUDE.md`). Add a new one there, not inline in a host; construction and resize policy stay per-host (ADR-0001).
 
 ## Testing mountRollingStrip for another date range without faking the date
 
@@ -83,7 +86,7 @@
 - The view restores its persisted `year` — set it first (`view.setState({...view.getState(), year}, {history:false})`) or DOM counts reflect whatever year was last open.
 - Write tests against `lhakZettel` with throwaway notes (`zz` prefix, far-future year ≤ 2068 — its `YYMMDD` formats parse `99` as 1999, so 2099 fixtures are never found) and trash them in `finally`. Create them with `plugin.eventNotes.create(date, { title, openAfterCreate: false })` rather than driving the modal; drive the modal only to test the modal. Assert deltas against a baseline, not totals: the year already holds real bars, and a promoted note with a remind date draws its own ghost.
 - Walk settings-dependent cases (`alignMode`, …) without writing `data.json`: set `plugin.settings.<key>` in memory and repaint via `view.setState(...)`, never `saveSettings()`; restore both in `finally`. A no-change refactor is then checked by a before/after DOM fingerprint over year × layout × align, plus a strip paged across New Year.
-- Assert what a change repainted, not how it looks: tag an existing day cell (`cell.dataset.mark`) and check it survives (bars-only repaint) or vanishes (full rebuild); count a strip's repaints with an `onRangeChange` counter; read tooltip text after `bar.dispatchEvent(new MouseEvent("mouseenter"))` (`Tooltip` listens in the capture phase on the grid, so a non-bubbling event at the bar reaches it).
+- Assert what a change repainted, not how it looks: tag an existing day cell (`cell.dataset.mark`) and check it survives (bars-only repaint) or vanishes (full rebuild); count a strip's full repaints with an `onRangeChange` counter (bars-only repaints do not fire it); count either scope in any host by overriding `view.calendarRenderer.renderBars`/`render` on the instance (its own subscriptions call through `this`, so they hit the override) and `delete` both in `finally`; read tooltip text after `bar.dispatchEvent(new MouseEvent("mouseenter"))` (`Tooltip` listens in the capture phase on the grid, so a non-bubbling event at the bar reaches it).
 
 ## Day windows
 

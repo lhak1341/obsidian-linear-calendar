@@ -399,6 +399,31 @@ describe("promoteReminder", () => {
 		expect(v.disk.get("Events/2026-03-05 Talk.md")!.tags).toEqual(["linear-calendar"]);
 	});
 
+	it("makes one note when a second promotion of the same source starts before the first resolves", async () => {
+		const v = makeVault();
+		v.addFile("Events/2026-03-01 Talk.md", { dateStart: "2026-03-01", remindOn: "2026-03-05" });
+		const notes = new ObsidianEventNotes(v.app, makeSettings);
+
+		const results = await Promise.all([
+			notes.promoteReminder("Events/2026-03-01 Talk.md"),
+			notes.promoteReminder("Events/2026-03-01 Talk.md"),
+		]);
+
+		expect(results).toEqual([true, true]);
+		expect([...v.disk.keys()].filter((p) => p.includes("2026-03-05"))).toEqual(["Events/2026-03-05 Talk.md"]);
+		expect(v.log.filter((l) => l === "write Events/2026-03-01 Talk.md")).toHaveLength(1);
+	});
+
+	it("runs a new promotion once the previous one has resolved", async () => {
+		const v = makeVault();
+		v.addFile("Events/2026-03-01 Talk.md", { dateStart: "2026-03-01", remindOn: "2026-03-05" });
+		const notes = new ObsidianEventNotes(v.app, makeSettings);
+
+		expect(await notes.promoteReminder("Events/2026-03-01 Talk.md")).toBe(true);
+		// The source's remind date is gone now, so a fresh run fails rather than replaying the first.
+		expect(await notes.promoteReminder("Events/2026-03-01 Talk.md")).toBe(false);
+	});
+
 	it("resolves false and writes nothing when the source has no remind date", async () => {
 		const v = makeVault();
 		v.addFile("Events/2026-03-01 Talk.md", { dateStart: "2026-03-01" });

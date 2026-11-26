@@ -1,59 +1,37 @@
 import { ItemView, Menu, Notice, WorkspaceLeaf, setIcon } from "obsidian";
-import type { PluginSettings } from "../types";
 import { VIEW_TYPE_LINEAR_CALENDAR } from "../constants";
-import type { DataSource } from "../data/DataSource";
-import type { EventNotes } from "../EventNotes";
-import type { DailyNotes } from "../DailyNotes";
-import type { SettingsChanges } from "../SettingsChanges";
 import { CreateEventModal } from "../CreateEventModal";
-import { CalendarRenderer, RenderConfig } from "./CalendarRenderer";
-import { createInteractions } from "./calendarInteractions";
+import { CalendarRenderer, type CalendarDeps, type RenderConfig } from "./CalendarRenderer";
 import { applyFontRoles } from "@lhak/style/obsidian-helpers/font-roles";
-import { toggleCategory } from "../utils/category";
 import { restoreViewState, type ViewState } from "../utils/viewState";
 
 /**
  * Public interface:
- *   refresh()          — force re-render (called by plugin after settings save)
  *   getState()         — persists { year, hiddenCategories, rowHeight, layout } across reloads
  *   setState(s, r)     — restores persisted state, then re-renders
  *
- * Re-render triggers: metadataCache changed for calendar files (debounced 300ms),
- *   vault create/delete/rename, year nav buttons, layout toggle.
+ * Re-render triggers owned here: year nav (buttons, arrow keys), Today, layout toggle, setState.
+ *   Item, daily-note and settings changes are CalendarRenderer's own subscriptions; the category
+ *   toggle is its own too. Fonts are re-applied after every full render (afterRender), which is
+ *   how a settings save reaches them.
  *
- * Lifecycle: onOpen builds DOM once; renderCalendar() clears and repaints the grid each call.
- *   onClose cleans up CalendarRenderer (NowIndicator timer, Tooltip listener).
+ * Lifecycle: onOpen builds DOM once; renderCalendar() syncs the toolbar and repaints the grid each call.
+ *   onClose cleans up CalendarRenderer (subscriptions, NowIndicator timer, Tooltip listener).
  */
 export class LinearCalendarView extends ItemView {
 	private currentYear: number;
-	private hiddenCategories: Set<string> = new Set();
+	/** Refilled in place by setState: CalendarRenderer holds this same set. */
+	private readonly hiddenCategories = new Set<string>();
 	private rowHeight = 0;
 	private layout: "horizontal" | "vertical";
 	private layoutToggleBtn!: HTMLElement;
 	private yearLabelEl!: HTMLElement;
 	private rowSlider: HTMLInputElement | null = null;
 	private calendarRenderer!: CalendarRenderer;
-	private getSettings: () => PluginSettings;
-	private source: DataSource;
-	private dailyNotes: DailyNotes;
-	private eventNotes: EventNotes;
-	private settingsChanges: SettingsChanges;
 	private categoriesContainer!: HTMLElement;
 
-	constructor(
-		leaf: WorkspaceLeaf,
-		getSettings: () => PluginSettings,
-		source: DataSource,
-		dailyNotes: DailyNotes,
-		eventNotes: EventNotes,
-		settingsChanges: SettingsChanges,
-	) {
+	constructor(leaf: WorkspaceLeaf, private deps: CalendarDeps) {
 		super(leaf);
-		this.getSettings = getSettings;
-		this.source = source;
-		this.dailyNotes = dailyNotes;
-		this.eventNotes = eventNotes;
-		this.settingsChanges = settingsChanges;
 		this.currentYear = new Date().getFullYear();
 		this.layout = window.innerWidth < 768 ? "vertical" : "horizontal";
 	}
@@ -75,37 +53,21 @@ export class LinearCalendarView extends ItemView {
 		contentEl.empty();
 		// lk-root: the @lhak/style alias layer resolves its --lk- roles under this class.
 		contentEl.addClass("linear-calendar-container", "lk-root");
-		this.applyFonts();
 
 		const toolbar = contentEl.createDiv({ cls: "linear-calendar-toolbar" });
 		this.buildToolbar(toolbar);
 
 		const scrollWrapper = contentEl.createDiv({ cls: "linear-calendar-scroll" });
 
-		const interactions = createInteractions({
-			app: this.app,
-			eventNotes: this.eventNotes,
-			getSettings: this.getSettings,
-			rerender: () => this.renderBarsOnly(),
+		this.calendarRenderer = new CalendarRenderer(this.deps, {
+			container: scrollWrapper,
+			categoriesEl: this.categoriesContainer,
+			config: () => this.renderConfig(),
+			hiddenCategories: this.hiddenCategories,
+			afterRender: () => this.applyFonts(),
+			onDayDblClick: (y, m, d) => this.createNoteForDate(y, m, d),
+			onDayContextMenu: (y, m, d, e) => this.showDayContextMenu(y, m, d, e),
 		});
-
-		this.calendarRenderer = new CalendarRenderer(
-			this.app,
-			scrollWrapper,
-			this.categoriesContainer,
-			this.source,
-			this.dailyNotes,
-			this.getSettings,
-			{
-				onDayDblClick: (y, m, d) => this.createNoteForDate(y, m, d),
-				onDayContextMenu: (y, m, d, e) => this.showDayContextMenu(y, m, d, e),
-				onCategoryToggle: (tag) => {
-					toggleCategory(this.hiddenCategories, tag);
-					this.renderBarsOnly();
-				},
-				...interactions,
-			},
-		);
 
 		this.registerDomEvent(scrollWrapper, "wheel", (evt: WheelEvent) => {
 			if (evt.shiftKey && this.layout === "horizontal") {
@@ -122,10 +84,6 @@ export class LinearCalendarView extends ItemView {
 		this.registerDomEvent(contentEl, "keydown", (evt: KeyboardEvent) => {
 			this.handleKeydown(evt);
 		});
-
-		this.register(this.source.onChange(() => this.renderCalendar()));
-		this.register(this.dailyNotes.onChange(() => this.renderCalendar()));
-		this.register(this.settingsChanges.onChange(() => this.refresh()));
 	}
 
 	async onClose(): Promise<void> {
@@ -144,7 +102,8 @@ export class LinearCalendarView extends ItemView {
 	async setState(state: unknown, result: unknown): Promise<void> {
 		const s = restoreViewState(state, this.getState());
 		this.currentYear = s.year;
-		this.hiddenCategories = new Set(s.hiddenCategories);
+		this.hiddenCategories.clear();
+		for (const category of s.hiddenCategories) this.hiddenCategories.add(category);
 		this.rowHeight = s.rowHeight;
 		this.layout = s.layout;
 		if (this.calendarRenderer) this.renderCalendar();
@@ -240,27 +199,27 @@ export class LinearCalendarView extends ItemView {
 
 	private renderCalendar(): void {
 		this.syncChrome();
-		const config: RenderConfig = {
-			range: { kind: "year", year: this.currentYear, layout: this.layout, alignMode: this.getSettings().alignMode },
-			hiddenCategories: this.hiddenCategories,
-			rowHeight: this.rowHeight,
-		};
-		this.calendarRenderer.render(config);
+		this.calendarRenderer.render();
 	}
 
-	private renderBarsOnly(): void {
-		this.calendarRenderer.renderBars();
+	/** Read by CalendarRenderer on every full render, so a settings save picks up a new align mode. */
+	private renderConfig(): RenderConfig {
+		return {
+			range: { kind: "year", year: this.currentYear, layout: this.layout, alignMode: this.deps.getSettings().alignMode },
+			rowHeight: this.rowHeight,
+		};
 	}
 
 	private showDayContextMenu(year: number, month: number, day: number, event: MouseEvent): void {
 		const menu = new Menu();
-		if (!this.dailyNotes.get(year, month, day)) {
+		const { dailyNotes, eventNotes, getSettings } = this.deps;
+		if (!dailyNotes.get(year, month, day)) {
 			menu.addItem((item) =>
 				item.setTitle("Create daily note")
 					.setIcon("file-plus")
 					.onClick(async () => {
 						try {
-							const file = await this.dailyNotes.create(year, month, day);
+							const file = await dailyNotes.create(year, month, day);
 							await this.app.workspace.openLinkText(file.path, "", false);
 						} catch (err) {
 							console.error("[linear-calendar] create daily note failed:", err);
@@ -272,18 +231,13 @@ export class LinearCalendarView extends ItemView {
 		menu.addItem((item) =>
 			item.setTitle("Create event")
 				.setIcon("calendar-plus")
-				.onClick(() => new CreateEventModal(this.app, this.eventNotes, this.getSettings(), new Date(year, month, day)).open())
+				.onClick(() => new CreateEventModal(this.app, eventNotes, getSettings(), new Date(year, month, day)).open())
 		);
 		menu.showAtMouseEvent(event);
 	}
 
-	refresh(): void {
-		this.applyFonts();
-		this.renderCalendar();
-	}
-
 	private applyFonts(): void {
-		applyFontRoles(this.contentEl, this.getSettings());
+		applyFontRoles(this.contentEl, this.deps.getSettings());
 	}
 
 	private handleKeydown(evt: KeyboardEvent): void {
@@ -307,7 +261,7 @@ export class LinearCalendarView extends ItemView {
 	}
 
 	private createNoteForDate(year: number, month: number, day: number): void {
-		void this.eventNotes.create(new Date(year, month, day), { openAfterCreate: true });
+		void this.deps.eventNotes.create(new Date(year, month, day), { openAfterCreate: true });
 	}
 
 	private scrollToNow(): void {

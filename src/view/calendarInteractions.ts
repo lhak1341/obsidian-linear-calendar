@@ -9,29 +9,28 @@ export interface CalendarInteractionDeps {
 	eventNotes: EventNotes;
 	/** Read at call time — settings are mutable. */
 	getSettings: () => PluginSettings;
-	/** Called after a reminder promotion lands, so the host can repaint with the new note. */
-	rerender: () => void;
 }
 
 export interface CalendarInteractions {
 	onDropCommit: DropCommitFn;
-	onReminderClick: (item: CalendarItem) => void;
+	/** Resolves `false` when the promotion failed, so the clicked ghost can be clicked again. */
+	onReminderClick: (item: CalendarItem) => Promise<boolean>;
 	onEditNote: (filePath: string) => void;
 	/** Whether `onEditNote` applies: only notes the Create-event flow could have written (directly in the event folder). */
 	canEditNote: (filePath: string) => boolean;
 }
 
 /**
- * The note-mutating callbacks every CalendarRenderer host wires identically: write a drag's
- * dates, promote a reminder ghost, edit an event (and whether a note can be edited). Hosts keep their own construction, resize
- * policy, category toggle and day callbacks (see ADR-0001).
+ * The note-mutating callbacks of every calendar: write a drag's dates, promote a reminder ghost,
+ * edit an event (and whether a note can be edited). `CalendarRenderer` builds them from its deps;
+ * no host wires them. None repaints: the scanner's `onChange` brings each write to the calendar.
  */
-export function createInteractions({ app, eventNotes, getSettings, rerender }: CalendarInteractionDeps): CalendarInteractions {
+export function createInteractions({ app, eventNotes, getSettings }: CalendarInteractionDeps): CalendarInteractions {
 	return {
 		onDropCommit: async (filePath, oldStart, newStart, newEnd) => {
 			await eventNotes.move(filePath, oldStart, newStart, newEnd);
 		},
-		onReminderClick: (item) => void eventNotes.promoteReminder(item.filePath).then(rerender),
+		onReminderClick: (item) => eventNotes.promoteReminder(item.filePath),
 		onEditNote: (filePath) => new CreateEventModal(app, eventNotes, getSettings(), undefined, filePath).open(),
 		canEditNote: (filePath) => isEventNotePath(filePath, eventNoteConfig(getSettings())),
 	};

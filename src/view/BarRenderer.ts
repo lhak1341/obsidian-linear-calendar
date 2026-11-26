@@ -49,7 +49,13 @@ export class BarRenderer {
 				barEl.addEventListener("click", (evt) => {
 					if (barEl.dataset.justDragged) return;
 					if (segment.item.kind === "reminder") {
-						this.interactions.onReminderClick(segment.item);
+						// Marked from click until the scanner's repaint replaces this element (a running
+						// promotion is also deduped in EventNotes); a failed promotion unmarks it.
+						if (barEl.dataset.promoting) return;
+						barEl.dataset.promoting = "true";
+						void this.interactions.onReminderClick(segment.item).then((ok) => {
+							if (!ok) delete barEl.dataset.promoting;
+						});
 						return;
 					}
 					void this.app.workspace.openLinkText(segment.item.filePath, "", evt.metaKey || evt.ctrlKey);

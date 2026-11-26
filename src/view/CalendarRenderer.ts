@@ -1,59 +1,115 @@
-import { App } from "obsidian";
+import type { App } from "obsidian";
 import type { PluginSettings } from "../types";
 import type { DataSource } from "../data/DataSource";
 import type { DailyNotes } from "../DailyNotes";
+import type { EventNotes } from "../EventNotes";
+import type { SettingsChanges } from "../SettingsChanges";
 import { buildTagColorMap } from "../utils/colorUtils";
-import { visibleItems } from "../utils/category";
+import { toggleCategory, visibleItems } from "../utils/category";
 import { resolveRange, type ResolvedRange, type ViewRange } from "../utils/viewRange";
 import { GridRenderer } from "./GridRenderer";
 import type { RowRef } from "./GridRenderer";
 import { BarRenderer } from "./BarRenderer";
-import type { CalendarInteractions } from "./calendarInteractions";
+import { createInteractions, type CalendarInteractions } from "./calendarInteractions";
+import { subscribeRepaints } from "./calendarRepaints";
 import { NowIndicator } from "./NowIndicator";
 import { Tooltip } from "./Tooltip";
 import { CategoryChips } from "./CategoryChips";
 
+/** What a host shows; `CalendarHost.config` is read on every full render. */
 export interface RenderConfig {
 	range: ViewRange;
-	hiddenCategories: Set<string>;
 	/** Density slider value; see `updateRowHeight`. */
 	rowHeight: number;
+}
+
+/** The plugin's shared collaborators: the same for every host. */
+export interface CalendarDeps {
+	app: App;
+	source: DataSource;
+	dailyNotes: DailyNotes;
+	eventNotes: EventNotes;
+	/** Read at call time — settings are mutable. */
+	getSettings: () => PluginSettings;
+	settingsChanges: SettingsChanges;
+}
+
+/** What one host supplies: where to draw, what to show, and its own extras. */
+export interface CalendarHost {
+	container: HTMLElement;
+	categoriesEl: HTMLElement | null;
+	config: () => RenderConfig;
+	/** The host's set, so it can persist it; a chip click toggles it in place and repaints bars. */
+	hiddenCategories: Set<string>;
+	/** Runs after each full render, never after a bars-only repaint. */
+	afterRender?: () => void;
+	onDayDblClick?: (y: number, m: number, d: number) => void;
+	onDayContextMenu?: (y: number, m: number, d: number, e: MouseEvent) => void;
 }
 
 interface CalendarRendererCallbacks extends CalendarInteractions {
 	onDayDblClick?: (y: number, m: number, d: number) => void;
 	onDayContextMenu?: (y: number, m: number, d: number, e: MouseEvent) => void;
-	onCategoryToggle?: (tag: string) => void;
 }
 
+/**
+ * One calendar in one host. It keeps itself fresh: it subscribes to items, daily notes and settings
+ * (`subscribeRepaints` decides how much each repaints), owns the category filter and the
+ * note-mutating callbacks. A host calls `render()` after its own state changes (navigation,
+ * layout, paging, resize) and `cleanup()` when it closes. Construction and resize policy stay
+ * with each host (ADR-0001).
+ */
 export class CalendarRenderer {
 	private gridRenderer: GridRenderer;
 	private barRenderer: BarRenderer;
 	private nowIndicator: NowIndicator;
 	private tooltip: Tooltip;
 	private categoryChips: CategoryChips | null;
-	private current: { range: ResolvedRange; hiddenCategories: Set<string> } | null = null;
+	private current: ResolvedRange | null = null;
+	private app: App;
+	private source: DataSource;
+	private dailyNotes: DailyNotes;
+	private getSettings: () => PluginSettings;
+	private callbacks: CalendarRendererCallbacks;
+	private unsubscribe: () => void;
 
-	constructor(
-		private app: App,
-		container: HTMLElement,
-		categoriesEl: HTMLElement | null,
-		private source: DataSource,
-		private dailyNotes: DailyNotes,
-		private getSettings: () => PluginSettings,
-		private callbacks: CalendarRendererCallbacks,
-	) {
+	constructor(deps: CalendarDeps, private host: CalendarHost) {
+		this.app = deps.app;
+		this.source = deps.source;
+		this.dailyNotes = deps.dailyNotes;
+		this.getSettings = deps.getSettings;
+		this.callbacks = {
+			onDayDblClick: host.onDayDblClick,
+			onDayContextMenu: host.onDayContextMenu,
+			...createInteractions({
+				app: deps.app,
+				eventNotes: deps.eventNotes,
+				getSettings: deps.getSettings,
+			}),
+		};
+		const { container, categoriesEl } = host;
 		this.gridRenderer = new GridRenderer(container);
-		this.barRenderer = new BarRenderer(app, callbacks);
+		this.barRenderer = new BarRenderer(deps.app, this.callbacks);
 		this.nowIndicator = new NowIndicator();
 		// Anchor tooltip to container's parent to avoid overflow-x clipping
 		this.tooltip = new Tooltip(container.parentElement ?? container);
-		this.categoryChips = categoriesEl ? new CategoryChips(categoriesEl, this.tooltip, callbacks.onCategoryToggle) : null;
+		this.categoryChips = categoriesEl
+			? new CategoryChips(categoriesEl, this.tooltip, (tag) => {
+				toggleCategory(host.hiddenCategories, tag);
+				this.renderBars();
+			})
+			: null;
+		this.unsubscribe = subscribeRepaints(
+			{ items: deps.source, dailyNotes: deps.dailyNotes, settings: deps.settingsChanges },
+			{ full: () => this.render(), bars: () => this.renderBars() },
+		);
 	}
 
-	render(config: RenderConfig): void {
+	/** Full render from the host's current `config()`, then `afterRender`. */
+	render(): void {
+		const config = this.host.config();
 		const range = resolveRange(config.range);
-		this.current = { range, hiddenCategories: config.hiddenCategories };
+		this.current = range;
 		const { dailyNoteColor, dailyNoteStyle, japaneseWeekdayLabels } = this.getSettings();
 
 		const rowRefs = this.gridRenderer.render({
@@ -76,10 +132,12 @@ export class CalendarRenderer {
 		this.nowIndicator.render(rowRefs, range);
 
 		this.tooltip.attach(this.gridRenderer.getContainer(), this.barRenderer.getBarInfo.bind(this.barRenderer));
+
+		this.host.afterRender?.();
 	}
 
-	/** Rebuild only bars and category chips using the config from the last render(); preserves the day-cell grid DOM. */
-	renderBars(): void {
+	/** Rebuild only bars and category chips for the last render()'s range; preserves the day-cell grid DOM. */
+	private renderBars(): void {
 		const rowRefs = this.gridRenderer.getRowRefs();
 		if (!this.current || rowRefs.length === 0) return;
 
@@ -97,7 +155,8 @@ export class CalendarRenderer {
 	 */
 	private renderVisibleBars(rowRefs: RowRef[]): void {
 		if (!this.current) return;
-		const { range, hiddenCategories } = this.current;
+		const range = this.current;
+		const { hiddenCategories } = this.host;
 		const { colorMap, iconMap, defaultMapping } = this.getSettings();
 
 		const allItems = range.items((year) => this.source.scan(defaultMapping, year));
@@ -115,7 +174,7 @@ export class CalendarRenderer {
 	 */
 	updateRowHeight(rowHeight: number): void {
 		const grid = this.gridRenderer.getContainer();
-		if (this.current?.range.layout === "vertical") {
+		if (this.current?.layout === "vertical") {
 			grid.style.setProperty("--lc-vert-row-h", `${20 + rowHeight * 0.4}px`);
 		} else {
 			grid.style.setProperty("--lc-row-min", `${rowHeight * 3}px`);
@@ -123,6 +182,7 @@ export class CalendarRenderer {
 	}
 
 	cleanup(): void {
+		this.unsubscribe();
 		this.barRenderer.cleanup();
 		this.nowIndicator.cleanup();
 		this.tooltip.cleanup();

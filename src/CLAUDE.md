@@ -6,7 +6,7 @@
   `next`/`prev`/`today`/`destroy`) and `getCalendarData(year)` on `LinearCalendarPlugin`
   are called at runtime by `obsidian-lhak-dashboard`. Changing either signature requires
   coordinating both repos.
-- `mountRollingStrip` is a one-line `new RollingStrip(...)`; the strip itself lives in `view/RollingStrip.ts` (a class implementing `RollingStripHandle`). `onRangeChange` fires after every render, not only on navigation.
+- `mountRollingStrip` is a one-line `new RollingStrip(...)`; the strip itself lives in `view/RollingStrip.ts` (a class implementing `RollingStripHandle`). `onRangeChange` fires after every full render (mount, paging, midnight, resize, a daily-note or settings change), not only on navigation; not after an item change or a category toggle, which repaint bars only and cannot move the window. The dashboard uses it only for a range label (`CalendarPanel.ts`).
 - Types used only internally by those two (e.g. `RenderConfig`) are **not** part of the
   coordinated surface.
 - The dashboard only calls `mountRollingStrip`, never `getCalendarData` — `CalendarItem`'s
@@ -74,7 +74,7 @@
   with the hues. Text roles flip lightness with the mode and hues do not, so text-muted itself
   would be darker than every hue in light mode and brighter than most in dark. The neutral's own
   chroma and hue are kept, so the grey is neutral in Capritarius and warm in Primary. The daily-note highlight colour is still a free hex.
-- `settings.ts` mutates `plugin.settings` in place, then `saveSettings()` saves and calls `SettingsChanges.notify()`. Every host (`LinearCalendarView`, each `RollingStrip`) subscribes via `onChange` and repaints fully; hosts read settings through a `getSettings` getter, never a captured object. A new host must subscribe, or it goes stale after a settings save. Not unit-tested (a subscriber set); verify live via `obsidian eval`: mount a strip with an `onRangeChange` counter, toggle a setting and `await plugin.saveSettings()`, and the count rises by one; after `destroy()` it no longer rises. Restore the setting afterwards. Run 2026-10-21 in `lhakZettel`: passed (render count only, DOM change not inspected).
+- `settings.ts` mutates `plugin.settings` in place, then `saveSettings()` saves and calls `SettingsChanges.notify()`. `CalendarRenderer` subscribes via `onChange` and repaints fully, so a host does not (see "Repaints" in `view/CLAUDE.md`; the mapping is pinned by `view/calendarRepaints.test.ts`). Everything reads settings through a `getSettings` getter, never a captured object. The wiring itself (constructor subscribes, `cleanup()` unsubscribes) is verified live via `obsidian eval`: mount a strip with an `onRangeChange` counter, toggle a setting and `await plugin.saveSettings()`, and the count rises by one; after `destroy()` it no longer rises. Restore the setting afterwards. Run 2026-11-26 in `lhakZettel` after the repaint move into `CalendarRenderer`: passed, with day-cell marks checked too (an item change and a category toggle keep them, a settings save rebuilds them).
 
 ## Daily notes
 
